@@ -2,7 +2,8 @@
   "name": "psd",
   "version": "0.0.1",
   "dependencies": {
-    "coffee-script": "~ 1.7.1"
+    "coffee-script": "~ 1.7.1",
+    "rsvp": "~ 3.0.6"
   },
   "devDependencies": {
     "coffeeify": "~ 0.6.0"
