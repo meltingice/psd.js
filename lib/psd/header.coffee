@@ -15,4 +15,15 @@ module.exports = class Header
       @sig = @file.readString(4)
       @version = @file.readUShort()
 
+      @file.seek 6, true
+
+      @channels = @file.readUShort()
+      @rows = @file.readUInt()
+      @cols = @file.readUInt()
+      @depth = @file.readUShort()
+      @mode = @file.readUShort()
+
+      colorDataLen = @file.readUInt()
+      @file.seek colorDataLen, true
+
       resolve(@)

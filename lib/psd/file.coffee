@@ -14,6 +14,12 @@ module.exports = class File
     UShort:
       code: '>H'
       length: 2
+    Float:
+      code: '>f'
+      length: 4
+    Double:
+      code: '>d'
+      length: 8
 
   for own format, info of FORMATS then do (format, info) =>
     @::["read#{format}"] = -> @readf(info.code, info.length)[0]
