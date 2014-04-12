@@ -1,8 +1,10 @@
-fs    = require 'fs'
-RSVP  = require 'rsvp'
+fs        = require 'fs'
 
-File  = require './psd/file.coffee'
-Header = require './psd/header.coffee'
+File      = require './psd/file.coffee'
+Header    = require './psd/header.coffee'
+Resources = require './psd/resources.coffee'
+LayerMask = require './psd/layer_mask.coffee'
+Image     = require './psd/image.coffee'
 
 module.exports = class PSD
   @fromFile: (file) -> new PSD fs.readFileSync(file)
@@ -13,11 +15,27 @@ module.exports = class PSD
     @header = null
 
   parse: ->
-    new RSVP.Promise (resolve, reject) =>
-      return resolve(@) if @parsed
-      
-      @parseHeader().then (header) =>
-        @header = header
-        resolve(@)
+    return if @parsed
 
-  parseHeader: -> new Header(@file).parse()
+    @parseHeader()
+    @parseResources()
+    @parseLayerMask()
+    @parseImage()
+
+    @parsed = true
+
+  parseHeader: ->
+    @header = new Header(@file)
+    @header.parse()
+
+  parseResources: ->
+    @resources = new Resources(@file)
+    @resources.parse()
+
+  parseLayerMask: ->
+    @layerMask = new LayerMask(@file, @header)
+    @layerMask.parse()
+
+  parseImage: ->
+    @image = new Image(@file, @header)
+    @image.parse()
