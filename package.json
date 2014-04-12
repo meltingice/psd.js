@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "dependencies": {
     "coffee-script": "~ 1.7.1",
-    "rsvp": "~ 3.0.6"
+    "rsvp": "~ 3.0.6",
+    "jspack": "~ 0.0.3"
   },
   "devDependencies": {
     "coffeeify": "~ 0.6.0"

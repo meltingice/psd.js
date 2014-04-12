@@ -2,6 +2,7 @@ RSVP = require ('rsvp')
 
 module.exports = class Header
   constructor: (@file) ->
+    @sig = null
     @version = null
     @channels = null
     @rows = null
@@ -11,6 +12,7 @@ module.exports = class Header
 
   parse: ->
     new RSVP.Promise (resolve, reject) =>
-      sig = @file.readString(4)
-      console.log sig
+      @sig = @file.readString(4)
+      @version = @file.readUShort()
+
       resolve(@)
