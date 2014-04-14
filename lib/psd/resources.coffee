@@ -4,6 +4,10 @@ module.exports = class Resources
     @typeIndex = {}
     @length = null
 
+  skip: ->
+    @length = @file.readInt()
+    @file.seek @length, true
+
   parse: ->
     @length = @file.readInt()
     @file.seek @length, true

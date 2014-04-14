@@ -1,6 +1,8 @@
 fs        = require 'fs'
 
 File      = require './psd/file.coffee'
+LazyExecute = require './psd/lazy_execute.coffee'
+
 Header    = require './psd/header.coffee'
 Resources = require './psd/resources.coffee'
 LayerMask = require './psd/layer_mask.coffee'
@@ -29,13 +31,22 @@ module.exports = class PSD
     @header.parse()
 
   parseResources: ->
-    @resources = new Resources(@file)
-    @resources.parse()
+    resources = new Resources(@file)
+    @resources = new LazyExecute(resources, @file)
+      .now('skip')
+      .later('parse')
+      .get()
 
   parseLayerMask: ->
-    @layerMask = new LayerMask(@file, @header)
-    @layerMask.parse()
+    layerMask = new LayerMask(@file, @header)
+    @layerMask = new LazyExecute(layerMask, @file)
+      .now('skip')
+      .later('parse')
+      .get()
 
   parseImage: ->
-    @image = new Image(@file, @header)
-    @image.parse()
+    image = new Image(@file, @header)
+    @image = new LazyExecute(image, @file)
+      .later('parse')
+      .ignore('width', 'height')
+      .get()

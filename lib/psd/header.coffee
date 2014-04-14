@@ -24,8 +24,8 @@ module.exports = class Header
     @sig = null
     @version = null
     @channels = null
-    @rows = null
-    @cols = null
+    @rows = @height = null
+    @cols = @width = null
     @depth = null
     @mode = null
 
@@ -36,8 +36,8 @@ module.exports = class Header
     @file.seek 6, true
 
     @channels = @file.readUShort()
-    @rows = @file.readUInt()
-    @cols = @file.readUInt()
+    @rows = @height = @file.readUInt()
+    @cols = @width = @file.readUInt()
     @depth = @file.readUShort()
     @mode = @file.readUShort()
 

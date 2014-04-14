@@ -6,6 +6,8 @@ module.exports = class LayerMask
     @mergedAlpha = false
     @globalMask = null
 
+  skip: -> @file.seek @file.readInt()
+
   parse: ->
     maskSize = @file.readInt()
     finish = maskSize + @file.tell()
