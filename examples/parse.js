@@ -1,6 +1,6 @@
 var PSD = require('../');
 
-psd = PSD.fromFile('/Users/ryanlefevre/LayerVault/Pillocks/Welcome Email.psd');
+psd = PSD.fromFile('./examples/images/example.psd');
 psd.parse();
 
 console.log(psd.header.export());
