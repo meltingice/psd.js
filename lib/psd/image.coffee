@@ -1,8 +1,77 @@
-module.exports = class Image
+{Module}    = require 'coffeescript-module'
+ImageFormat = require './image_format.coffee'
+ImageMode   = require './image_mode.coffee'
+
+module.exports = class Image extends Module
+  @includes ImageFormat.RAW
+  @includes ImageFormat.RLE
+  @includes ImageMode.RGB
+  
+  COMPRESSIONS = [
+    'Raw'
+    'RLE'
+    'ZIP'
+    'ZIPPrediction'
+  ]
+
   constructor: (@file, @header) ->
-    @width = @header.width
-    @height = @header.height
+    @numPixels = @width() * @height()
+    @numPixels *= 2 if @depth() is 16
+
+    @calculateLength()
+
+    @channelData = []
+    @pixelData = []
+    @opacity = 1.0
+    @hasMask = false
+
+    @startPos = @file.tell()
+    @endPos = @startPos + @length
+
+    @channelsInfo = [
+      {id: 0}
+      {id: 1}
+      {id: 2}
+    ]
+
+    @channelsInfo.push {id: -1} if @channels() is 4
+
+  for attr in ['width', 'height', 'channels', 'depth', 'mode'] then do (attr) =>
+    @::[attr] = -> @header[attr]
+
+  calculateLength: ->
+    @length = switch @depth()
+      when 1 then (@width() + 7) / 8 * @height()
+      when 16 then @width() * @height() * 2
+      else @width() * @height()
+
+    @channelLength = @length
+    @length *= @channels()
 
   parse: ->
-    console.log "parse!"
+    @compression = @parseCompression()
+
+    if @compression in [2, 3]
+      @file.seek @endPos
+      return
+
+    @parseImageData()
+
+  parseCompression: -> @file.readShort()
     
+  parseImageData: ->
+    switch @compression
+      when 0 then @parseRaw()
+      when 1 then @parseRLE()
+      when 2, 3 then @parseZip()
+      else @file.seek(@endPos)
+
+    @processImageData()
+
+  processImageData: ->
+    switch @mode()
+      when 1 then @combineGreyscaleChannel()
+      when 3 then @combineRgbChannel()
+      when 4 then @combineCmykChannel()
+
+    @channelData = null
