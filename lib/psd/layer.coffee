@@ -3,6 +3,7 @@
 module.exports = class Layer extends Module
   @includes require('./layer/position_channels.coffee')
   @includes require('./layer/blend_modes.coffee')
+  @includes require('./layer/mask.coffee')
   # @includes require('./layer/blending_ranges.coffee')
   # @includes require('./layer/channel_image.coffee')
 
@@ -23,6 +24,8 @@ module.exports = class Layer extends Module
     extraLen = @file.readInt()
     @layerEnd = @file.tell() + extraLen
 
+    @parseMaskData()
+
     @file.seek @layerEnd
     return @
 
@@ -36,3 +39,4 @@ module.exports = class Layer extends Module
     opacity: @opacity
     visible: @visible
     clipped: @clipped
+    mask: @mask.export()
