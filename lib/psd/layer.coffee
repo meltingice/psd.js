@@ -5,6 +5,7 @@ module.exports = class Layer extends Module
   @includes require('./layer/blend_modes.coffee')
   @includes require('./layer/mask.coffee')
   @includes require('./layer/blending_ranges.coffee')
+  @includes require('./layer/name.coffee')
   # @includes require('./layer/channel_image.coffee')
 
   constructor: (@file, @header) ->
@@ -26,11 +27,13 @@ module.exports = class Layer extends Module
 
     @parseMaskData()
     @parseBlendingRanges()
+    @parseLegacyLayerName()
 
     @file.seek @layerEnd
     return @
 
   export: ->
+    name: @name
     top: @top
     right: @right
     bottom: @bottom

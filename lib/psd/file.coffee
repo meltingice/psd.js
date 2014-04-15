@@ -37,5 +37,5 @@ module.exports = class File
 
   seek: (amt, rel = false) -> if rel then @pos += amt else @pos = amt
 
-  readString: (length) -> @read(length).toString()
+  readString: (length) -> @read(length).toString().replace /\u0000/g, ''
   readByte: -> @read(1)[0]
