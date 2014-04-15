@@ -1,11 +1,14 @@
 {Module}    = require 'coffeescript-module'
+
 ImageFormat = require './image_format.coffee'
 ImageMode   = require './image_mode.coffee'
+Export      = require './image_export.coffee'
 
 module.exports = class Image extends Module
   @includes ImageFormat.RAW
   @includes ImageFormat.RLE
   @includes ImageMode.RGB
+  @includes Export.PNG
   
   COMPRESSIONS = [
     'Raw'

@@ -20,7 +20,7 @@ module.exports = class LazyExecute
     return @
 
   get: ->
-    for own key, val of @obj then do (key, val) =>
+    for key, val of @obj then do (key, val) =>
       return if @[key]?
       Object.defineProperty @, key,
         get: ->
