@@ -1,4 +1,5 @@
 Util = require('./util.coffee')
+Layer = require('./layer.coffee')
 
 module.exports = class LayerMask
   constructor: (@file, @header) ->
@@ -11,8 +12,6 @@ module.exports = class LayerMask
   parse: ->
     maskSize = @file.readInt()
     finish = maskSize + @file.tell()
-    @file.seek finish
-    return
 
     return if maskSize <= 0
 
@@ -25,3 +24,9 @@ module.exports = class LayerMask
         layerCount = Math.abs layerCount
         @mergedAlpha = true
 
+      for i in [0...layerCount]
+        @layers.push new Layer(@file, @header).parse()
+
+    @layers.reverse()
+
+    @file.seek finish

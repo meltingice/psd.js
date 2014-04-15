@@ -38,10 +38,4 @@ module.exports = class File
   seek: (amt, rel = false) -> if rel then @pos += amt else @pos = amt
 
   readString: (length) -> @read(length).toString()
-  # readUInt: ->
-  #   @data.readUInt32(@pos)
-  #   @pos += 4
-
-  # readInt: ->
-  #   @data.readInt32(@pos)
-  #   @pos += 4
+  readByte: -> @read(1)[0]

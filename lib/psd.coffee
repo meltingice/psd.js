@@ -16,6 +16,9 @@ module.exports = class PSD
     @parsed = false
     @header = null
 
+    Object.defineProperty @, 'layers',
+      get: -> @layerMask.layers
+
   parse: ->
     return if @parsed
 
