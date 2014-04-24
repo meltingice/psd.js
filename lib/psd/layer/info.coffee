@@ -5,6 +5,9 @@ LAYER_INFO = {
   name: require('../layer_info/unicode_name.coffee')
 }
 
+for own name, klass of LAYER_INFO then do (name, klass) ->
+  module.exports[name] = -> @adjustments[name]
+
 module.exports =
   parseLayerInfo: ->
     while @file.tell() < @layerEnd
@@ -23,6 +26,9 @@ module.exports =
           .now('skip')
           .later('parse')
           .get()
+
+        unless @[name]?
+          do (name) => @[name] = -> @adjustments[name]
 
         keyParseable = true
         break

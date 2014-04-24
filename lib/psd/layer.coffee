@@ -19,6 +19,13 @@ module.exports = class Layer extends Module
 
     @infoKeys = []
 
+    Object.defineProperty @, 'name',
+      get: ->
+        if @adjustments['name']?
+          @adjustments['name'].data
+        else
+          @legacyName
+
   parse: ->
     @parsePositionAndChannels()
     @parseBlendModes()
