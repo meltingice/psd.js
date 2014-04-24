@@ -1,4 +1,5 @@
-{jspack} = require('jspack')
+{jspack} = require 'jspack'
+Util = require './util.coffee'
 
 module.exports = class File
   FORMATS =
@@ -38,4 +39,12 @@ module.exports = class File
   seek: (amt, rel = false) -> if rel then @pos += amt else @pos = amt
 
   readString: (length) -> @read(length).toString().replace /\u0000/g, ''
+  readUnicodeString: (length = null) ->
+    length or= @readInt()
+    @read(length * 2)
+      .toJSON()
+      .map((c) -> Util.getUnicodeCharacter(c))
+      .join('')
+      .replace(/\u0000/g, '')
+
   readByte: -> @read(1)[0]
