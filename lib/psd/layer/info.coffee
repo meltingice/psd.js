@@ -2,11 +2,9 @@ LazyExecute = require '../lazy_execute.coffee'
 Util = require '../util.coffee'
 
 LAYER_INFO = {
-  name: require('../layer_info/unicode_name.coffee')
+  name: require('../layer_info/unicode_name.coffee'),
+  nestedSectionDivider: require('../layer_info/nested_section_divider.coffee')
 }
-
-for own name, klass of LAYER_INFO then do (name, klass) ->
-  module.exports[name] = -> @adjustments[name]
 
 module.exports =
   parseLayerInfo: ->
