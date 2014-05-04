@@ -21,8 +21,8 @@ module.exports = class Root extends Node
     @buildHeirarchy()
 
   documentDimensions: -> [
-    @documentWidth(),
-    @documentHeight()
+    @width,
+    @height
   ]
 
   depth: -> 0
@@ -31,6 +31,13 @@ module.exports = class Root extends Node
 
   export: ->
     children: @children.map((c) -> c.export())
+    document:
+      width: @width
+      height: @height
+      resources:
+        layerComps: []
+        guides: []
+        slices: []
 
 
   buildHeirarchy: ->
