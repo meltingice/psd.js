@@ -28,12 +28,24 @@ module.exports = class Node extends Module
     @createProperties()
 
   createProperties: ->
-    Object.defineProperty @, 'top',     get: -> @coords.top + @topOffset
-    Object.defineProperty @, 'right',   get: -> @coords.right + @leftOffset
-    Object.defineProperty @, 'bottom',  get: -> @coords.bottom + @topOffset
-    Object.defineProperty @, 'left',    get: -> @coords.left + @leftOffset
-    Object.defineProperty @, 'width',   get: -> @right - @left
-    Object.defineProperty @, 'height',  get: -> @bottom - @top
+    Object.defineProperty @, 'top',
+      get: -> @coords.top + @topOffset
+      set: (val) -> @coords.top = val
+
+    Object.defineProperty @, 'right',
+      get: -> @coords.right + @leftOffset
+      set: (val) -> @coords.right = val
+
+    Object.defineProperty @, 'bottom',
+      get: -> @coords.bottom + @topOffset
+      set: (val) -> @coords.bottom = val
+
+    Object.defineProperty @, 'left',
+      get: -> @coords.left + @leftOffset
+      set: (val) -> @coords.left = val
+
+    Object.defineProperty @, 'width',  get: -> @right - @left
+    Object.defineProperty @, 'height', get: -> @bottom - @top
 
   get: (prop) -> if @[prop]? then @[prop] else @layer[prop]
 
@@ -75,7 +87,7 @@ module.exports = class Node extends Module
     return if @isRoot()
 
     nonEmptyChildren = @children.filter((c) -> not c.isEmpty())
-    @coords.left = _.min(nonEmptyChildren.map((c) -> c.left)) or 0
-    @coords.top = _.min(nonEmptyChildren.map((c) -> c.top)) or 0
-    @coords.bottom = _.max(nonEmptyChildren.map((c) -> c.bottom)) or 0
-    @coords.right = _.max(nonEmptyChildren.map((c) -> c.right)) or 0
+    @left = _.min(nonEmptyChildren.map((c) -> c.left)) or 0
+    @top = _.min(nonEmptyChildren.map((c) -> c.top)) or 0
+    @bottom = _.max(nonEmptyChildren.map((c) -> c.bottom)) or 0
+    @right = _.max(nonEmptyChildren.map((c) -> c.right)) or 0
