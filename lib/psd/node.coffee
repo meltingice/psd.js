@@ -75,7 +75,7 @@ module.exports = class Node extends Module
     return if @isRoot()
 
     nonEmptyChildren = @children.filter((c) -> not c.isEmpty())
-    @left = _.min(nonEmptyChildren.map((c) -> c.left)) or 0
-    @top = _.min(nonEmptyChildren.map((c) -> c.top)) or 0
-    @bottom = _.max(nonEmptyChildren.map((c) -> c.bottom)) or 0
-    @right = _.max(nonEmptyChildren.map((c) -> c.right)) or 0
+    @coords.left = _.min(nonEmptyChildren.map((c) -> c.left)) or 0
+    @coords.top = _.min(nonEmptyChildren.map((c) -> c.top)) or 0
+    @coords.bottom = _.max(nonEmptyChildren.map((c) -> c.bottom)) or 0
+    @coords.right = _.max(nonEmptyChildren.map((c) -> c.right)) or 0
