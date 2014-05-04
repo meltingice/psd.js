@@ -10,7 +10,7 @@ module.exports = class Node extends Module
 
   constructor: (@layer, @parent = null) ->
     @layer.node = @
-    @children = []
+    @_children = []
 
     @name = @layer.name
 
@@ -82,11 +82,11 @@ module.exports = class Node extends Module
   updateDimensions: ->
     return if @isLayer()
 
-    child.updateDimensions() for child in @children
+    child.updateDimensions() for child in @_children
 
     return if @isRoot()
 
-    nonEmptyChildren = @children.filter((c) -> not c.isEmpty())
+    nonEmptyChildren = @_children.filter((c) -> not c.isEmpty())
     @left = _.min(nonEmptyChildren.map((c) -> c.left)) or 0
     @top = _.min(nonEmptyChildren.map((c) -> c.top)) or 0
     @bottom = _.max(nonEmptyChildren.map((c) -> c.bottom)) or 0

@@ -7,16 +7,18 @@ module.exports =
 
   isRoot: -> @depth() is 0
 
+  children: -> @_children
+
   ancestors: ->
     return [] if not @parent? or @parent.isRoot()
     return @parent.ancestors().concat [@parent]
 
-  hasChildren: -> @children.length > 0
+  hasChildren: -> @_children.length > 0
   childless: -> not @hasChildren()
 
   siblings: ->
     return [] unless @parent?
-    @parent.children
+    @parent.children()
 
   nextSibling: ->
     return null unless @parent?
@@ -31,7 +33,7 @@ module.exports =
   hasSiblings: -> @siblings().length > 1
   onlyChild: -> not @hasSiblings()
 
-  descendants: -> _.flatten @children.map((n) -> n.subtree())
+  descendants: -> _.flatten @_children.map((n) -> n.subtree())
 
   subtree: -> [@].concat @descendants()
 

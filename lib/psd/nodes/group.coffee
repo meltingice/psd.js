@@ -8,9 +8,9 @@ module.exports = class Group extends Node
     @get('blendingMode') is 'passthru'
 
   isEmpty: ->
-    return false unless child.isEmpty() for child in @children
+    return false unless child.isEmpty() for child in @_children
 
   export: ->
     _.merge super(),
       type: 'group'
-      children: @children.map((c) -> c.export())
+      children: @_children.map((c) -> c.export())

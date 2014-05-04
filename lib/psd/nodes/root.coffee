@@ -30,7 +30,7 @@ module.exports = class Root extends Node
   fillOpacity: -> 255
 
   export: ->
-    children: @children.map((c) -> c.export())
+    children: @_children.map((c) -> c.export())
     document:
       width: @width
       height: @height
@@ -50,9 +50,9 @@ module.exports = class Root extends Node
         currentGroup = new Group(layer, _.last(parseStack))
       else if layer.isFolderEnd()
         parent = parseStack.pop()
-        parent.children.push currentGroup
+        parent.children().push currentGroup
         currentGroup = parent
       else
-        currentGroup.children.push new Layer(layer, currentGroup)
+        currentGroup.children().push new Layer(layer, currentGroup)
 
     @updateDimensions()

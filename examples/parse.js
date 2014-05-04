@@ -8,4 +8,4 @@ console.log(psd.header.export());
 //   console.log("Finished!");
 // });
 
-console.log(psd.tree().children[0].children[0].nextSibling().export());
+console.log(psd.tree().children()[0].children()[0].nextSibling().export());
