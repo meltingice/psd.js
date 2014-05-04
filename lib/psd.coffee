@@ -9,6 +9,9 @@ LayerMask = require './psd/layer_mask.coffee'
 Image     = require './psd/image.coffee'
 
 module.exports = class PSD
+  @Node:
+    Root: require('./psd/nodes/root.coffee')
+
   @fromFile: (file) -> new PSD fs.readFileSync(file)
 
   constructor: (data) ->
@@ -53,3 +56,5 @@ module.exports = class PSD
       .later('parse')
       .ignore('width', 'height')
       .get()
+
+  tree: -> new PSD.Node.Root(@)

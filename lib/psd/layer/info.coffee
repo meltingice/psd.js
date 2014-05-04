@@ -3,7 +3,8 @@ Util = require '../util.coffee'
 
 LAYER_INFO = {
   name: require('../layer_info/unicode_name.coffee'),
-  nestedSectionDivider: require('../layer_info/nested_section_divider.coffee')
+  nestedSectionDivider: require('../layer_info/nested_section_divider.coffee'),
+  sectionDivider: require('../layer_info/section_divider.coffee')
 }
 
 module.exports =
