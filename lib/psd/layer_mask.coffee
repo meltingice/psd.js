@@ -36,3 +36,23 @@ module.exports = class LayerMask
         @layers.push new Layer(@file, @header).parse()
 
   parseGlobalMask: ->
+    length = @file.readInt()
+    return if length <= 0
+
+    maskEnd = @file.tell() + length
+
+    @globalMask = _({}).tap (mask) ->
+      mask.overlayColorSpace = @file.readShort()
+      mask.colorComponents = [
+        @file.readShort() >> 8
+        @file.readShort() >> 8
+        @file.readShort() >> 8
+        @file.readShort() >> 8
+      ]
+
+      mask.opacity = @file.readShort() / 16.0
+
+      # 0 = color selected, 1 = color protected, 128 = use value per layer
+      mask.kind = @file.readByte()
+
+    @file.seek maskEnd
