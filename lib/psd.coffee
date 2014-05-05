@@ -13,6 +13,13 @@ module.exports = class PSD
     Root: require('./psd/nodes/root.coffee')
 
   @fromFile: (file) -> new PSD fs.readFileSync(file)
+  @open: (file, cb) ->
+    fs.readFile file, (err, data) ->
+      throw err if err?
+      psd = new PSD(data)
+      psd.parse()
+
+      cb(psd)
 
   constructor: (data) ->
     @file = new File(data)

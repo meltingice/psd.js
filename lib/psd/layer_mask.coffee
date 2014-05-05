@@ -15,6 +15,14 @@ module.exports = class LayerMask
 
     return if maskSize <= 0
 
+    @parseLayers()
+    @parseGlobalMask()
+
+    @layers.reverse()
+
+    @file.seek finish
+
+  parseLayers: ->
     layerInfoSize = Util.pad2 @file.readInt()
 
     if layerInfoSize > 0
@@ -27,6 +35,4 @@ module.exports = class LayerMask
       for i in [0...layerCount]
         @layers.push new Layer(@file, @header).parse()
 
-    @layers.reverse()
-
-    @file.seek finish
+  parseGlobalMask: ->
