@@ -4,13 +4,11 @@ RSVP = require 'rsvp'
 
 module.exports =
   toPng: ->
-    return @png if @png
-
-    @png = new Png(new Buffer(@pixelData), @width(), @height(), 'rgba')
-
     new RSVP.Promise (resolve, reject) =>
+      png = new Png(new Buffer(@pixelData), @width(), @height(), 'rgba')
+
       console.log "Encoding!"
-      @png.encode(resolve)
+      png.encode(resolve)
 
   saveAsPng: (output) ->
     new RSVP.Promise (resolve, reject) =>
