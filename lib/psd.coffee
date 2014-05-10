@@ -1,4 +1,4 @@
-fs        = require 'fs'
+{Module} = require 'coffeescript-module'
 
 File      = require './psd/file.coffee'
 LazyExecute = require './psd/lazy_execute.coffee'
@@ -8,18 +8,11 @@ Resources = require './psd/resources.coffee'
 LayerMask = require './psd/layer_mask.coffee'
 Image     = require './psd/image.coffee'
 
-module.exports = class PSD
+module.exports = class PSD extends Module
   @Node:
     Root: require('./psd/nodes/root.coffee')
 
-  @fromFile: (file) -> new PSD fs.readFileSync(file)
-  @open: (file, cb) ->
-    fs.readFile file, (err, data) ->
-      throw err if err?
-      psd = new PSD(data)
-      psd.parse()
-
-      cb(psd)
+  @extends require('./psd/init.coffee')
 
   constructor: (data) ->
     @file = new File(data)
