@@ -21,6 +21,9 @@ module.exports = class File
     Double:
       code: '>d'
       length: 8
+    LongLong:
+      code: '>q'
+      length: 8
 
   for own format, info of FORMATS then do (format, info) =>
     @::["read#{format}"] = -> @readf(info.code, info.length)[0]
@@ -48,3 +51,4 @@ module.exports = class File
       .replace(/\u0000/g, '')
 
   readByte: -> @read(1)[0]
+  readBoolean: -> readByte() isnt 0
