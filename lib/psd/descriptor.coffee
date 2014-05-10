@@ -7,7 +7,7 @@ module.exports = class Descriptor
     numItems = @file.readInt()
 
     for i in [0...numItems]
-      id, value = @parseKeyItem()
+      [id, value] = @parseKeyItem()
       @data[id] = value
 
     @data
@@ -23,7 +23,7 @@ module.exports = class Descriptor
   parseKeyItem: ->
     id = @parseId()
     value = @parseItem()
-    return id, value
+    return [id, value]
 
   parseItem: (type = null) ->
     type = @file.readString(4) unless type?
@@ -94,3 +94,58 @@ module.exports = class Descriptor
     items
 
   parseObjectArray: ->
+    throw "Descriptor object array not implemented yet @ #{@file.tell()}"
+
+  parseRawData: ->
+    len = @file.readInt()
+    @file.read(len)
+
+  parseReference: ->
+    numItems = @file.readInt()
+    items = []
+
+    for i in [0...numItems]
+      type = @file.readString(4)
+      value = switch type
+        when 'prop' then @parseProperty()
+        when 'Clss' then @parseClass()
+        when 'Enmr' then @parseEnumReference()
+        when 'Idnt' then @parseIdentifier()
+        when 'indx' then @parseIndex()
+        when 'name' then @file.readUnicodeString()
+        when 'rele' then @parseOffset()
+
+      items.push type: type, value: value
+
+    items
+
+  parseUnitDouble: ->
+    unitId = @file.readString(4)
+    unit = switch unitId
+      when '#Ang' then 'Angle'
+      when '#Rsl' then 'Density'
+      when '#Rlt' then 'Distance'
+      when '#Nne' then 'None'
+      when '#Prc' then 'Percent'
+      when '#Pxl' then 'Pixels'
+      when '#Mlm' then 'Millimeters'
+      when '#Pnt' then 'Points'
+
+    value = @file.readDouble()
+    id: unitId, unit: unit, value: value
+
+  parseUnitFloat: ->
+    unitId = @file.readString(4)
+    unit = switch unitId
+      when '#Ang' then 'Angle'
+      when '#Rsl' then 'Density'
+      when '#Rlt' then 'Distance'
+      when '#Nne' then 'None'
+      when '#Prc' then 'Percent'
+      when '#Pxl' then 'Pixels'
+      when '#Mlm' then 'Millimeters'
+      when '#Pnt' then 'Points'
+
+    value = @file.readFloat()
+    id: unitId, unit: unit, value: value
+    

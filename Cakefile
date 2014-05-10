@@ -13,4 +13,5 @@ task 'compile', 'Compile with browserify for the web', ->
   .bundle (err, src) ->
     return console.log(err) if err?
     fs.writeFile './dist/psd.js', src, ->
-      console.log "Compiled to ./dist/psd.js"
+      fs.stat './dist/psd.js', (err, stats) ->
+        console.log "Compiled to ./dist/psd.js - #{Math.round(stats.size / 1024)}KB"
