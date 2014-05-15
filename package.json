@@ -11,7 +11,7 @@
     "lodash": "~ 2.4"
   },
   "scripts": {
-    "test": "./node_modules/mocha/bin/mocha test"
+    "test": "mocha test"
   },
   "devDependencies": {
     "coffeeify": "~ 0.6.0",
