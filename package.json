@@ -9,8 +9,12 @@
     "rsvp": "~ 3.0.6",
     "lodash": "~ 2.4"
   },
+  "test": "mocha test",
   "devDependencies": {
     "coffeeify": "~ 0.6.0",
-    "browserify": "~ 3.46.0"
+    "browserify": "~ 3.46.0",
+    "mocha": "~ 1.18.2",
+    "should": "~ 3.3.1",
+    "rimraf": "~ 2.2.8"
   }
 }
