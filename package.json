@@ -1,6 +1,7 @@
 {
   "name": "psd",
   "version": "0.0.1",
+  "main": "./index.js",
   "dependencies": {
     "coffee-script": "~ 1.7.1",
     "jspack": "~ 0.0.3",
@@ -9,7 +10,9 @@
     "rsvp": "~ 3.0.6",
     "lodash": "~ 2.4"
   },
-  "test": "mocha test",
+  "scripts": {
+    "test": "./node_modules/mocha/bin/mocha test"
+  },
   "devDependencies": {
     "coffeeify": "~ 0.6.0",
     "browserify": "~ 3.46.0",
