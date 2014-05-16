@@ -1,5 +1,7 @@
 # PSD.js
 
+[![Build Status](https://travis-ci.org/meltingice/psd.js.svg?branch=master)](https://travis-ci.org/meltingice/psd.js)
+
 A general purpose PSD parser written in Coffeescript. Based off of [PSD.rb](https://github.com/layervault/psd.rb).
 
 Runs in both NodeJS and the browser (using browserify).
