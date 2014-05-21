@@ -1,4 +1,4 @@
-var PSD = require('../');
+var PSD = require('../../');
 
 var file = process.argv[2] || './examples/images/example.psd';
 var start = new Date();

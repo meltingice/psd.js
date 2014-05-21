@@ -1,3 +1,5 @@
+RSVP = require 'rsvp'
+
 module.exports = 
   toPng: ->
     new RSVP.Promise (resolve, reject) =>
@@ -11,6 +13,8 @@ module.exports =
       pixelData = imageData.data
 
       pixelData[i] = pixel for pixel, i in @pixelData
+
+      context.putImageData(imageData, 0, 0)
 
       # Create the image and set the source to the
       # canvas data URL.

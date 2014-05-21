@@ -1,4 +1,4 @@
-require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({"aS3ana":[function(require,module,exports){
 var File, Header, Image, LayerMask, LazyExecute, Module, PSD, Resources,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -80,7 +80,9 @@ module.exports = PSD = (function(_super) {
 })(Module);
 
 
-},{"./psd/file.coffee":3,"./psd/header.coffee":4,"./psd/image.coffee":5,"./psd/init.coffee":"/ioUh4","./psd/layer_mask.coffee":24,"./psd/lazy_execute.coffee":25,"./psd/nodes/root.coffee":31,"./psd/resources.coffee":33,"coffeescript-module":36}],2:[function(require,module,exports){
+},{"./psd/file.coffee":5,"./psd/header.coffee":6,"./psd/image.coffee":7,"./psd/init.coffee":"/ioUh4","./psd/layer_mask.coffee":25,"./psd/lazy_execute.coffee":26,"./psd/nodes/root.coffee":32,"./psd/resources.coffee":36,"coffeescript-module":40}],"psd":[function(require,module,exports){
+module.exports=require('aS3ana');
+},{}],3:[function(require,module,exports){
 var BlendMode, Module,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -155,7 +157,284 @@ module.exports = BlendMode = (function(_super) {
 })(Module);
 
 
-},{"coffeescript-module":36}],3:[function(require,module,exports){
+},{"coffeescript-module":40}],4:[function(require,module,exports){
+var Descriptor;
+
+module.exports = Descriptor = (function() {
+  function Descriptor(file) {
+    this.file = file;
+    this.data = {};
+  }
+
+  Descriptor.prototype.parse = function() {
+    var i, id, numItems, value, _i, _ref;
+    this.data["class"] = this.parseClass();
+    numItems = this.file.readInt();
+    for (i = _i = 0; 0 <= numItems ? _i < numItems : _i > numItems; i = 0 <= numItems ? ++_i : --_i) {
+      _ref = this.parseKeyItem(), id = _ref[0], value = _ref[1];
+      this.data[id] = value;
+    }
+    return this.data;
+  };
+
+  Descriptor.prototype.parseClass = function() {
+    return {
+      name: this.file.readUnicodeString(),
+      id: this.parseId()
+    };
+  };
+
+  Descriptor.prototype.parseId = function() {
+    var len;
+    len = this.file.readInt();
+    if (len === 0) {
+      return this.file.readString(4);
+    } else {
+      return this.file.readString(len);
+    }
+  };
+
+  Descriptor.prototype.parseKeyItem = function() {
+    var id, value;
+    id = this.parseId();
+    value = this.parseItem();
+    return [id, value];
+  };
+
+  Descriptor.prototype.parseItem = function(type) {
+    if (type == null) {
+      type = null;
+    }
+    if (type == null) {
+      type = this.file.readString(4);
+    }
+    switch (type) {
+      case 'bool':
+        return this.parseBoolean();
+      case 'type':
+      case 'GlbC':
+        return this.parseClass();
+      case 'Objc':
+      case 'GlbO':
+        return new Descriptor(this.file).parse();
+      case 'doub':
+        return this.parseDouble();
+      case 'enum':
+        return this.parseEnum();
+      case 'alis':
+        return this.parseAlias();
+      case 'Pth':
+        return this.parseFilePath();
+      case 'long':
+        return this.parseInteger();
+      case 'comp':
+        return this.parseLargeInteger();
+      case 'VlLs':
+        return this.parseList();
+      case 'ObAr':
+        return this.parseObjectArray();
+      case 'tdta':
+        return this.parseRawData();
+      case 'obj ':
+        return this.parseReference();
+      case 'TEXT':
+        return this.file.readUnicodeString();
+      case 'UntF':
+        return this.parseUnitDouble();
+      case 'UnFl':
+        return this.parseUnitFloat();
+    }
+  };
+
+  Descriptor.prototype.parseBoolean = function() {
+    return this.file.readBoolean();
+  };
+
+  Descriptor.prototype.parseDouble = function() {
+    return this.file.readDouble();
+  };
+
+  Descriptor.prototype.parseInteger = function() {
+    return this.file.readInt();
+  };
+
+  Descriptor.prototype.parseLargeInteger = function() {
+    return this.file.readLongLong();
+  };
+
+  Descriptor.prototype.parseIdentifier = function() {
+    return this.file.readInt();
+  };
+
+  Descriptor.prototype.parseIndex = function() {
+    return this.file.readInt();
+  };
+
+  Descriptor.prototype.parseOffset = function() {
+    return this.file.readInt();
+  };
+
+  Descriptor.prototype.parseProperty = function() {
+    return {
+      "class": this.parseClass(),
+      id: this.parseId()
+    };
+  };
+
+  Descriptor.prototype.parseEnum = function() {
+    return {
+      type: this.parseId(),
+      value: this.parseId()
+    };
+  };
+
+  Descriptor.prototype.parseEnumReference = function() {
+    return {
+      "class": this.parseClass(),
+      type: this.parseId(),
+      value: this.parseId()
+    };
+  };
+
+  Descriptor.prototype.parseAlias = function() {
+    var len;
+    len = this.file.readInt();
+    return this.file.readString(len);
+  };
+
+  Descriptor.prototype.parseFilePath = function() {
+    var len, numChars, path, pathSize, sig;
+    len = this.file.readInt();
+    sig = this.file.readString(4);
+    pathSize = this.file.read('<i');
+    numChars = this.file.read('<i');
+    path = this.file.readUnicodeString(numChars);
+    return {
+      sig: sig,
+      path: path
+    };
+  };
+
+  Descriptor.prototype.parseList = function() {
+    var count, i, items, _i;
+    count = this.file.readInt();
+    items = [];
+    for (i = _i = 0; 0 <= count ? _i < count : _i > count; i = 0 <= count ? ++_i : --_i) {
+      items.push(this.parseItem());
+    }
+    return items;
+  };
+
+  Descriptor.prototype.parseObjectArray = function() {
+    throw "Descriptor object array not implemented yet @ " + (this.file.tell());
+  };
+
+  Descriptor.prototype.parseRawData = function() {
+    var len;
+    len = this.file.readInt();
+    return this.file.read(len);
+  };
+
+  Descriptor.prototype.parseReference = function() {
+    var i, items, numItems, type, value, _i;
+    numItems = this.file.readInt();
+    items = [];
+    for (i = _i = 0; 0 <= numItems ? _i < numItems : _i > numItems; i = 0 <= numItems ? ++_i : --_i) {
+      type = this.file.readString(4);
+      value = (function() {
+        switch (type) {
+          case 'prop':
+            return this.parseProperty();
+          case 'Clss':
+            return this.parseClass();
+          case 'Enmr':
+            return this.parseEnumReference();
+          case 'Idnt':
+            return this.parseIdentifier();
+          case 'indx':
+            return this.parseIndex();
+          case 'name':
+            return this.file.readUnicodeString();
+          case 'rele':
+            return this.parseOffset();
+        }
+      }).call(this);
+      items.push({
+        type: type,
+        value: value
+      });
+    }
+    return items;
+  };
+
+  Descriptor.prototype.parseUnitDouble = function() {
+    var unit, unitId, value;
+    unitId = this.file.readString(4);
+    unit = (function() {
+      switch (unitId) {
+        case '#Ang':
+          return 'Angle';
+        case '#Rsl':
+          return 'Density';
+        case '#Rlt':
+          return 'Distance';
+        case '#Nne':
+          return 'None';
+        case '#Prc':
+          return 'Percent';
+        case '#Pxl':
+          return 'Pixels';
+        case '#Mlm':
+          return 'Millimeters';
+        case '#Pnt':
+          return 'Points';
+      }
+    })();
+    value = this.file.readDouble();
+    return {
+      id: unitId,
+      unit: unit,
+      value: value
+    };
+  };
+
+  Descriptor.prototype.parseUnitFloat = function() {
+    var unit, unitId, value;
+    unitId = this.file.readString(4);
+    unit = (function() {
+      switch (unitId) {
+        case '#Ang':
+          return 'Angle';
+        case '#Rsl':
+          return 'Density';
+        case '#Rlt':
+          return 'Distance';
+        case '#Nne':
+          return 'None';
+        case '#Prc':
+          return 'Percent';
+        case '#Pxl':
+          return 'Pixels';
+        case '#Mlm':
+          return 'Millimeters';
+        case '#Pnt':
+          return 'Points';
+      }
+    })();
+    value = this.file.readFloat();
+    return {
+      id: unitId,
+      unit: unit,
+      value: value
+    };
+  };
+
+  return Descriptor;
+
+})();
+
+
+},{}],5:[function(require,module,exports){
 var File, Util, jspack,
   __hasProp = {}.hasOwnProperty;
 
@@ -218,10 +497,12 @@ module.exports = File = (function() {
   };
 
   File.prototype.read = function(length) {
-    var data;
-    data = this.data.slice(this.pos, this.pos + length);
-    this.pos += length;
-    return data;
+    var i, _i, _results;
+    _results = [];
+    for (i = _i = 0; 0 <= length ? _i < length : _i > length; i = 0 <= length ? ++_i : --_i) {
+      _results.push(this.data[this.pos++]);
+    }
+    return _results;
   };
 
   File.prototype.readf = function(format, len) {
@@ -243,7 +524,7 @@ module.exports = File = (function() {
   };
 
   File.prototype.readString = function(length) {
-    return this.read(length).toString().replace(/\u0000/g, '');
+    return String.fromCharCode.apply(null, this.read(length)).replace(/\u0000/g, "");
   };
 
   File.prototype.readUnicodeString = function(length) {
@@ -251,7 +532,7 @@ module.exports = File = (function() {
       length = null;
     }
     length || (length = this.readInt());
-    return this.read(length * 2).toJSON().map(function(c) {
+    return this.read(length * 2).map(function(c) {
       return Util.getUnicodeCharacter(c);
     }).join('').replace(/\u0000/g, '');
   };
@@ -269,7 +550,7 @@ module.exports = File = (function() {
 })();
 
 
-},{"./util.coffee":34,"jspack":38}],4:[function(require,module,exports){
+},{"./util.coffee":38,"jspack":42}],6:[function(require,module,exports){
 var Header;
 
 module.exports = Header = (function() {
@@ -322,7 +603,7 @@ module.exports = Header = (function() {
 })();
 
 
-},{}],5:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 var Export, Image, ImageFormat, ImageMode, Module,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -457,20 +738,20 @@ module.exports = Image = (function(_super) {
 })(Module);
 
 
-},{"./image_export.coffee":6,"./image_format.coffee":7,"./image_mode.coffee":10,"coffeescript-module":36}],6:[function(require,module,exports){
+},{"./image_export.coffee":8,"./image_format.coffee":9,"./image_mode.coffee":12,"coffeescript-module":40}],8:[function(require,module,exports){
 module.exports = {
   PNG: require('./image_exports/png.coffee')
 };
 
 
-},{"./image_exports/png.coffee":"bZ5QlH"}],7:[function(require,module,exports){
+},{"./image_exports/png.coffee":"bZ5QlH"}],9:[function(require,module,exports){
 module.exports = {
   RAW: require('./image_formats/raw.coffee'),
   RLE: require('./image_formats/rle.coffee')
 };
 
 
-},{"./image_formats/raw.coffee":8,"./image_formats/rle.coffee":9}],8:[function(require,module,exports){
+},{"./image_formats/raw.coffee":10,"./image_formats/rle.coffee":11}],10:[function(require,module,exports){
 module.exports = {
   parseRaw: function() {
     return this.channelData = this.file.read(this.length);
@@ -478,7 +759,7 @@ module.exports = {
 };
 
 
-},{}],9:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 var __slice = [].slice;
 
 module.exports = {
@@ -544,49 +825,13 @@ module.exports = {
 };
 
 
-},{}],10:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 module.exports = {
   RGB: require('./image_modes/rgb.coffee')
 };
 
 
-},{"./image_modes/rgb.coffee":11}],11:[function(require,module,exports){
-module.exports = {
-  combineRgbChannel: function() {
-    var a, b, chan, g, i, index, r, rgbChannels, val, _i, _j, _len, _ref, _results;
-    rgbChannels = this.channelsInfo.map(function(ch) {
-      return ch.id;
-    }).filter(function(ch) {
-      return ch >= -1;
-    });
-    _results = [];
-    for (i = _i = 0, _ref = this.numPixels; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
-      r = g = b = a = 0;
-      for (index = _j = 0, _len = rgbChannels.length; _j < _len; index = ++_j) {
-        chan = rgbChannels[index];
-        val = this.channelData[i + (this.channelLength * index)];
-        switch (chan) {
-          case -1:
-            a = 255 - val;
-            break;
-          case 0:
-            r = val;
-            break;
-          case 1:
-            g = val;
-            break;
-          case 2:
-            b = val;
-        }
-      }
-      _results.push(this.pixelData.push(r, g, b, a));
-    }
-    return _results;
-  }
-};
-
-
-},{}],12:[function(require,module,exports){
+},{"./image_modes/rgb.coffee":"DhO9gV"}],13:[function(require,module,exports){
 var Layer, Module,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -666,7 +911,7 @@ module.exports = Layer = (function(_super) {
 })(Module);
 
 
-},{"./layer/blend_modes.coffee":13,"./layer/blending_ranges.coffee":14,"./layer/helpers.coffee":15,"./layer/info.coffee":16,"./layer/mask.coffee":17,"./layer/name.coffee":18,"./layer/position_channels.coffee":19,"coffeescript-module":36}],13:[function(require,module,exports){
+},{"./layer/blend_modes.coffee":14,"./layer/blending_ranges.coffee":15,"./layer/helpers.coffee":16,"./layer/info.coffee":17,"./layer/mask.coffee":18,"./layer/name.coffee":19,"./layer/position_channels.coffee":20,"coffeescript-module":40}],14:[function(require,module,exports){
 var BlendMode;
 
 BlendMode = require('../blend_mode.coffee');
@@ -688,7 +933,7 @@ module.exports = {
 };
 
 
-},{"../blend_mode.coffee":2}],14:[function(require,module,exports){
+},{"../blend_mode.coffee":3}],15:[function(require,module,exports){
 module.exports = {
   parseBlendingRanges: function() {
     var i, length, numChannels, _i, _results;
@@ -723,7 +968,7 @@ module.exports = {
 };
 
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 module.exports = {
   isFolder: function() {
     if (this.adjustments['sectionDivider'] != null) {
@@ -746,7 +991,7 @@ module.exports = {
 };
 
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 var LAYER_INFO, LazyExecute, Util,
   __hasProp = {}.hasOwnProperty;
 
@@ -801,7 +1046,7 @@ module.exports = {
 };
 
 
-},{"../layer_info/nested_section_divider.coffee":21,"../layer_info/section_divider.coffee":22,"../layer_info/unicode_name.coffee":23,"../lazy_execute.coffee":25,"../util.coffee":34}],17:[function(require,module,exports){
+},{"../layer_info/nested_section_divider.coffee":22,"../layer_info/section_divider.coffee":23,"../layer_info/unicode_name.coffee":24,"../lazy_execute.coffee":26,"../util.coffee":38}],18:[function(require,module,exports){
 var Mask;
 
 Mask = require('../mask.coffee');
@@ -813,7 +1058,7 @@ module.exports = {
 };
 
 
-},{"../mask.coffee":26}],18:[function(require,module,exports){
+},{"../mask.coffee":27}],19:[function(require,module,exports){
 var Util;
 
 Util = require('../util.coffee');
@@ -827,7 +1072,7 @@ module.exports = {
 };
 
 
-},{"../util.coffee":34}],19:[function(require,module,exports){
+},{"../util.coffee":38}],20:[function(require,module,exports){
 module.exports = {
   parsePositionAndChannels: function() {
     var i, id, length, _i, _ref, _results;
@@ -852,7 +1097,7 @@ module.exports = {
 };
 
 
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 var LayerInfo;
 
 module.exports = LayerInfo = (function() {
@@ -877,7 +1122,7 @@ module.exports = LayerInfo = (function() {
 })();
 
 
-},{}],21:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 var LayerInfo, NestedSectionDivider,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -914,7 +1159,7 @@ module.exports = NestedSectionDivider = (function(_super) {
 })(LayerInfo);
 
 
-},{"../layer_info.coffee":20}],22:[function(require,module,exports){
+},{"../layer_info.coffee":21}],23:[function(require,module,exports){
 var LayerInfo, NestedSectionDivider,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -969,7 +1214,7 @@ module.exports = NestedSectionDivider = (function(_super) {
 })(LayerInfo);
 
 
-},{"../layer_info.coffee":20}],23:[function(require,module,exports){
+},{"../layer_info.coffee":21}],24:[function(require,module,exports){
 var LayerInfo, UnicodeName,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1000,8 +1245,10 @@ module.exports = UnicodeName = (function(_super) {
 })(LayerInfo);
 
 
-},{"../layer_info.coffee":20}],24:[function(require,module,exports){
-var Layer, LayerMask, Util;
+},{"../layer_info.coffee":21}],25:[function(require,module,exports){
+var Layer, LayerMask, Util, _;
+
+_ = require('lodash');
 
 Util = require('./util.coffee');
 
@@ -1057,12 +1304,14 @@ module.exports = LayerMask = (function() {
       return;
     }
     maskEnd = this.file.tell() + length;
-    this.globalMask = _({}).tap(function(mask) {
-      mask.overlayColorSpace = this.file.readShort();
-      mask.colorComponents = [this.file.readShort() >> 8, this.file.readShort() >> 8, this.file.readShort() >> 8, this.file.readShort() >> 8];
-      mask.opacity = this.file.readShort() / 16.0;
-      return mask.kind = this.file.readByte();
-    });
+    this.globalMask = _({}).tap((function(_this) {
+      return function(mask) {
+        mask.overlayColorSpace = _this.file.readShort();
+        mask.colorComponents = [_this.file.readShort() >> 8, _this.file.readShort() >> 8, _this.file.readShort() >> 8, _this.file.readShort() >> 8];
+        mask.opacity = _this.file.readShort() / 16.0;
+        return mask.kind = _this.file.readByte();
+      };
+    })(this));
     return this.file.seek(maskEnd);
   };
 
@@ -1071,7 +1320,7 @@ module.exports = LayerMask = (function() {
 })();
 
 
-},{"./layer.coffee":12,"./util.coffee":34}],25:[function(require,module,exports){
+},{"./layer.coffee":13,"./util.coffee":38,"lodash":43}],26:[function(require,module,exports){
 var LazyExecute,
   __slice = [].slice,
   __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
@@ -1148,7 +1397,7 @@ module.exports = LazyExecute = (function() {
 })();
 
 
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 var Mask;
 
 module.exports = Mask = (function() {
@@ -1205,7 +1454,7 @@ module.exports = Mask = (function() {
 })();
 
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 var Module, Node, _,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1392,7 +1641,7 @@ module.exports = Node = (function(_super) {
 })(Module);
 
 
-},{"./nodes/ancestry.coffee":28,"./nodes/search.coffee":32,"coffeescript-module":36,"lodash":39}],28:[function(require,module,exports){
+},{"./nodes/ancestry.coffee":29,"./nodes/search.coffee":33,"coffeescript-module":40,"lodash":43}],29:[function(require,module,exports){
 var _;
 
 _ = require('lodash');
@@ -1478,7 +1727,7 @@ module.exports = {
 };
 
 
-},{"lodash":39}],29:[function(require,module,exports){
+},{"lodash":43}],30:[function(require,module,exports){
 var Group, Node, _,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1530,7 +1779,7 @@ module.exports = Group = (function(_super) {
 })(Node);
 
 
-},{"../node.coffee":27,"lodash":39}],30:[function(require,module,exports){
+},{"../node.coffee":28,"lodash":43}],31:[function(require,module,exports){
 var Layer, Node, _,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1565,7 +1814,7 @@ module.exports = Layer = (function(_super) {
 })(Node);
 
 
-},{"../node.coffee":27,"lodash":39}],31:[function(require,module,exports){
+},{"../node.coffee":28,"lodash":43}],32:[function(require,module,exports){
 var Group, Layer, Node, Root, _,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1663,7 +1912,7 @@ module.exports = Root = (function(_super) {
 })(Node);
 
 
-},{"../node.coffee":27,"./group.coffee":29,"./layer.coffee":30,"lodash":39}],32:[function(require,module,exports){
+},{"../node.coffee":28,"./group.coffee":30,"./layer.coffee":31,"lodash":43}],33:[function(require,module,exports){
 var _;
 
 _ = require('lodash');
@@ -1699,8 +1948,70 @@ module.exports = {
 };
 
 
-},{"lodash":39}],33:[function(require,module,exports){
-var Resources;
+},{"lodash":43}],34:[function(require,module,exports){
+var Resource, Util;
+
+Util = require('./util.coffee');
+
+module.exports = Resource = (function() {
+  Resource.Section = require('./resource_section.coffee');
+
+  function Resource(file) {
+    this.file = file;
+    this.id = null;
+    this.type = null;
+    this.length = 0;
+  }
+
+  Resource.prototype.parse = function() {
+    var nameLength;
+    this.type = this.file.readString(4);
+    this.id = this.file.readShort();
+    nameLength = Util.pad2(this.file.readByte() + 1) - 1;
+    this.name = this.file.readString(nameLength);
+    return this.length = Util.pad2(this.file.readInt());
+  };
+
+  return Resource;
+
+})();
+
+
+},{"./resource_section.coffee":35,"./util.coffee":38}],35:[function(require,module,exports){
+var ResourceSection, _;
+
+_ = require('lodash');
+
+module.exports = ResourceSection = (function() {
+  var RESOURCES;
+
+  function ResourceSection() {}
+
+  RESOURCES = [require('./resources/layer_comps.coffee')];
+
+  ResourceSection.factory = function(resource) {
+    var Section, _i, _len;
+    for (_i = 0, _len = RESOURCES.length; _i < _len; _i++) {
+      Section = RESOURCES[_i];
+      if (Section.prototype.id !== resource.id) {
+        continue;
+      }
+      return _.tap(new Section(resource), function(s) {
+        return s.parse();
+      });
+    }
+    return null;
+  };
+
+  return ResourceSection;
+
+})();
+
+
+},{"./resources/layer_comps.coffee":37,"lodash":43}],36:[function(require,module,exports){
+var Resource, Resources;
+
+Resource = require('./resource.coffee');
 
 module.exports = Resources = (function() {
   function Resources(file) {
@@ -1716,8 +2027,37 @@ module.exports = Resources = (function() {
   };
 
   Resources.prototype.parse = function() {
+    var finish, resource, resourceEnd, section;
     this.length = this.file.readInt();
-    return this.file.seek(this.length, true);
+    finish = this.length + this.file.tell();
+    while (this.file.tell() < finish) {
+      resource = new Resource(this.file);
+      resource.parse();
+      resourceEnd = this.file.tell() + resource.length;
+      section = Resource.Section.factory(resource);
+      if (section == null) {
+        this.file.seek(resourceEnd);
+        continue;
+      }
+      this.resources[section.id] = section;
+      if (section.name != null) {
+        this.typeIndex[section.name] = section.id;
+      }
+      this.file.seek(resourceEnd);
+    }
+    return this.file.seek(finish);
+  };
+
+  Resources.prototype.resource = function(search) {
+    if (typeof search === 'string') {
+      return this.byType(search);
+    } else {
+      return this.resources[search];
+    }
+  };
+
+  Resources.prototype.byType = function(name) {
+    return this.resources[this.typeIndex[name]];
   };
 
   return Resources;
@@ -1725,7 +2065,60 @@ module.exports = Resources = (function() {
 })();
 
 
-},{}],34:[function(require,module,exports){
+},{"./resource.coffee":34}],37:[function(require,module,exports){
+var Descriptor, LayerComps;
+
+Descriptor = require('../descriptor.coffee');
+
+module.exports = LayerComps = (function() {
+  LayerComps.prototype.id = 1065;
+
+  LayerComps.prototype.name = 'layerComps';
+
+  LayerComps.visibilityCaptured = function(comp) {
+    return comp.capturedInfo & parseInt('001', 2) > 0;
+  };
+
+  LayerComps.positionCaptured = function(comp) {
+    return comp.positionCaptured & parseInt('010', 2) > 0;
+  };
+
+  LayerComps.appearanceCaptured = function(comp) {
+    return comp.appearanceCaptured & parseInt('100', 2) > 0;
+  };
+
+  function LayerComps(resource) {
+    this.resource = resource;
+    this.file = this.resource.file;
+  }
+
+  LayerComps.prototype.parse = function() {
+    this.file.seek(4, true);
+    return this.data = new Descriptor(this.file).parse();
+  };
+
+  LayerComps.prototype.names = function() {
+    return this.data.list.map(function(comp) {
+      return comp['Nm  '];
+    });
+  };
+
+  LayerComps.prototype["export"] = function() {
+    return this.data.list.map(function(comp) {
+      return {
+        id: comp.compID,
+        name: comp['Nm  '],
+        capturedInfo: comp.capturedInfo
+      };
+    });
+  };
+
+  return LayerComps;
+
+})();
+
+
+},{"../descriptor.coffee":4}],38:[function(require,module,exports){
 var Util;
 
 module.exports = Util = (function() {
@@ -1756,7 +2149,7 @@ module.exports = Util = (function() {
 })();
 
 
-},{}],35:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -1818,9 +2211,9 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],36:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 module.exports = require('./module');
-},{"./module":37}],37:[function(require,module,exports){
+},{"./module":41}],41:[function(require,module,exports){
 // Generated by CoffeeScript 1.7.1
 var Module, moduleKeywords,
   __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
@@ -1900,7 +2293,7 @@ exports.Module = Module = (function() {
 
 })();
 
-},{}],38:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 /*!
  *  Copyright © 2008 Fair Oaks Labs, Inc.
  *  All rights reserved.
@@ -2156,7 +2549,7 @@ function JSPack()
 
 exports.jspack = new JSPack();
 
-},{}],39:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -8945,7 +9338,7 @@ exports.jspack = new JSPack();
 }.call(this));
 
 }).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],40:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 "use strict";
 var Promise = require("./rsvp/promise")["default"];
 var EventTarget = require("./rsvp/events")["default"];
@@ -9008,7 +9401,7 @@ exports.reject = reject;
 exports.async = async;
 exports.map = map;
 exports.filter = filter;
-},{"./rsvp/all":42,"./rsvp/all-settled":41,"./rsvp/asap":43,"./rsvp/config":44,"./rsvp/defer":45,"./rsvp/events":46,"./rsvp/filter":47,"./rsvp/hash":49,"./rsvp/hash-settled":48,"./rsvp/map":51,"./rsvp/node":52,"./rsvp/promise":53,"./rsvp/race":59,"./rsvp/reject":60,"./rsvp/resolve":61,"./rsvp/rethrow":62}],41:[function(require,module,exports){
+},{"./rsvp/all":46,"./rsvp/all-settled":45,"./rsvp/asap":47,"./rsvp/config":48,"./rsvp/defer":49,"./rsvp/events":50,"./rsvp/filter":51,"./rsvp/hash":53,"./rsvp/hash-settled":52,"./rsvp/map":55,"./rsvp/node":56,"./rsvp/promise":57,"./rsvp/race":63,"./rsvp/reject":64,"./rsvp/resolve":65,"./rsvp/rethrow":66}],45:[function(require,module,exports){
 'use strict';
 var Promise = require('./promise')['default'];
 var isArray = require('./utils').isArray;
@@ -9114,7 +9507,7 @@ function rejected(reason) {
         reason: reason
     };
 }
-},{"./promise":53,"./utils":63}],42:[function(require,module,exports){
+},{"./promise":57,"./utils":67}],46:[function(require,module,exports){
 'use strict';
 var Promise = require('./promise')['default'];
 /**
@@ -9130,7 +9523,7 @@ var Promise = require('./promise')['default'];
 exports['default'] = function all(array, label) {
     return Promise.all(array, label);
 };
-},{"./promise":53}],43:[function(require,module,exports){
+},{"./promise":57}],47:[function(require,module,exports){
 (function (process){
 'use strict';
 exports['default'] = function asap(callback, arg) {
@@ -9186,7 +9579,7 @@ if (typeof process !== 'undefined' && {}.toString.call(process) === '[object pro
     scheduleFlush = useSetTimeout();
 }
 }).call(this,require("/Users/ryanlefevre/Repositories/psd.js/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"))
-},{"/Users/ryanlefevre/Repositories/psd.js/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":35}],44:[function(require,module,exports){
+},{"/Users/ryanlefevre/Repositories/psd.js/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":39}],48:[function(require,module,exports){
 'use strict';
 var EventTarget = require('./events')['default'];
 var config = { instrument: false };
@@ -9207,7 +9600,7 @@ function configure(name, value) {
 }
 exports.config = config;
 exports.configure = configure;
-},{"./events":46}],45:[function(require,module,exports){
+},{"./events":50}],49:[function(require,module,exports){
 'use strict';
 var Promise = require('./promise')['default'];
 /**
@@ -9250,7 +9643,7 @@ exports['default'] = function defer(label) {
     }, label);
     return deferred;
 };
-},{"./promise":53}],46:[function(require,module,exports){
+},{"./promise":57}],50:[function(require,module,exports){
 'use strict';
 function indexOf(callbacks, callback) {
     for (var i = 0, l = callbacks.length; i < l; i++) {
@@ -9311,7 +9704,7 @@ exports['default'] = {
         }
     }
 };
-},{}],47:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 'use strict';
 var Promise = require('./promise')['default'];
 var isFunction = require('./utils').isFunction;
@@ -9422,7 +9815,7 @@ exports['default'] = function filter(promises, filterFn, label) {
         });
     });
 };
-},{"./promise":53,"./utils":63}],48:[function(require,module,exports){
+},{"./promise":57,"./utils":67}],52:[function(require,module,exports){
 'use strict';
 var Promise = require('./promise')['default'];
 var isNonThenable = require('./utils').isNonThenable;
@@ -9577,7 +9970,7 @@ function rejected(reason) {
         reason: reason
     };
 }
-},{"./promise":53,"./utils":63}],49:[function(require,module,exports){
+},{"./promise":57,"./utils":67}],53:[function(require,module,exports){
 'use strict';
 var Promise = require('./promise')['default'];
 var isNonThenable = require('./utils').isNonThenable;
@@ -9706,7 +10099,7 @@ exports['default'] = function hash(object, label) {
         }
     });
 };
-},{"./promise":53,"./utils":63}],50:[function(require,module,exports){
+},{"./promise":57,"./utils":67}],54:[function(require,module,exports){
 'use strict';
 var config = require('./config').config;
 var now = require('./utils').now;
@@ -9728,7 +10121,7 @@ exports['default'] = function instrument(eventName, promise, child) {
         }, 0);
     }
 };
-},{"./config":44,"./utils":63}],51:[function(require,module,exports){
+},{"./config":48,"./utils":67}],55:[function(require,module,exports){
 'use strict';
 var Promise = require('./promise')['default'];
 var isArray = require('./utils').isArray;
@@ -9824,7 +10217,7 @@ exports['default'] = function map(promises, mapFn, label) {
         return Promise.all(results, label);
     });
 };
-},{"./promise":53,"./utils":63}],52:[function(require,module,exports){
+},{"./promise":57,"./utils":67}],56:[function(require,module,exports){
 'use strict';
 /* global  arraySlice */
 var Promise = require('./promise')['default'];
@@ -10012,7 +10405,7 @@ exports['default'] = function denodeify(nodeFunc, argumentNames) {
     denodeifiedFunction.__proto__ = nodeFunc;
     return denodeifiedFunction;
 };
-},{"./promise":53,"./utils":63}],53:[function(require,module,exports){
+},{"./promise":57,"./utils":67}],57:[function(require,module,exports){
 'use strict';
 var config = require('./config').config;
 var EventTarget = require('./events')['default'];
@@ -10332,7 +10725,7 @@ function publishRejection(promise) {
     }
     publish(promise, promise._state = REJECTED);
 }
-},{"./config":44,"./events":46,"./instrument":50,"./promise/all":54,"./promise/cast":55,"./promise/race":56,"./promise/reject":57,"./promise/resolve":58,"./utils":63}],54:[function(require,module,exports){
+},{"./config":48,"./events":50,"./instrument":54,"./promise/all":58,"./promise/cast":59,"./promise/race":60,"./promise/reject":61,"./promise/resolve":62,"./utils":67}],58:[function(require,module,exports){
 'use strict';
 var isArray = require('../utils').isArray;
 var isNonThenable = require('../utils').isNonThenable;
@@ -10422,7 +10815,7 @@ exports['default'] = function all(entries, label) {
         }
     }, label);
 };
-},{"../utils":63}],55:[function(require,module,exports){
+},{"../utils":67}],59:[function(require,module,exports){
 'use strict';
 /**
   @deprecated
@@ -10502,7 +10895,7 @@ exports['default'] = function cast(object, label) {
         resolve(object);
     }, label);
 };
-},{}],56:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
 'use strict';
 /* global toString */
 var isArray = require('../utils').isArray;
@@ -10606,7 +10999,7 @@ exports['default'] = function race(entries, label) {
         }
     }, label);
 };
-},{"../utils":63}],57:[function(require,module,exports){
+},{"../utils":67}],61:[function(require,module,exports){
 'use strict';
 /**
   `RSVP.Promise.reject` returns a promise rejected with the passed `reason`.
@@ -10650,7 +11043,7 @@ exports['default'] = function reject(reason, label) {
         reject$2(reason);
     }, label);
 };
-},{}],58:[function(require,module,exports){
+},{}],62:[function(require,module,exports){
 'use strict';
 /**
   `RSVP.Promise.resolve` returns a promise that will become resolved with the
@@ -10694,7 +11087,7 @@ exports['default'] = function resolve(object, label) {
         resolve$2(object);
     }, label);
 };
-},{}],59:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 'use strict';
 var Promise = require('./promise')['default'];
 /**
@@ -10710,7 +11103,7 @@ var Promise = require('./promise')['default'];
 exports['default'] = function race(array, label) {
     return Promise.race(array, label);
 };
-},{"./promise":53}],60:[function(require,module,exports){
+},{"./promise":57}],64:[function(require,module,exports){
 'use strict';
 var Promise = require('./promise')['default'];
 /**
@@ -10727,7 +11120,7 @@ var Promise = require('./promise')['default'];
 exports['default'] = function reject(reason, label) {
     return Promise.reject(reason, label);
 };
-},{"./promise":53}],61:[function(require,module,exports){
+},{"./promise":57}],65:[function(require,module,exports){
 'use strict';
 var Promise = require('./promise')['default'];
 /**
@@ -10745,7 +11138,7 @@ var Promise = require('./promise')['default'];
 exports['default'] = function resolve(value, label) {
     return Promise.resolve(value, label);
 };
-},{"./promise":53}],62:[function(require,module,exports){
+},{"./promise":57}],66:[function(require,module,exports){
 'use strict';
 /**
   `RSVP.rethrow` will rethrow an error on the next turn of the JavaScript event
@@ -10793,7 +11186,7 @@ exports['default'] = function rethrow(reason) {
     });
     throw reason;
 };
-},{}],63:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
 'use strict';
 function objectOrFunction(x) {
     return typeof x === 'function' || typeof x === 'object' && x !== null;
@@ -10840,7 +11233,7 @@ RSVP = require('rsvp');
 
 module.exports = {
   extended: function(PSD) {
-    return this.fromURL = function(url) {
+    this.fromURL = function(url) {
       return new RSVP.Promise(function(resolve, reject) {
         var xhr;
         xhr = new XMLHttpRequest();
@@ -10850,16 +11243,38 @@ module.exports = {
           var data, psd;
           data = new Uint8Array(xhr.response || xhr.mozResponseArrayBuffer);
           psd = new PSD(data);
+          psd.parse();
           return resolve(psd);
         };
         return xhr.send(null);
+      });
+    };
+    return this.fromEvent = function(e) {
+      return new RSVP.Promise(function(resolve, reject) {
+        var file, reader;
+        file = e.dataTransfer.files[0];
+        reader = new FileReader();
+        reader.onload = function(e) {
+          var psd;
+          psd = new PSD(new Uint8Array(e.target.result));
+          psd.parse();
+          return resolve(psd);
+        };
+        reader.onerror = reject;
+        return reader.readAsArrayBuffer(file);
       });
     };
   }
 };
 
 
-},{"rsvp":40}],"bZ5QlH":[function(require,module,exports){
+},{"rsvp":44}],"./image_exports/png.coffee":[function(require,module,exports){
+module.exports=require('bZ5QlH');
+},{}],"bZ5QlH":[function(require,module,exports){
+var RSVP;
+
+RSVP = require('rsvp');
+
 module.exports = {
   toPng: function() {
     return new RSVP.Promise((function(_this) {
@@ -10876,6 +11291,7 @@ module.exports = {
           pixel = _ref[i];
           pixelData[i] = pixel;
         }
+        context.putImageData(imageData, 0, 0);
         image = new Image();
         image.width = _this.width();
         image.height = _this.height();
@@ -10890,6 +11306,43 @@ module.exports = {
 };
 
 
-},{}],"./image_exports/png.coffee":[function(require,module,exports){
-module.exports=require('bZ5QlH');
-},{}]},{},[1])
+},{"rsvp":44}],"./image_modes/rgb.coffee":[function(require,module,exports){
+module.exports=require('DhO9gV');
+},{}],"DhO9gV":[function(require,module,exports){
+module.exports = {
+  combineRgbChannel: function() {
+    var a, b, chan, g, i, index, r, rgbChannels, val, _i, _j, _len, _ref, _results;
+    rgbChannels = this.channelsInfo.map(function(ch) {
+      return ch.id;
+    }).filter(function(ch) {
+      return ch >= -1;
+    });
+    _results = [];
+    for (i = _i = 0, _ref = this.numPixels; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+      r = g = b = 0;
+      a = 255;
+      for (index = _j = 0, _len = rgbChannels.length; _j < _len; index = ++_j) {
+        chan = rgbChannels[index];
+        val = this.channelData[i + (this.channelLength * index)];
+        switch (chan) {
+          case -1:
+            a = val;
+            break;
+          case 0:
+            r = val;
+            break;
+          case 1:
+            g = val;
+            break;
+          case 2:
+            b = val;
+        }
+      }
+      _results.push(this.pixelData.push(r, g, b, a));
+    }
+    return _results;
+  }
+};
+
+
+},{}]},{},[])

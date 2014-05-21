@@ -32,20 +32,16 @@ module.exports = class File
     @pos = 0
 
   tell: -> @pos
-  read: (length) ->
-    data = @data[@pos...@pos+length]
-    @pos += length
-    return data
+  read: (length) -> (@data[@pos++] for i in [0...length])
 
   readf: (format, len = null) -> jspack.Unpack format, @read(len or jspack.CalcLength(format))
 
   seek: (amt, rel = false) -> if rel then @pos += amt else @pos = amt
 
-  readString: (length) -> @read(length).toString().replace /\u0000/g, ''
+  readString: (length) -> String.fromCharCode.apply(null, @read(length)).replace /\u0000/g, ""
   readUnicodeString: (length = null) ->
     length or= @readInt()
     @read(length * 2)
-      .toJSON()
       .map((c) -> Util.getUnicodeCharacter(c))
       .join('')
       .replace(/\u0000/g, '')

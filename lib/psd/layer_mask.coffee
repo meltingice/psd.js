@@ -1,5 +1,6 @@
-Util = require('./util.coffee')
-Layer = require('./layer.coffee')
+_ = require 'lodash'
+Util = require './util.coffee'
+Layer = require './layer.coffee'
 
 module.exports = class LayerMask
   constructor: (@file, @header) ->
@@ -41,7 +42,7 @@ module.exports = class LayerMask
 
     maskEnd = @file.tell() + length
 
-    @globalMask = _({}).tap (mask) ->
+    @globalMask = _({}).tap (mask) =>
       mask.overlayColorSpace = @file.readShort()
       mask.colorComponents = [
         @file.readShort() >> 8
