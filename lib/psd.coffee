@@ -1,3 +1,4 @@
+RSVP = require 'rsvp'
 {Module} = require 'coffeescript-module'
 
 File      = require './psd/file.coffee'
@@ -21,6 +22,8 @@ module.exports = class PSD extends Module
 
     Object.defineProperty @, 'layers',
       get: -> @layerMask.layers
+
+    RSVP.on 'error', (reason) -> console.error(reason)
 
   parse: ->
     return if @parsed
