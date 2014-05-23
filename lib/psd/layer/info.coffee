@@ -9,6 +9,7 @@ LAYER_INFO = {
   layerId:                require('../layer_info/layer_id.coffee')
   layerNameSource:        require('../layer_info/layer_name_source.coffee')
   locked:                 require('../layer_info/locked.coffee')
+  metadataSetting:        require('../layer_info/metadata_setting.coffee')
   name:                   require('../layer_info/unicode_name.coffee')
   nestedSectionDivider:   require('../layer_info/nested_section_divider.coffee')
   sectionDivider:         require('../layer_info/section_divider.coffee')
