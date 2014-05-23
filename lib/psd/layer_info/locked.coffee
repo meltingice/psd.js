@@ -3,6 +3,14 @@ LayerInfo = require '../layer_info.coffee'
 module.exports = class Locked extends LayerInfo
   @shouldParse: (key) -> key is 'lspf'
 
+  constructor: (layer, length) ->
+    super(layer, length)
+
+    @transparencyLocked = false
+    @compositeLocked = false
+    @positionLocked = false
+    @allLocked = false
+
   parse: ->
     locked = @file.readInt()
 
