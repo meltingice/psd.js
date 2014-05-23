@@ -3,6 +3,7 @@ Util = require '../util.coffee'
 
 LAYER_INFO = {
   blendClippingElements: require('../layer_info/blend_clipping_elements.coffee')
+  blendInteriorElements: require('../layer_info/blend_interior_elements.coffee')
   name: require('../layer_info/unicode_name.coffee')
   nestedSectionDivider: require('../layer_info/nested_section_divider.coffee')
   sectionDivider: require('../layer_info/section_divider.coffee')
