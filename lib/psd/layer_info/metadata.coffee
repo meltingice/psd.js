@@ -1,7 +1,7 @@
 LayerInfo = require '../layer_info.coffee'
 Descriptor = require '../descriptor.coffee'
 
-module.exports = class LayerId extends LayerInfo
+module.exports = class Metadata extends LayerInfo
   @shouldParse: (key) -> key is 'shmd'
 
   parse: ->

@@ -48,7 +48,9 @@ module.exports = class Node extends Module
     Object.defineProperty @, 'width',  get: -> @right - @left
     Object.defineProperty @, 'height', get: -> @bottom - @top
 
-  get: (prop) -> if @[prop]? then @[prop] else @layer[prop]
+  get: (prop) ->
+    value = if @[prop]? then @[prop] else @layer[prop]
+    if typeof value is 'function' then value() else value
 
   visible: ->
     return false if @layer.clipped and not @clippingMask().visible()
