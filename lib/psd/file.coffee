@@ -47,4 +47,4 @@ module.exports = class File
       .replace(/\u0000/g, '')
 
   readByte: -> @read(1)[0]
-  readBoolean: -> readByte() isnt 0
+  readBoolean: -> @readByte() isnt 0
