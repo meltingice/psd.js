@@ -2,6 +2,10 @@
   "name": "psd",
   "version": "0.0.1",
   "main": "./index.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:meltingice/psd.js.git"
+  },
   "dependencies": {
     "coffee-script": "~ 1.7.1",
     "jspack": "~ 0.0.3",
