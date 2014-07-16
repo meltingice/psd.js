@@ -23,7 +23,9 @@ var PSD = require('psd');
 var psd = PSD.fromFile("path/to/file.psd");
 psd.parse();
 
-console.log(psd.header.export());
+console.log(psd.tree().export());
+console.log(psd.tree().childrenAtPath('A/B/C')[0].export());
+psd.image.saveAsPng('./output.png').then(function () { console.log('success!') });
 ```
 
 ### Browser
