@@ -1,7 +1,7 @@
 {
   "name": "psd",
   "description": "A general purpose Photoshop file parser.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "./index.js",
   "keywords": ["psd", "parser", "photoshop", "adobe", "reader"],
   "repository": {
