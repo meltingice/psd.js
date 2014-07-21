@@ -1,7 +1,9 @@
 require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({"aS3ana":[function(require,module,exports){
-var File, Header, Image, LayerMask, LazyExecute, Module, PSD, Resources,
+var File, Header, Image, LayerMask, LazyExecute, Module, PSD, RSVP, Resources,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+RSVP = require('rsvp');
 
 Module = require('coffeescript-module').Module;
 
@@ -34,6 +36,9 @@ module.exports = PSD = (function(_super) {
       get: function() {
         return this.layerMask.layers;
       }
+    });
+    RSVP.on('error', function(reason) {
+      return console.error(reason);
     });
   }
 
@@ -80,7 +85,7 @@ module.exports = PSD = (function(_super) {
 })(Module);
 
 
-},{"./psd/file.coffee":5,"./psd/header.coffee":6,"./psd/image.coffee":7,"./psd/init.coffee":"/ioUh4","./psd/layer_mask.coffee":33,"./psd/lazy_execute.coffee":34,"./psd/nodes/root.coffee":40,"./psd/resources.coffee":44,"coffeescript-module":48}],"psd":[function(require,module,exports){
+},{"./psd/file.coffee":5,"./psd/header.coffee":6,"./psd/image.coffee":7,"./psd/init.coffee":"/ioUh4","./psd/layer_mask.coffee":34,"./psd/lazy_execute.coffee":35,"./psd/nodes/root.coffee":41,"./psd/resources.coffee":45,"coffeescript-module":49,"rsvp":53}],"psd":[function(require,module,exports){
 module.exports=require('aS3ana');
 },{}],3:[function(require,module,exports){
 var BlendMode, Module,
@@ -157,7 +162,7 @@ module.exports = BlendMode = (function(_super) {
 })(Module);
 
 
-},{"coffeescript-module":48}],4:[function(require,module,exports){
+},{"coffeescript-module":49}],4:[function(require,module,exports){
 var Descriptor;
 
 module.exports = Descriptor = (function() {
@@ -550,7 +555,7 @@ module.exports = File = (function() {
 })();
 
 
-},{"./util.coffee":46,"jspack":50}],6:[function(require,module,exports){
+},{"./util.coffee":47,"jspack":51}],6:[function(require,module,exports){
 var Header;
 
 module.exports = Header = (function() {
@@ -738,7 +743,7 @@ module.exports = Image = (function(_super) {
 })(Module);
 
 
-},{"./image_export.coffee":8,"./image_format.coffee":9,"./image_mode.coffee":12,"coffeescript-module":48}],8:[function(require,module,exports){
+},{"./image_export.coffee":8,"./image_format.coffee":9,"./image_mode.coffee":12,"coffeescript-module":49}],8:[function(require,module,exports){
 module.exports = {
   PNG: require('./image_exports/png.coffee')
 };
@@ -831,7 +836,44 @@ module.exports = {
 };
 
 
-},{"./image_modes/rgb.coffee":"DhO9gV"}],13:[function(require,module,exports){
+},{"./image_modes/rgb.coffee":13}],13:[function(require,module,exports){
+module.exports = {
+  combineRgbChannel: function() {
+    var a, b, chan, g, i, index, r, rgbChannels, val, _i, _j, _len, _ref, _results;
+    rgbChannels = this.channelsInfo.map(function(ch) {
+      return ch.id;
+    }).filter(function(ch) {
+      return ch >= -1;
+    });
+    _results = [];
+    for (i = _i = 0, _ref = this.numPixels; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+      r = g = b = 0;
+      a = 255;
+      for (index = _j = 0, _len = rgbChannels.length; _j < _len; index = ++_j) {
+        chan = rgbChannels[index];
+        val = this.channelData[i + (this.channelLength * index)];
+        switch (chan) {
+          case -1:
+            a = val;
+            break;
+          case 0:
+            r = val;
+            break;
+          case 1:
+            g = val;
+            break;
+          case 2:
+            b = val;
+        }
+      }
+      _results.push(this.pixelData.push(r, g, b, a));
+    }
+    return _results;
+  }
+};
+
+
+},{}],14:[function(require,module,exports){
 var Layer, Module,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -911,7 +953,7 @@ module.exports = Layer = (function(_super) {
 })(Module);
 
 
-},{"./layer/blend_modes.coffee":14,"./layer/blending_ranges.coffee":15,"./layer/helpers.coffee":16,"./layer/info.coffee":17,"./layer/mask.coffee":18,"./layer/name.coffee":19,"./layer/position_channels.coffee":20,"coffeescript-module":48}],14:[function(require,module,exports){
+},{"./layer/blend_modes.coffee":15,"./layer/blending_ranges.coffee":16,"./layer/helpers.coffee":17,"./layer/info.coffee":18,"./layer/mask.coffee":19,"./layer/name.coffee":20,"./layer/position_channels.coffee":21,"coffeescript-module":49}],15:[function(require,module,exports){
 var BlendMode;
 
 BlendMode = require('../blend_mode.coffee');
@@ -933,7 +975,7 @@ module.exports = {
 };
 
 
-},{"../blend_mode.coffee":3}],15:[function(require,module,exports){
+},{"../blend_mode.coffee":3}],16:[function(require,module,exports){
 module.exports = {
   parseBlendingRanges: function() {
     var i, length, numChannels, _i, _results;
@@ -968,7 +1010,7 @@ module.exports = {
 };
 
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 module.exports = {
   isFolder: function() {
     if (this.adjustments['sectionDivider'] != null) {
@@ -991,7 +1033,7 @@ module.exports = {
 };
 
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 var LAYER_INFO, LazyExecute, Util,
   __hasProp = {}.hasOwnProperty;
 
@@ -1054,7 +1096,7 @@ module.exports = {
 };
 
 
-},{"../layer_info/blend_clipping_elements.coffee":22,"../layer_info/blend_interior_elements.coffee":23,"../layer_info/fill_opacity.coffee":24,"../layer_info/gradient_fill.coffee":25,"../layer_info/layer_id.coffee":26,"../layer_info/layer_name_source.coffee":27,"../layer_info/locked.coffee":28,"../layer_info/metadata.coffee":29,"../layer_info/nested_section_divider.coffee":30,"../layer_info/section_divider.coffee":31,"../layer_info/unicode_name.coffee":32,"../lazy_execute.coffee":34,"../util.coffee":46}],18:[function(require,module,exports){
+},{"../layer_info/blend_clipping_elements.coffee":23,"../layer_info/blend_interior_elements.coffee":24,"../layer_info/fill_opacity.coffee":25,"../layer_info/gradient_fill.coffee":26,"../layer_info/layer_id.coffee":27,"../layer_info/layer_name_source.coffee":28,"../layer_info/locked.coffee":29,"../layer_info/metadata.coffee":30,"../layer_info/nested_section_divider.coffee":31,"../layer_info/section_divider.coffee":32,"../layer_info/unicode_name.coffee":33,"../lazy_execute.coffee":35,"../util.coffee":47}],19:[function(require,module,exports){
 var Mask;
 
 Mask = require('../mask.coffee');
@@ -1066,7 +1108,7 @@ module.exports = {
 };
 
 
-},{"../mask.coffee":35}],19:[function(require,module,exports){
+},{"../mask.coffee":36}],20:[function(require,module,exports){
 var Util;
 
 Util = require('../util.coffee');
@@ -1080,7 +1122,7 @@ module.exports = {
 };
 
 
-},{"../util.coffee":46}],20:[function(require,module,exports){
+},{"../util.coffee":47}],21:[function(require,module,exports){
 module.exports = {
   parsePositionAndChannels: function() {
     var i, id, length, _i, _ref, _results;
@@ -1105,7 +1147,7 @@ module.exports = {
 };
 
 
-},{}],21:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 var LayerInfo;
 
 module.exports = LayerInfo = (function() {
@@ -1130,7 +1172,7 @@ module.exports = LayerInfo = (function() {
 })();
 
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 var BlendClippingElements, LayerInfo,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1158,7 +1200,7 @@ module.exports = BlendClippingElements = (function(_super) {
 })(LayerInfo);
 
 
-},{"../layer_info.coffee":21}],23:[function(require,module,exports){
+},{"../layer_info.coffee":22}],24:[function(require,module,exports){
 var BlendInteriorElements, LayerInfo,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1186,7 +1228,7 @@ module.exports = BlendInteriorElements = (function(_super) {
 })(LayerInfo);
 
 
-},{"../layer_info.coffee":21}],24:[function(require,module,exports){
+},{"../layer_info.coffee":22}],25:[function(require,module,exports){
 var FillOpacity, LayerInfo,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1213,7 +1255,7 @@ module.exports = FillOpacity = (function(_super) {
 })(LayerInfo);
 
 
-},{"../layer_info.coffee":21}],25:[function(require,module,exports){
+},{"../layer_info.coffee":22}],26:[function(require,module,exports){
 var Descriptor, GradientFill, LayerInfo,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1243,7 +1285,7 @@ module.exports = GradientFill = (function(_super) {
 })(LayerInfo);
 
 
-},{"../descriptor.coffee":4,"../layer_info.coffee":21}],26:[function(require,module,exports){
+},{"../descriptor.coffee":4,"../layer_info.coffee":22}],27:[function(require,module,exports){
 var LayerId, LayerInfo,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1270,7 +1312,7 @@ module.exports = LayerId = (function(_super) {
 })(LayerInfo);
 
 
-},{"../layer_info.coffee":21}],27:[function(require,module,exports){
+},{"../layer_info.coffee":22}],28:[function(require,module,exports){
 var LayerInfo, LayerNameSource,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1297,7 +1339,7 @@ module.exports = LayerNameSource = (function(_super) {
 })(LayerInfo);
 
 
-},{"../layer_info.coffee":21}],28:[function(require,module,exports){
+},{"../layer_info.coffee":22}],29:[function(require,module,exports){
 var LayerInfo, Locked,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1307,13 +1349,17 @@ LayerInfo = require('../layer_info.coffee');
 module.exports = Locked = (function(_super) {
   __extends(Locked, _super);
 
-  function Locked() {
-    return Locked.__super__.constructor.apply(this, arguments);
-  }
-
   Locked.shouldParse = function(key) {
     return key === 'lspf';
   };
+
+  function Locked(layer, length) {
+    Locked.__super__.constructor.call(this, layer, length);
+    this.transparencyLocked = false;
+    this.compositeLocked = false;
+    this.positionLocked = false;
+    this.allLocked = false;
+  }
 
   Locked.prototype.parse = function() {
     var locked;
@@ -1329,7 +1375,7 @@ module.exports = Locked = (function(_super) {
 })(LayerInfo);
 
 
-},{"../layer_info.coffee":21}],29:[function(require,module,exports){
+},{"../layer_info.coffee":22}],30:[function(require,module,exports){
 var Descriptor, LayerInfo, Metadata,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1378,7 +1424,7 @@ module.exports = Metadata = (function(_super) {
 })(LayerInfo);
 
 
-},{"../descriptor.coffee":4,"../layer_info.coffee":21}],30:[function(require,module,exports){
+},{"../descriptor.coffee":4,"../layer_info.coffee":22}],31:[function(require,module,exports){
 var LayerInfo, NestedSectionDivider,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1415,7 +1461,7 @@ module.exports = NestedSectionDivider = (function(_super) {
 })(LayerInfo);
 
 
-},{"../layer_info.coffee":21}],31:[function(require,module,exports){
+},{"../layer_info.coffee":22}],32:[function(require,module,exports){
 var LayerInfo, NestedSectionDivider,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1470,7 +1516,7 @@ module.exports = NestedSectionDivider = (function(_super) {
 })(LayerInfo);
 
 
-},{"../layer_info.coffee":21}],32:[function(require,module,exports){
+},{"../layer_info.coffee":22}],33:[function(require,module,exports){
 var LayerInfo, UnicodeName,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1501,7 +1547,7 @@ module.exports = UnicodeName = (function(_super) {
 })(LayerInfo);
 
 
-},{"../layer_info.coffee":21}],33:[function(require,module,exports){
+},{"../layer_info.coffee":22}],34:[function(require,module,exports){
 var Layer, LayerMask, Util, _;
 
 _ = require('lodash');
@@ -1576,7 +1622,7 @@ module.exports = LayerMask = (function() {
 })();
 
 
-},{"./layer.coffee":13,"./util.coffee":46,"lodash":51}],34:[function(require,module,exports){
+},{"./layer.coffee":14,"./util.coffee":47,"lodash":52}],35:[function(require,module,exports){
 var LazyExecute,
   __slice = [].slice,
   __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
@@ -1653,7 +1699,7 @@ module.exports = LazyExecute = (function() {
 })();
 
 
-},{}],35:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 var Mask;
 
 module.exports = Mask = (function() {
@@ -1710,7 +1756,7 @@ module.exports = Mask = (function() {
 })();
 
 
-},{}],36:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 var Module, Node, _,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1899,7 +1945,7 @@ module.exports = Node = (function(_super) {
 })(Module);
 
 
-},{"./nodes/ancestry.coffee":37,"./nodes/search.coffee":41,"coffeescript-module":48,"lodash":51}],37:[function(require,module,exports){
+},{"./nodes/ancestry.coffee":38,"./nodes/search.coffee":42,"coffeescript-module":49,"lodash":52}],38:[function(require,module,exports){
 var _;
 
 _ = require('lodash');
@@ -1985,7 +2031,7 @@ module.exports = {
 };
 
 
-},{"lodash":51}],38:[function(require,module,exports){
+},{"lodash":52}],39:[function(require,module,exports){
 var Group, Node, _,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2037,7 +2083,7 @@ module.exports = Group = (function(_super) {
 })(Node);
 
 
-},{"../node.coffee":36,"lodash":51}],39:[function(require,module,exports){
+},{"../node.coffee":37,"lodash":52}],40:[function(require,module,exports){
 var Layer, Node, _,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2072,7 +2118,7 @@ module.exports = Layer = (function(_super) {
 })(Node);
 
 
-},{"../node.coffee":36,"lodash":51}],40:[function(require,module,exports){
+},{"../node.coffee":37,"lodash":52}],41:[function(require,module,exports){
 var Group, Layer, Node, Root, _,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2128,6 +2174,7 @@ module.exports = Root = (function(_super) {
   };
 
   Root.prototype["export"] = function() {
+    var _ref;
     return {
       children: this._children.map(function(c) {
         return c["export"]();
@@ -2136,7 +2183,7 @@ module.exports = Root = (function(_super) {
         width: this.width,
         height: this.height,
         resources: {
-          layerComps: this.psd.resources.resource('layerComps')["export"](),
+          layerComps: ((_ref = this.psd.resources.resource('layerComps')) != null ? _ref["export"]() : void 0) || [],
           guides: [],
           slices: []
         }
@@ -2170,7 +2217,7 @@ module.exports = Root = (function(_super) {
 })(Node);
 
 
-},{"../node.coffee":36,"./group.coffee":38,"./layer.coffee":39,"lodash":51}],41:[function(require,module,exports){
+},{"../node.coffee":37,"./group.coffee":39,"./layer.coffee":40,"lodash":52}],42:[function(require,module,exports){
 var _;
 
 _ = require('lodash');
@@ -2206,7 +2253,7 @@ module.exports = {
 };
 
 
-},{"lodash":51}],42:[function(require,module,exports){
+},{"lodash":52}],43:[function(require,module,exports){
 var Resource, Util;
 
 Util = require('./util.coffee');
@@ -2235,7 +2282,7 @@ module.exports = Resource = (function() {
 })();
 
 
-},{"./resource_section.coffee":43,"./util.coffee":46}],43:[function(require,module,exports){
+},{"./resource_section.coffee":44,"./util.coffee":47}],44:[function(require,module,exports){
 var ResourceSection, _;
 
 _ = require('lodash');
@@ -2266,7 +2313,7 @@ module.exports = ResourceSection = (function() {
 })();
 
 
-},{"./resources/layer_comps.coffee":45,"lodash":51}],44:[function(require,module,exports){
+},{"./resources/layer_comps.coffee":46,"lodash":52}],45:[function(require,module,exports){
 var Resource, Resources;
 
 Resource = require('./resource.coffee');
@@ -2323,7 +2370,7 @@ module.exports = Resources = (function() {
 })();
 
 
-},{"./resource.coffee":42}],45:[function(require,module,exports){
+},{"./resource.coffee":43}],46:[function(require,module,exports){
 var Descriptor, LayerComps;
 
 Descriptor = require('../descriptor.coffee');
@@ -2376,7 +2423,7 @@ module.exports = LayerComps = (function() {
 })();
 
 
-},{"../descriptor.coffee":4}],46:[function(require,module,exports){
+},{"../descriptor.coffee":4}],47:[function(require,module,exports){
 var Util;
 
 module.exports = Util = (function() {
@@ -2407,7 +2454,7 @@ module.exports = Util = (function() {
 })();
 
 
-},{}],47:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -2455,8 +2502,11 @@ process.argv = [];
 function noop() {}
 
 process.on = noop;
+process.addListener = noop;
 process.once = noop;
 process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
 process.emit = noop;
 
 process.binding = function (name) {
@@ -2469,9 +2519,9 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],48:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 module.exports = require('./module');
-},{"./module":49}],49:[function(require,module,exports){
+},{"./module":50}],50:[function(require,module,exports){
 // Generated by CoffeeScript 1.7.1
 var Module, moduleKeywords,
   __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
@@ -2551,7 +2601,7 @@ exports.Module = Module = (function() {
 
 })();
 
-},{}],50:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 /*!
  *  Copyright © 2008 Fair Oaks Labs, Inc.
  *  All rights reserved.
@@ -2807,7 +2857,7 @@ function JSPack()
 
 exports.jspack = new JSPack();
 
-},{}],51:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -9596,7 +9646,7 @@ exports.jspack = new JSPack();
 }.call(this));
 
 }).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],52:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 "use strict";
 var Promise = require("./rsvp/promise")["default"];
 var EventTarget = require("./rsvp/events")["default"];
@@ -9659,11 +9709,243 @@ exports.reject = reject;
 exports.async = async;
 exports.map = map;
 exports.filter = filter;
-},{"./rsvp/all":54,"./rsvp/all-settled":53,"./rsvp/asap":55,"./rsvp/config":56,"./rsvp/defer":57,"./rsvp/events":58,"./rsvp/filter":59,"./rsvp/hash":61,"./rsvp/hash-settled":60,"./rsvp/map":63,"./rsvp/node":64,"./rsvp/promise":65,"./rsvp/race":71,"./rsvp/reject":72,"./rsvp/resolve":73,"./rsvp/rethrow":74}],53:[function(require,module,exports){
+},{"./rsvp/all":56,"./rsvp/all-settled":55,"./rsvp/asap":57,"./rsvp/config":58,"./rsvp/defer":59,"./rsvp/events":61,"./rsvp/filter":62,"./rsvp/hash":64,"./rsvp/hash-settled":63,"./rsvp/map":66,"./rsvp/node":67,"./rsvp/promise":69,"./rsvp/race":75,"./rsvp/reject":76,"./rsvp/resolve":77,"./rsvp/rethrow":78}],54:[function(require,module,exports){
 'use strict';
+var objectOrFunction = require('./utils').objectOrFunction;
+var isFunction = require('./utils').isFunction;
+var now = require('./utils').now;
+var instrument = require('./instrument')['default'];
+var config = require('./config').config;
+function noop() {
+}
+var PENDING = void 0;
+var FULFILLED = 1;
+var REJECTED = 2;
+var GET_THEN_ERROR = new ErrorObject();
+function getThen(promise) {
+    try {
+        return promise.then;
+    } catch (error) {
+        GET_THEN_ERROR.error = error;
+        return GET_THEN_ERROR;
+    }
+}
+function tryThen(then, value, fulfillmentHandler, rejectionHandler) {
+    try {
+        then.call(value, fulfillmentHandler, rejectionHandler);
+    } catch (e) {
+        return e;
+    }
+}
+function handleForeignThenable(promise, thenable, then) {
+    config.async(function (promise$2) {
+        var sealed = false;
+        var error = tryThen(then, thenable, function (value) {
+                if (sealed) {
+                    return;
+                }
+                sealed = true;
+                if (thenable !== value) {
+                    resolve(promise$2, value);
+                } else {
+                    fulfill(promise$2, value);
+                }
+            }, function (reason) {
+                if (sealed) {
+                    return;
+                }
+                sealed = true;
+                reject(promise$2, reason);
+            }, 'Settle: ' + (promise$2._label || ' unknown promise'));
+        if (!sealed && error) {
+            sealed = true;
+            reject(promise$2, error);
+        }
+    }, promise);
+}
+function handleOwnThenable(promise, thenable) {
+    promise._onerror = null;
+    if (thenable._state === FULFILLED) {
+        fulfill(promise, thenable._result);
+    } else if (promise._state === REJECTED) {
+        reject(promise, thenable._result);
+    } else {
+        subscribe(thenable, undefined, function (value) {
+            if (thenable !== value) {
+                resolve(promise, value);
+            } else {
+                fulfill(promise, value);
+            }
+        }, function (reason) {
+            reject(promise, reason);
+        });
+    }
+}
+function handleMaybeThenable(promise, maybeThenable) {
+    if (maybeThenable instanceof promise.constructor) {
+        handleOwnThenable(promise, maybeThenable);
+    } else {
+        var then = getThen(maybeThenable);
+        if (then === GET_THEN_ERROR) {
+            reject(promise, GET_THEN_ERROR.error);
+        } else if (then === undefined) {
+            fulfill(promise, maybeThenable);
+        } else if (isFunction(then)) {
+            handleForeignThenable(promise, maybeThenable, then);
+        } else {
+            fulfill(promise, maybeThenable);
+        }
+    }
+}
+function resolve(promise, value) {
+    if (promise === value) {
+        fulfill(promise, value);
+    } else if (objectOrFunction(value)) {
+        handleMaybeThenable(promise, value);
+    } else {
+        fulfill(promise, value);
+    }
+}
+function publishRejection(promise) {
+    if (promise._onerror) {
+        promise._onerror(promise._result);
+    }
+    publish(promise);
+}
+function fulfill(promise, value) {
+    if (promise._state !== PENDING) {
+        return;
+    }
+    promise._result = value;
+    promise._state = FULFILLED;
+    if (promise._subscribers.length === 0) {
+        if (config.instrument) {
+            instrument('fulfilled', promise);
+        }
+    } else {
+        config.async(publish, promise);
+    }
+}
+function reject(promise, reason) {
+    if (promise._state !== PENDING) {
+        return;
+    }
+    promise._state = REJECTED;
+    promise._result = reason;
+    config.async(publishRejection, promise);
+}
+function subscribe(parent, child, onFulfillment, onRejection) {
+    var subscribers = parent._subscribers;
+    var length = subscribers.length;
+    parent._onerror = null;
+    subscribers[length] = child;
+    subscribers[length + FULFILLED] = onFulfillment;
+    subscribers[length + REJECTED] = onRejection;
+    if (length === 0 && parent._state) {
+        config.async(publish, parent);
+    }
+}
+function publish(promise) {
+    var subscribers = promise._subscribers;
+    var settled = promise._state;
+    if (config.instrument) {
+        instrument(settled === FULFILLED ? 'fulfilled' : 'rejected', promise);
+    }
+    if (subscribers.length === 0) {
+        return;
+    }
+    var child, callback, detail = promise._result;
+    for (var i = 0; i < subscribers.length; i += 3) {
+        child = subscribers[i];
+        callback = subscribers[i + settled];
+        if (child) {
+            invokeCallback(settled, child, callback, detail);
+        } else {
+            callback(detail);
+        }
+    }
+    promise._subscribers.length = 0;
+}
+function ErrorObject() {
+    this.error = null;
+}
+var TRY_CATCH_ERROR = new ErrorObject();
+function tryCatch(callback, detail) {
+    try {
+        return callback(detail);
+    } catch (e) {
+        TRY_CATCH_ERROR.error = e;
+        return TRY_CATCH_ERROR;
+    }
+}
+function invokeCallback(settled, promise, callback, detail) {
+    var hasCallback = isFunction(callback), value, error, succeeded, failed;
+    if (hasCallback) {
+        value = tryCatch(callback, detail);
+        if (value === TRY_CATCH_ERROR) {
+            failed = true;
+            error = value.error;
+            value = null;
+        } else {
+            succeeded = true;
+        }
+        if (promise === value) {
+            reject(promise, new TypeError('A promises callback cannot return that same promise.'));
+            return;
+        }
+    } else {
+        value = detail;
+        succeeded = true;
+    }
+    if (promise._state !== PENDING) {
+    }    // noop
+    else if (hasCallback && succeeded) {
+        resolve(promise, value);
+    } else if (failed) {
+        reject(promise, error);
+    } else if (settled === FULFILLED) {
+        fulfill(promise, value);
+    } else if (settled === REJECTED) {
+        reject(promise, value);
+    }
+}
+function initializePromise(promise, resolver) {
+    try {
+        resolver(function resolvePromise(value) {
+            resolve(promise, value);
+        }, function rejectPromise(reason) {
+            reject(promise, reason);
+        });
+    } catch (e) {
+        reject(promise, e);
+    }
+}
+exports.noop = noop;
+exports.resolve = resolve;
+exports.reject = reject;
+exports.fulfill = fulfill;
+exports.subscribe = subscribe;
+exports.publish = publish;
+exports.publishRejection = publishRejection;
+exports.initializePromise = initializePromise;
+exports.invokeCallback = invokeCallback;
+exports.FULFILLED = FULFILLED;
+exports.REJECTED = REJECTED;
+},{"./config":58,"./instrument":65,"./utils":79}],55:[function(require,module,exports){
+'use strict';
+var Enumerator = require('./enumerator')['default'];
+var makeSettledResult = require('./enumerator').makeSettledResult;
 var Promise = require('./promise')['default'];
-var isArray = require('./utils').isArray;
-var isNonThenable = require('./utils').isNonThenable;
+var o_create = require('./utils').o_create;
+function AllSettled(Constructor, entries, label) {
+    this._superConstructor(Constructor, entries, false, label);
+}
+AllSettled.prototype = o_create(Enumerator.prototype);
+AllSettled.prototype._superConstructor = Enumerator;
+AllSettled.prototype._makeResult = makeSettledResult;
+AllSettled.prototype._validationError = function () {
+    return new Error('allSettled must be called with an array');
+};
 /**
   `RSVP.allSettled` is similar to `RSVP.all`, but instead of implementing
   a fail-fast method, it waits until all the promises have returned and
@@ -9716,56 +9998,9 @@ var isNonThenable = require('./utils').isNonThenable;
   states of the constituent promises.
 */
 exports['default'] = function allSettled(entries, label) {
-    return new Promise(function (resolve, reject) {
-        if (!isArray(entries)) {
-            throw new TypeError('You must pass an array to allSettled.');
-        }
-        var remaining = entries.length;
-        var entry;
-        if (remaining === 0) {
-            resolve([]);
-            return;
-        }
-        var results = new Array(remaining);
-        function fulfilledResolver(index$2) {
-            return function (value) {
-                resolveAll(index$2, fulfilled(value));
-            };
-        }
-        function rejectedResolver(index$2) {
-            return function (reason) {
-                resolveAll(index$2, rejected(reason));
-            };
-        }
-        function resolveAll(index$2, value) {
-            results[index$2] = value;
-            if (--remaining === 0) {
-                resolve(results);
-            }
-        }
-        for (var index = 0; index < entries.length; index++) {
-            entry = entries[index];
-            if (isNonThenable(entry)) {
-                resolveAll(index, fulfilled(entry));
-            } else {
-                Promise.resolve(entry).then(fulfilledResolver(index), rejectedResolver(index));
-            }
-        }
-    }, label);
+    return new AllSettled(Promise, entries, label).promise;
 };
-function fulfilled(value) {
-    return {
-        state: 'fulfilled',
-        value: value
-    };
-}
-function rejected(reason) {
-    return {
-        state: 'rejected',
-        reason: reason
-    };
-}
-},{"./promise":65,"./utils":75}],54:[function(require,module,exports){
+},{"./enumerator":60,"./promise":69,"./utils":79}],56:[function(require,module,exports){
 'use strict';
 var Promise = require('./promise')['default'];
 /**
@@ -9781,15 +10016,15 @@ var Promise = require('./promise')['default'];
 exports['default'] = function all(array, label) {
     return Promise.all(array, label);
 };
-},{"./promise":65}],55:[function(require,module,exports){
+},{"./promise":69}],57:[function(require,module,exports){
 (function (process){
 'use strict';
+var length = 0;
 exports['default'] = function asap(callback, arg) {
-    var length = queue.push([
-            callback,
-            arg
-        ]);
-    if (length === 1) {
+    queue[length] = callback;
+    queue[length + 1] = arg;
+    length += 2;
+    if (length === 2) {
         // If length is 1, that means that we need to schedule an async flush.
         // If additional callbacks are queued before the queue is flushed, they
         // will be processed by this flush that we are scheduling.
@@ -9798,6 +10033,8 @@ exports['default'] = function asap(callback, arg) {
 };
 var browserGlobal = typeof window !== 'undefined' ? window : {};
 var BrowserMutationObserver = browserGlobal.MutationObserver || browserGlobal.WebKitMutationObserver;
+// test for web worker but not in IE10
+var isWorker = typeof Uint8ClampedArray !== 'undefined' && typeof importScripts !== 'undefined' && typeof MessageChannel !== 'undefined';
 // node
 function useNextTick() {
     return function () {
@@ -9813,19 +10050,29 @@ function useMutationObserver() {
         node.data = iterations = ++iterations % 2;
     };
 }
+// web worker
+function useMessageChannel() {
+    var channel = new MessageChannel();
+    channel.port1.onmessage = flush;
+    return function () {
+        channel.port2.postMessage(0);
+    };
+}
 function useSetTimeout() {
     return function () {
         setTimeout(flush, 1);
     };
 }
-var queue = [];
+var queue = new Array(1000);
 function flush() {
-    for (var i = 0; i < queue.length; i++) {
-        var tuple = queue[i];
-        var callback = tuple[0], arg = tuple[1];
+    for (var i = 0; i < length; i += 2) {
+        var callback = queue[i];
+        var arg = queue[i + 1];
         callback(arg);
+        queue[i] = undefined;
+        queue[i + 1] = undefined;
     }
-    queue.length = 0;
+    length = 0;
 }
 var scheduleFlush;
 // Decide what async method to use to triggering processing of queued callbacks:
@@ -9833,11 +10080,13 @@ if (typeof process !== 'undefined' && {}.toString.call(process) === '[object pro
     scheduleFlush = useNextTick();
 } else if (BrowserMutationObserver) {
     scheduleFlush = useMutationObserver();
+} else if (isWorker) {
+    scheduleFlush = useMessageChannel();
 } else {
     scheduleFlush = useSetTimeout();
 }
-}).call(this,require("/Users/ryanlefevre/Repositories/psd.js/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"))
-},{"/Users/ryanlefevre/Repositories/psd.js/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":47}],56:[function(require,module,exports){
+}).call(this,require("FWaASH"))
+},{"FWaASH":48}],58:[function(require,module,exports){
 'use strict';
 var EventTarget = require('./events')['default'];
 var config = { instrument: false };
@@ -9858,7 +10107,7 @@ function configure(name, value) {
 }
 exports.config = config;
 exports.configure = configure;
-},{"./events":58}],57:[function(require,module,exports){
+},{"./events":61}],59:[function(require,module,exports){
 'use strict';
 var Promise = require('./promise')['default'];
 /**
@@ -9901,7 +10150,113 @@ exports['default'] = function defer(label) {
     }, label);
     return deferred;
 };
-},{"./promise":65}],58:[function(require,module,exports){
+},{"./promise":69}],60:[function(require,module,exports){
+'use strict';
+var isArray = require('./utils').isArray;
+var isMaybeThenable = require('./utils').isMaybeThenable;
+var noop = require('./-internal').noop;
+var reject = require('./-internal').reject;
+var fulfill = require('./-internal').fulfill;
+var subscribe = require('./-internal').subscribe;
+var FULFILLED = require('./-internal').FULFILLED;
+var REJECTED = require('./-internal').REJECTED;
+var PENDING = require('./-internal').PENDING;
+var ABORT_ON_REJECTION = true;
+exports.ABORT_ON_REJECTION = ABORT_ON_REJECTION;
+function makeSettledResult(state, position, value) {
+    if (state === FULFILLED) {
+        return {
+            state: 'fulfilled',
+            value: value
+        };
+    } else {
+        return {
+            state: 'rejected',
+            reason: value
+        };
+    }
+}
+exports.makeSettledResult = makeSettledResult;
+function Enumerator(Constructor, input, abortOnReject, label) {
+    this._instanceConstructor = Constructor;
+    this.promise = new Constructor(noop, label);
+    this._abortOnReject = abortOnReject;
+    if (this._validateInput(input)) {
+        this._input = input;
+        this.length = input.length;
+        this._remaining = input.length;
+        this._init();
+        if (this.length === 0) {
+            fulfill(this.promise, this._result);
+        } else {
+            this.length = this.length || 0;
+            this._enumerate();
+            if (this._remaining === 0) {
+                fulfill(this.promise, this._result);
+            }
+        }
+    } else {
+        reject(this.promise, this._validationError());
+    }
+}
+Enumerator.prototype._validateInput = function (input) {
+    return isArray(input);
+};
+Enumerator.prototype._validationError = function () {
+    return new Error('Array Methods must be provided an Array');
+};
+Enumerator.prototype._init = function () {
+    this._result = new Array(this.length);
+};
+exports['default'] = Enumerator;
+Enumerator.prototype._enumerate = function () {
+    var length = this.length;
+    var promise = this.promise;
+    var input = this._input;
+    for (var i = 0; promise._state === PENDING && i < length; i++) {
+        this._eachEntry(input[i], i);
+    }
+};
+Enumerator.prototype._eachEntry = function (entry, i) {
+    var c = this._instanceConstructor;
+    if (isMaybeThenable(entry)) {
+        if (entry.constructor === c && entry._state !== PENDING) {
+            entry._onerror = null;
+            this._settledAt(entry._state, i, entry._result);
+        } else {
+            this._willSettleAt(c.resolve(entry), i);
+        }
+    } else {
+        this._remaining--;
+        this._result[i] = this._makeResult(FULFILLED, i, entry);
+    }
+};
+Enumerator.prototype._settledAt = function (state, i, value) {
+    var promise = this.promise;
+    if (promise._state === PENDING) {
+        this._remaining--;
+        if (this._abortOnReject && state === REJECTED) {
+            reject(promise, value);
+        } else {
+            this._result[i] = this._makeResult(state, i, value);
+        }
+    }
+    if (this._remaining === 0) {
+        fulfill(promise, this._result);
+    }
+};
+Enumerator.prototype._makeResult = function (state, i, value) {
+    return value;
+};
+Enumerator.prototype._willSettleAt = function (promise, i) {
+    var enumerator = this;
+    subscribe(promise, undefined, function (value) {
+        enumerator._settledAt(FULFILLED, i, value);
+    }, function (reason) {
+        enumerator._settledAt(REJECTED, i, reason);
+    });
+};
+},{"./-internal":54,"./utils":79}],61:[function(require,module,exports){
 'use strict';
 function indexOf(callbacks, callback) {
     for (var i = 0, l = callbacks.length; i < l; i++) {
@@ -9962,10 +10317,11 @@ exports['default'] = {
         }
     }
 };
-},{}],59:[function(require,module,exports){
+},{}],62:[function(require,module,exports){
 'use strict';
 var Promise = require('./promise')['default'];
 var isFunction = require('./utils').isFunction;
+var isMaybeThenable = require('./utils').isMaybeThenable;
 /**
  `RSVP.filter` is similar to JavaScript's native `filter` method, except that it
   waits for all promises to become fulfilled before running the `filterFn` on
@@ -9980,6 +10336,8 @@ var isFunction = require('./utils').isFunction;
   var promise1 = RSVP.resolve(1);
   var promise2 = RSVP.resolve(2);
   var promise3 = RSVP.resolve(3);
+
+  var promises = [promise1, promise2, promise3];
 
   var filterFn = function(item){
     return item > 1;
@@ -10063,7 +10421,7 @@ exports['default'] = function filter(promises, filterFn, label) {
             var results = new Array(length);
             var newLength = 0;
             for (var i$2 = 0; i$2 < length; i$2++) {
-                if (filtered$2[i$2] === true) {
+                if (filtered$2[i$2]) {
                     results[newLength] = values[i$2];
                     newLength++;
                 }
@@ -10073,11 +10431,22 @@ exports['default'] = function filter(promises, filterFn, label) {
         });
     });
 };
-},{"./promise":65,"./utils":75}],60:[function(require,module,exports){
+},{"./promise":69,"./utils":79}],63:[function(require,module,exports){
 'use strict';
 var Promise = require('./promise')['default'];
-var isNonThenable = require('./utils').isNonThenable;
-var keysOf = require('./utils').keysOf;
+var makeSettledResult = require('./enumerator').makeSettledResult;
+var PromiseHash = require('./promise-hash')['default'];
+var Enumerator = require('./enumerator')['default'];
+var o_create = require('./utils').o_create;
+function HashSettled(Constructor, object, label) {
+    this._superConstructor(Constructor, object, false, label);
+}
+HashSettled.prototype = o_create(PromiseHash.prototype);
+HashSettled.prototype._superConstructor = Enumerator;
+HashSettled.prototype._makeResult = makeSettledResult;
+HashSettled.prototype._validationError = function () {
+    return new Error('hashSettled must be called with an object');
+};
 /**
   `RSVP.hashSettled` is similar to `RSVP.allSettled`, but takes an object
   instead of an array for its `promises` argument.
@@ -10180,59 +10549,13 @@ var keysOf = require('./utils').keysOf;
   @static
 */
 exports['default'] = function hashSettled(object, label) {
-    return new Promise(function (resolve, reject) {
-        var results = {};
-        var keys = keysOf(object);
-        var remaining = keys.length;
-        var entry, property;
-        if (remaining === 0) {
-            resolve(results);
-            return;
-        }
-        function fulfilledResolver(property$2) {
-            return function (value) {
-                resolveAll(property$2, fulfilled(value));
-            };
-        }
-        function rejectedResolver(property$2) {
-            return function (reason) {
-                resolveAll(property$2, rejected(reason));
-            };
-        }
-        function resolveAll(property$2, value) {
-            results[property$2] = value;
-            if (--remaining === 0) {
-                resolve(results);
-            }
-        }
-        for (var i = 0; i < keys.length; i++) {
-            property = keys[i];
-            entry = object[property];
-            if (isNonThenable(entry)) {
-                resolveAll(property, fulfilled(entry));
-            } else {
-                Promise.resolve(entry).then(fulfilledResolver(property), rejectedResolver(property));
-            }
-        }
-    });
+    return new HashSettled(Promise, object, label).promise;
 };
-function fulfilled(value) {
-    return {
-        state: 'fulfilled',
-        value: value
-    };
-}
-function rejected(reason) {
-    return {
-        state: 'rejected',
-        reason: reason
-    };
-}
-},{"./promise":65,"./utils":75}],61:[function(require,module,exports){
+},{"./enumerator":60,"./promise":69,"./promise-hash":68,"./utils":79}],64:[function(require,module,exports){
 'use strict';
 var Promise = require('./promise')['default'];
-var isNonThenable = require('./utils').isNonThenable;
-var keysOf = require('./utils').keysOf;
+var PromiseHash = require('./promise-hash')['default'];
+var ABORT_ON_REJECTION = require('./enumerator').ABORT_ON_REJECTION;
 /**
   `RSVP.hash` is similar to `RSVP.all`, but takes an object instead of an array
   for its `promises` argument.
@@ -10322,64 +10645,37 @@ var keysOf = require('./utils').keysOf;
   have been fulfilled, or rejected if any of them become rejected.
 */
 exports['default'] = function hash(object, label) {
-    return new Promise(function (resolve, reject) {
-        var results = {};
-        var keys = keysOf(object);
-        var remaining = keys.length;
-        var entry, property;
-        if (remaining === 0) {
-            resolve(results);
-            return;
-        }
-        function fulfilledTo(property$2) {
-            return function (value) {
-                results[property$2] = value;
-                if (--remaining === 0) {
-                    resolve(results);
-                }
-            };
-        }
-        function onRejection(reason) {
-            remaining = 0;
-            reject(reason);
-        }
-        for (var i = 0; i < keys.length; i++) {
-            property = keys[i];
-            entry = object[property];
-            if (isNonThenable(entry)) {
-                results[property] = entry;
-                if (--remaining === 0) {
-                    resolve(results);
-                }
-            } else {
-                Promise.resolve(entry).then(fulfilledTo(property), onRejection);
-            }
-        }
-    });
+    return new PromiseHash(Promise, object, label).promise;
 };
-},{"./promise":65,"./utils":75}],62:[function(require,module,exports){
+},{"./enumerator":60,"./promise":69,"./promise-hash":68}],65:[function(require,module,exports){
 'use strict';
 var config = require('./config').config;
 var now = require('./utils').now;
+var queue = [];
 exports['default'] = function instrument(eventName, promise, child) {
-    // instrumentation should not disrupt normal usage.
-    try {
-        config.trigger(eventName, {
-            guid: promise._guidKey + promise._id,
-            eventName: eventName,
-            detail: promise._detail,
-            childGuid: child && promise._guidKey + child._id,
-            label: promise._label,
-            timeStamp: now(),
-            stack: new Error(promise._label).stack
-        });
-    } catch (error) {
+    if (1 === queue.push({
+            name: eventName,
+            payload: {
+                guid: promise._guidKey + promise._id,
+                eventName: eventName,
+                detail: promise._result,
+                childGuid: child && promise._guidKey + child._id,
+                label: promise._label,
+                timeStamp: now(),
+                stack: new Error(promise._label).stack
+            }
+        })) {
         setTimeout(function () {
-            throw error;
-        }, 0);
+            var entry;
+            for (var i = 0; i < queue.length; i++) {
+                entry = queue[i];
+                config.trigger(entry.name, entry.payload);
+            }
+            queue.length = 0;
+        }, 50);
     }
 };
-},{"./config":56,"./utils":75}],63:[function(require,module,exports){
+},{"./config":58,"./utils":79}],66:[function(require,module,exports){
 'use strict';
 var Promise = require('./promise')['default'];
 var isArray = require('./utils').isArray;
@@ -10432,7 +10728,7 @@ var isFunction = require('./utils').isFunction;
 
   `RSVP.map` will also wait if a promise is returned from `mapFn`. For example,
   say you want to get all comments from a set of blog posts, but you need
-  the blog posts first becuase they contain a url to those comments.
+  the blog posts first because they contain a url to those comments.
 
   ```javscript
 
@@ -10475,7 +10771,7 @@ exports['default'] = function map(promises, mapFn, label) {
         return Promise.all(results, label);
     });
 };
-},{"./promise":65,"./utils":75}],64:[function(require,module,exports){
+},{"./promise":69,"./utils":79}],67:[function(require,module,exports){
 'use strict';
 /* global  arraySlice */
 var Promise = require('./promise')['default'];
@@ -10619,7 +10915,9 @@ exports['default'] = function denodeify(nodeFunc, argumentNames) {
         }
         var thisArg;
         if (!asArray && !asHash && argumentNames) {
-            console.warn('Deprecation: RSVP.denodeify() doesn\'t allow setting the ' + '"this" binding anymore. Use yourFunction.bind(yourThis) instead.');
+            if (typeof console === 'object') {
+                console.warn('Deprecation: RSVP.denodeify() doesn\'t allow setting the ' + '"this" binding anymore. Use yourFunction.bind(yourThis) instead.');
+            }
             thisArg = argumentNames;
         } else {
             thisArg = this;
@@ -10663,7 +10961,48 @@ exports['default'] = function denodeify(nodeFunc, argumentNames) {
     denodeifiedFunction.__proto__ = nodeFunc;
     return denodeifiedFunction;
 };
-},{"./promise":65,"./utils":75}],65:[function(require,module,exports){
+},{"./promise":69,"./utils":79}],68:[function(require,module,exports){
+'use strict';
+var Enumerator = require('./enumerator')['default'];
+var PENDING = require('./-internal').PENDING;
+var FULFILLED = require('./-internal').FULFILLED;
+var o_create = require('./utils').o_create;
+function PromiseHash(Constructor, object, label) {
+    this._superConstructor(Constructor, object, true, label);
+}
+exports['default'] = PromiseHash;
+PromiseHash.prototype = o_create(Enumerator.prototype);
+PromiseHash.prototype._superConstructor = Enumerator;
+PromiseHash.prototype._init = function () {
+    this._result = {};
+};
+PromiseHash.prototype._validateInput = function (input) {
+    return input && typeof input === 'object';
+};
+PromiseHash.prototype._validationError = function () {
+    return new Error('Promise.hash must be called with an object');
+};
+PromiseHash.prototype._enumerate = function () {
+    var promise = this.promise;
+    var input = this._input;
+    var results = [];
+    for (var key in input) {
+        if (promise._state === PENDING && input.hasOwnProperty(key)) {
+            results.push({
+                position: key,
+                entry: input[key]
+            });
+        }
+    }
+    var length = results.length;
+    this._remaining = length;
+    var result;
+    for (var i = 0; promise._state === PENDING && i < length; i++) {
+        result = results[i];
+        this._eachEntry(result.entry, result.position);
+    }
+};
+},{"./-internal":54,"./enumerator":60,"./utils":79}],69:[function(require,module,exports){
 'use strict';
 var config = require('./config').config;
 var EventTarget = require('./events')['default'];
@@ -10671,6 +11010,15 @@ var instrument = require('./instrument')['default'];
 var objectOrFunction = require('./utils').objectOrFunction;
 var isFunction = require('./utils').isFunction;
 var now = require('./utils').now;
+var noop = require('./-internal').noop;
+var resolve = require('./-internal').resolve;
+var reject = require('./-internal').reject;
+var fulfill = require('./-internal').fulfill;
+var subscribe = require('./-internal').subscribe;
+var initializePromise = require('./-internal').initializePromise;
+var invokeCallback = require('./-internal').invokeCallback;
+var FULFILLED = require('./-internal').FULFILLED;
+var REJECTED = require('./-internal').REJECTED;
 var cast = require('./promise/cast')['default'];
 var all = require('./promise/all')['default'];
 var race = require('./promise/race')['default'];
@@ -10678,7 +11026,11 @@ var Resolve = require('./promise/resolve')['default'];
 var Reject = require('./promise/reject')['default'];
 var guidKey = 'rsvp_' + now() + '-';
 var counter = 0;
-function noop() {
+function needsResolver() {
+    throw new TypeError('You must pass a resolver function as the first argument to the promise constructor');
+}
+function needsNew() {
+    throw new TypeError('Failed to construct \'Promise\': Please use the \'new\' operator, this object constructor cannot be called as a function.');
 }
 exports['default'] = Promise;
 /**
@@ -10751,7 +11103,7 @@ exports['default'] = Promise;
           if (this.status === 200) {
             resolve(this.response);
           } else {
-            reject(new Error("getJSON: `" + url + "` failed with status: [" + this.status + "]");
+            reject(new Error("getJSON: `" + url + "` failed with status: [" + this.status + "]"));
           }
         }
       };
@@ -10780,18 +11132,12 @@ exports['default'] = Promise;
   ```
 
   @class RSVP.Promise
-  @param {function}
+  @param {function} resolver
   @param {String} label optional string for labeling the promise.
   Useful for tooling.
   @constructor
 */
 function Promise(resolver, label) {
-    if (!isFunction(resolver)) {
-        throw new TypeError('You must pass a resolver function as the first argument to the promise constructor');
-    }
-    if (!(this instanceof Promise)) {
-        throw new TypeError('Failed to construct \'Promise\': Please use the \'new\' operator, this object constructor cannot be called as a function.');
-    }
     this._id = counter++;
     this._label = label;
     this._subscribers = [];
@@ -10799,20 +11145,13 @@ function Promise(resolver, label) {
         instrument('created', this);
     }
     if (noop !== resolver) {
-        invokeResolver(resolver, this);
-    }
-}
-function invokeResolver(resolver, promise) {
-    function resolvePromise(value) {
-        resolve(promise, value);
-    }
-    function rejectPromise(reason) {
-        reject(promise, reason);
-    }
-    try {
-        resolver(resolvePromise, rejectPromise);
-    } catch (e) {
-        rejectPromise(e);
+        if (!isFunction(resolver)) {
+            needsResolver();
+        }
+        if (!(this instanceof Promise)) {
+            needsNew();
+        }
+        initializePromise(this, resolver);
     }
 }
 Promise.cast = cast;
@@ -10820,56 +11159,41 @@ Promise.all = all;
 Promise.race = race;
 Promise.resolve = Resolve;
 Promise.reject = Reject;
-var PENDING = void 0;
-var SEALED = 0;
-var FULFILLED = 1;
-var REJECTED = 2;
-function subscribe(parent, child, onFulfillment, onRejection) {
-    var subscribers = parent._subscribers;
-    var length = subscribers.length;
-    subscribers[length] = child;
-    subscribers[length + FULFILLED] = onFulfillment;
-    subscribers[length + REJECTED] = onRejection;
-}
-function publish(promise, settled) {
-    var child, callback, subscribers = promise._subscribers, detail = promise._detail;
-    if (config.instrument) {
-        instrument(settled === FULFILLED ? 'fulfilled' : 'rejected', promise);
-    }
-    for (var i = 0; i < subscribers.length; i += 3) {
-        child = subscribers[i];
-        callback = subscribers[i + settled];
-        invokeCallback(settled, child, callback, detail);
-    }
-    promise._subscribers = null;
-}
 Promise.prototype = {
     constructor: Promise,
     _id: undefined,
     _guidKey: guidKey,
     _label: undefined,
     _state: undefined,
-    _detail: undefined,
+    _result: undefined,
     _subscribers: undefined,
     _onerror: function (reason) {
         config.trigger('error', reason);
     },
     then: function (onFulfillment, onRejection, label) {
-        var promise = this;
-        this._onerror = null;
-        var thenPromise = new this.constructor(noop, label);
-        if (this._state) {
-            var callbacks = arguments;
-            config.async(function invokePromiseCallback() {
-                invokeCallback(promise._state, thenPromise, callbacks[promise._state - 1], promise._detail);
+        var parent = this;
+        var state = parent._state;
+        if (state === FULFILLED && !onFulfillment || state === REJECTED && !onRejection) {
+            if (config.instrument) {
+                instrument('chained', this, this);
+            }
+            return this;
+        }
+        parent._onerror = null;
+        var child = new this.constructor(noop, label);
+        var result = parent._result;
+        if (config.instrument) {
+            instrument('chained', parent, child);
+        }
+        if (state) {
+            var callback = arguments[state - 1];
+            config.async(function () {
+                invokeCallback(state, child, callback, result);
             });
         } else {
-            subscribe(this, thenPromise, onFulfillment, onRejection);
+            subscribe(parent, child, onFulfillment, onRejection);
         }
-        if (config.instrument) {
-            instrument('chained', promise, thenPromise);
-        }
-        return thenPromise;
+        return child;
     },
     'catch': function (onRejection, label) {
         return this.then(null, onRejection, label);
@@ -10887,106 +11211,9 @@ Promise.prototype = {
         }, label);
     }
 };
-function invokeCallback(settled, promise, callback, detail) {
-    var hasCallback = isFunction(callback), value, error, succeeded, failed;
-    if (hasCallback) {
-        try {
-            value = callback(detail);
-            succeeded = true;
-        } catch (e) {
-            failed = true;
-            error = e;
-        }
-    } else {
-        value = detail;
-        succeeded = true;
-    }
-    if (handleThenable(promise, value)) {
-        return;
-    } else if (hasCallback && succeeded) {
-        resolve(promise, value);
-    } else if (failed) {
-        reject(promise, error);
-    } else if (settled === FULFILLED) {
-        resolve(promise, value);
-    } else if (settled === REJECTED) {
-        reject(promise, value);
-    }
-}
-function handleThenable(promise, value) {
-    var then = null, resolved;
-    try {
-        if (promise === value) {
-            throw new TypeError('A promises callback cannot return that same promise.');
-        }
-        if (objectOrFunction(value)) {
-            then = value.then;
-            if (isFunction(then)) {
-                then.call(value, function (val) {
-                    if (resolved) {
-                        return true;
-                    }
-                    resolved = true;
-                    if (value !== val) {
-                        resolve(promise, val);
-                    } else {
-                        fulfill(promise, val);
-                    }
-                }, function (val) {
-                    if (resolved) {
-                        return true;
-                    }
-                    resolved = true;
-                    reject(promise, val);
-                }, 'Settle: ' + (promise._label || ' unknown promise'));
-                return true;
-            }
-        }
-    } catch (error) {
-        if (resolved) {
-            return true;
-        }
-        reject(promise, error);
-        return true;
-    }
-    return false;
-}
-function resolve(promise, value) {
-    if (promise === value) {
-        fulfill(promise, value);
-    } else if (!handleThenable(promise, value)) {
-        fulfill(promise, value);
-    }
-}
-function fulfill(promise, value) {
-    if (promise._state !== PENDING) {
-        return;
-    }
-    promise._state = SEALED;
-    promise._detail = value;
-    config.async(publishFulfillment, promise);
-}
-function reject(promise, reason) {
-    if (promise._state !== PENDING) {
-        return;
-    }
-    promise._state = SEALED;
-    promise._detail = reason;
-    config.async(publishRejection, promise);
-}
-function publishFulfillment(promise) {
-    publish(promise, promise._state = FULFILLED);
-}
-function publishRejection(promise) {
-    if (promise._onerror) {
-        promise._onerror(promise._detail);
-    }
-    publish(promise, promise._state = REJECTED);
-}
-},{"./config":56,"./events":58,"./instrument":62,"./promise/all":66,"./promise/cast":67,"./promise/race":68,"./promise/reject":69,"./promise/resolve":70,"./utils":75}],66:[function(require,module,exports){
+},{"./-internal":54,"./config":58,"./events":61,"./instrument":65,"./promise/all":70,"./promise/cast":71,"./promise/race":72,"./promise/reject":73,"./promise/resolve":74,"./utils":79}],70:[function(require,module,exports){
 'use strict';
-var isArray = require('../utils').isArray;
-var isNonThenable = require('../utils').isNonThenable;
+var Enumerator = require('../enumerator')['default'];
 /**
   `RSVP.Promise.all` accepts an array of promises, and returns a new promise which
   is fulfilled with an array of fulfillment values for the passed promises, or
@@ -11035,46 +11262,11 @@ var isNonThenable = require('../utils').isNonThenable;
   @static
 */
 exports['default'] = function all(entries, label) {
-    /*jshint validthis:true */
-    var Constructor = this;
-    return new Constructor(function (resolve, reject) {
-        if (!isArray(entries)) {
-            throw new TypeError('You must pass an array to all.');
-        }
-        var remaining = entries.length;
-        var results = new Array(remaining);
-        var entry, pending = true;
-        if (remaining === 0) {
-            resolve(results);
-            return;
-        }
-        function fulfillmentAt(index$2) {
-            return function (value) {
-                results[index$2] = value;
-                if (--remaining === 0) {
-                    resolve(results);
-                }
-            };
-        }
-        function onRejection(reason) {
-            remaining = 0;
-            reject(reason);
-        }
-        for (var index = 0; index < entries.length; index++) {
-            entry = entries[index];
-            if (isNonThenable(entry)) {
-                results[index] = entry;
-                if (--remaining === 0) {
-                    resolve(results);
-                }
-            } else {
-                Constructor.resolve(entry).then(fulfillmentAt(index), onRejection);
-            }
-        }
-    }, label);
+    return new Enumerator(this, entries, true, label).promise;
 };
-},{"../utils":75}],67:[function(require,module,exports){
+},{"../enumerator":60}],71:[function(require,module,exports){
 'use strict';
+var resolve = require('./resolve')['default'];
 /**
   @deprecated
 
@@ -11143,22 +11335,17 @@ exports['default'] = function all(entries, label) {
   Useful for tooling.
   @return {Promise} promise
 */
-exports['default'] = function cast(object, label) {
-    /*jshint validthis:true */
-    var Constructor = this;
-    if (object && typeof object === 'object' && object.constructor === Constructor) {
-        return object;
-    }
-    return new Constructor(function (resolve) {
-        resolve(object);
-    }, label);
-};
-},{}],68:[function(require,module,exports){
+exports['default'] = resolve;
+},{"./resolve":74}],72:[function(require,module,exports){
 'use strict';
-/* global toString */
 var isArray = require('../utils').isArray;
 var isFunction = require('../utils').isFunction;
-var isNonThenable = require('../utils').isNonThenable;
+var isMaybeThenable = require('../utils').isMaybeThenable;
+var noop = require('../-internal').noop;
+var resolve = require('../-internal').resolve;
+var reject = require('../-internal').reject;
+var subscribe = require('../-internal').subscribe;
+var PENDING = require('../-internal').PENDING;
 /**
   `RSVP.Promise.race` returns a new promise which is settled in the same way as the
   first passed promise to settle.
@@ -11206,7 +11393,7 @@ var isNonThenable = require('../utils').isNonThenable;
   RSVP.Promise.race([promise1, promise2]).then(function(result){
     // Code here never runs
   }, function(reason){
-    // reason.message === "promise2" because promise 2 became rejected before
+    // reason.message === "promise 2" because promise 2 became rejected before
     // promise 1 became fulfilled
   });
   ```
@@ -11228,37 +11415,27 @@ var isNonThenable = require('../utils').isNonThenable;
 exports['default'] = function race(entries, label) {
     /*jshint validthis:true */
     var Constructor = this, entry;
-    return new Constructor(function (resolve, reject) {
-        if (!isArray(entries)) {
-            throw new TypeError('You must pass an array to race.');
-        }
-        var pending = true;
-        function onFulfillment(value) {
-            if (pending) {
-                pending = false;
-                resolve(value);
-            }
-        }
-        function onRejection(reason) {
-            if (pending) {
-                pending = false;
-                reject(reason);
-            }
-        }
-        for (var i = 0; i < entries.length; i++) {
-            entry = entries[i];
-            if (isNonThenable(entry)) {
-                pending = false;
-                resolve(entry);
-                return;
-            } else {
-                Constructor.resolve(entry).then(onFulfillment, onRejection);
-            }
-        }
-    }, label);
+    var promise = new Constructor(noop, label);
+    if (!isArray(entries)) {
+        reject(promise, new TypeError('You must pass an array to race.'));
+        return promise;
+    }
+    var length = entries.length;
+    function onFulfillment(value) {
+        resolve(promise, value);
+    }
+    function onRejection(reason) {
+        reject(promise, reason);
+    }
+    for (var i = 0; promise._state === PENDING && i < length; i++) {
+        subscribe(Constructor.resolve(entries[i]), undefined, onFulfillment, onRejection);
+    }
+    return promise;
 };
-},{"../utils":75}],69:[function(require,module,exports){
+},{"../-internal":54,"../utils":79}],73:[function(require,module,exports){
 'use strict';
+var noop = require('../-internal').noop;
+var _reject = require('../-internal').reject;
 /**
   `RSVP.Promise.reject` returns a promise rejected with the passed `reason`.
   It is shorthand for the following:
@@ -11297,12 +11474,14 @@ exports['default'] = function race(entries, label) {
 exports['default'] = function reject(reason, label) {
     /*jshint validthis:true */
     var Constructor = this;
-    return new Constructor(function (resolve, reject$2) {
-        reject$2(reason);
-    }, label);
+    var promise = new Constructor(noop, label);
+    _reject(promise, reason);
+    return promise;
 };
-},{}],70:[function(require,module,exports){
+},{"../-internal":54}],74:[function(require,module,exports){
 'use strict';
+var noop = require('../-internal').noop;
+var _resolve = require('../-internal').resolve;
 /**
   `RSVP.Promise.resolve` returns a promise that will become resolved with the
   passed `value`. It is shorthand for the following:
@@ -11341,11 +11520,11 @@ exports['default'] = function resolve(object, label) {
     if (object && typeof object === 'object' && object.constructor === Constructor) {
         return object;
     }
-    return new Constructor(function (resolve$2) {
-        resolve$2(object);
-    }, label);
+    var promise = new Constructor(noop, label);
+    _resolve(promise, object);
+    return promise;
 };
-},{}],71:[function(require,module,exports){
+},{"../-internal":54}],75:[function(require,module,exports){
 'use strict';
 var Promise = require('./promise')['default'];
 /**
@@ -11361,7 +11540,7 @@ var Promise = require('./promise')['default'];
 exports['default'] = function race(array, label) {
     return Promise.race(array, label);
 };
-},{"./promise":65}],72:[function(require,module,exports){
+},{"./promise":69}],76:[function(require,module,exports){
 'use strict';
 var Promise = require('./promise')['default'];
 /**
@@ -11378,7 +11557,7 @@ var Promise = require('./promise')['default'];
 exports['default'] = function reject(reason, label) {
     return Promise.reject(reason, label);
 };
-},{"./promise":65}],73:[function(require,module,exports){
+},{"./promise":69}],77:[function(require,module,exports){
 'use strict';
 var Promise = require('./promise')['default'];
 /**
@@ -11396,7 +11575,7 @@ var Promise = require('./promise')['default'];
 exports['default'] = function resolve(value, label) {
     return Promise.resolve(value, label);
 };
-},{"./promise":65}],74:[function(require,module,exports){
+},{"./promise":69}],78:[function(require,module,exports){
 'use strict';
 /**
   `RSVP.rethrow` will rethrow an error on the next turn of the JavaScript event
@@ -11444,7 +11623,7 @@ exports['default'] = function rethrow(reason) {
     });
     throw reason;
 };
-},{}],75:[function(require,module,exports){
+},{}],79:[function(require,module,exports){
 'use strict';
 function objectOrFunction(x) {
     return typeof x === 'function' || typeof x === 'object' && x !== null;
@@ -11454,10 +11633,10 @@ function isFunction(x) {
     return typeof x === 'function';
 }
 exports.isFunction = isFunction;
-function isNonThenable(x) {
-    return !objectOrFunction(x);
+function isMaybeThenable(x) {
+    return typeof x === 'object' && x !== null;
 }
-exports.isNonThenable = isNonThenable;
+exports.isMaybeThenable = isMaybeThenable;
 var _isArray;
 if (!Array.isArray) {
     _isArray = function (x) {
@@ -11474,16 +11653,13 @@ var now = Date.now || function () {
         return new Date().getTime();
     };
 exports.now = now;
-var keysOf = Object.keys || function (object) {
-        var result = [];
-        for (var prop in object) {
-            result.push(prop);
-        }
-        return result;
+var o_create = Object.create || function (object) {
+        var o = function () {
+        };
+        o.prototype = object;
+        return o;
     };
-exports.keysOf = keysOf;
-},{}],"./psd/init.coffee":[function(require,module,exports){
-module.exports=require('/ioUh4');
+exports.o_create = o_create;
 },{}],"/ioUh4":[function(require,module,exports){
 var RSVP;
 
@@ -11526,8 +11702,8 @@ module.exports = {
 };
 
 
-},{"rsvp":52}],"./image_exports/png.coffee":[function(require,module,exports){
-module.exports=require('bZ5QlH');
+},{"rsvp":53}],"./psd/init.coffee":[function(require,module,exports){
+module.exports=require('/ioUh4');
 },{}],"bZ5QlH":[function(require,module,exports){
 var RSVP;
 
@@ -11564,43 +11740,6 @@ module.exports = {
 };
 
 
-},{"rsvp":52}],"./image_modes/rgb.coffee":[function(require,module,exports){
-module.exports=require('DhO9gV');
-},{}],"DhO9gV":[function(require,module,exports){
-module.exports = {
-  combineRgbChannel: function() {
-    var a, b, chan, g, i, index, r, rgbChannels, val, _i, _j, _len, _ref, _results;
-    rgbChannels = this.channelsInfo.map(function(ch) {
-      return ch.id;
-    }).filter(function(ch) {
-      return ch >= -1;
-    });
-    _results = [];
-    for (i = _i = 0, _ref = this.numPixels; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
-      r = g = b = 0;
-      a = 255;
-      for (index = _j = 0, _len = rgbChannels.length; _j < _len; index = ++_j) {
-        chan = rgbChannels[index];
-        val = this.channelData[i + (this.channelLength * index)];
-        switch (chan) {
-          case -1:
-            a = val;
-            break;
-          case 0:
-            r = val;
-            break;
-          case 1:
-            g = val;
-            break;
-          case 2:
-            b = val;
-        }
-      }
-      _results.push(this.pixelData.push(r, g, b, a));
-    }
-    return _results;
-  }
-};
-
-
+},{"rsvp":53}],"./image_exports/png.coffee":[function(require,module,exports){
+module.exports=require('bZ5QlH');
 },{}]},{},[])
