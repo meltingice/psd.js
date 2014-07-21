@@ -7,13 +7,14 @@ module.exports =
     new RSVP.Promise (resolve, reject) =>
       png = new PNG(filterType: 4, width: @width(), height: @height())
 
-      png.data[i] = p for p, i in @pixelData
+      png.data = @pixelData
       resolve(png)
 
   saveAsPng: (output) ->
     new RSVP.Promise (resolve, reject) =>
-      @toPng()
-        .then (image) ->
-          image.pack().pipe(fs.createWriteStream(output))
-          resolve()
+      @toPng().then (image) ->
+        image
+          .pack()
+          .on('end', resolve)
+          .pipe(fs.createWriteStream(output))
           
