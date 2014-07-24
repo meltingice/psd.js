@@ -15,5 +15,5 @@ module.exports =
       @toPng().then (image) ->
         image
           .pack()
-          .on 'end', -> setTimeout(resolve, 1)
           .pipe(fs.createWriteStream(output))
+          .on 'finish', resolve
