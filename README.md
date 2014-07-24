@@ -4,7 +4,7 @@
 
 A general purpose PSD parser written in Coffeescript. Based off of [PSD.rb](https://github.com/layervault/psd.rb).
 
-Runs in both NodeJS and the browser (using browserify). There are still some pieces missing that are present in PSD.rb, such as layer comp filtering, a built-in renderer, and many layer info blocks. The eventual goal is full feature parity with PSD.rb.
+Runs in both NodeJS and the browser (using browserify). There are still some pieces missing that are present in PSD.rb, such as layer comp filtering, layer image exporting, a built-in renderer, and many layer info blocks. The eventual goal is full feature parity with PSD.rb.
 
 ## Installation
 
