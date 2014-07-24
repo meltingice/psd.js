@@ -8,9 +8,7 @@ Runs in both NodeJS and the browser (using browserify). There are still some pie
 
 ## Installation
 
-Before installing from npm, you must install libpng, which is available on all popular package management systems. On OSX with homebrew, you can do `brew install libpng`. The install success for node-png is currently hit or miss, so alternate image packages are currently under consideration.
-
-Once your system is ready, simply add to your package.json dependencies or run `npm install psd`.
+PSD.js has no native dependencies. Simply add `psd` to your package.json or run `npm install psd`.
 
 ## Basic Usage
 
