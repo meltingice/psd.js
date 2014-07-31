@@ -4,6 +4,7 @@ _        = require 'lodash'
 module.exports = class Node extends Module
   @includes require('./nodes/ancestry.coffee')
   @includes require('./nodes/search.coffee')
+  # @includes require('./nodes/build_preview.coffee')
 
   @PROPERTIES: ['name', 'left', 'right', 'top', 'bottom', 'height', 'width']
 

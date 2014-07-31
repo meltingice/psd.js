@@ -1,12 +1,12 @@
-_ = require 'lodash'
-Image = require './image.coffee'
+_           = require 'lodash'
+Image       = require './image.coffee'
+ImageFormat = require './image_format.coffee'
 
 module.exports = class ChannelImage extends Image
-  
-  constructor: (file, header, @layer) ->
-    @width = @layer.width
-    @height = @layer.height
+  @includes ImageFormat.LayerRAW
+  @includes ImageFormat.LayerRLE
 
+  constructor: (file, header, @layer) ->
     super(file, header)
 
     @channelsInfo = @layer.channelsInfo
@@ -18,6 +18,8 @@ module.exports = class ChannelImage extends Image
     for chan in @channelsInfo
       @file.seek chan.length, true
 
+  width: -> @layer.width
+  height: -> @layer.height
   channels: -> @layer.channels
 
   parse: ->

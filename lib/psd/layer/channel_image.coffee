@@ -1,4 +1,5 @@
 ChannelImage = require '../channel_image.coffee'
+LazyExecute  = require '../lazy_execute.coffee'
 
 module.exports =
   parseChannelImage: ->
