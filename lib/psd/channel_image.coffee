@@ -7,6 +7,9 @@ module.exports = class ChannelImage extends Image
   @includes ImageFormat.LayerRLE
 
   constructor: (file, header, @layer) ->
+    @_width = @layer.width
+    @_height = @layer.height
+
     super(file, header)
 
     @channelsInfo = @layer.channelsInfo
@@ -18,8 +21,8 @@ module.exports = class ChannelImage extends Image
     for chan in @channelsInfo
       @file.seek chan.length, true
 
-  width: -> @layer.width
-  height: -> @layer.height
+  width: -> @_width
+  height: -> @_height
   channels: -> @layer.channels
 
   parse: ->
@@ -32,13 +35,13 @@ module.exports = class ChannelImage extends Image
       @chan = chan
 
       if chan.id < -1
-        @width = @layer.mask.width
-        @height = @layer.mask.height
+        @_width = @layer.mask.width
+        @_height = @layer.mask.height
       else
-        @width = @layer.width
-        @height = @layer.height
+        @_width = @layer.width
+        @_height = @layer.height
 
-      @length = @width * @height
+      @length = @_width * @_height
       start = @file.tell()
 
       @parseImageData()
@@ -48,7 +51,16 @@ module.exports = class ChannelImage extends Image
       if finish isnt start + @chan.length
         @file.seek(start + @chan.length)
 
-    @width = @layer.width
-    @height = @layer.height
+    @_width = @layer.width
+    @_height = @layer.height
 
     @processImageData()
+
+  parseImageData: ->
+    @compression = @parseCompression()
+
+    switch @compression
+      when 0 then @parseRaw()
+      when 1 then @parseRLE()
+      when 2, 3 then @parseZip()
+      else @file.seek(@endPos)
