@@ -9,7 +9,6 @@ task 'compile', 'Compile with browserify for the web', ->
   .transform('coffeeify')
   .require('./shims/png.coffee', expose: './image_exports/png.coffee')
   .require('./shims/init.coffee', expose: './psd/init.coffee')
-  .require('./shims/rgb.coffee', expose: './image_modes/rgb.coffee')
   .require('./lib/psd.coffee', expose: 'psd')
   .bundle (err, src) ->
     return console.log(err) if err?

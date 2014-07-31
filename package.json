@@ -1,7 +1,7 @@
 {
   "name": "psd",
   "description": "A general purpose Photoshop file parser.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "main": "./index.js",
   "keywords": ["psd", "parser", "photoshop", "adobe", "reader"],
   "repository": {
@@ -12,7 +12,7 @@
     "coffee-script": "~ 1.7.1",
     "jspack": "~ 0.0.3",
     "coffeescript-module": "~ 0.2.1",
-    "png": "~ 3.0.3",
+    "pngjs": "~ 0.4.0",
     "rsvp": "~ 3.0.6",
     "lodash": "~ 2.4"
   },

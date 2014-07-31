@@ -1,16 +1,19 @@
 fs = require 'fs'
-{Png} = require 'png'
+{PNG} = require 'pngjs'
 RSVP = require 'rsvp'
 
 module.exports =
   toPng: ->
     new RSVP.Promise (resolve, reject) =>
-      png = new Png(new Buffer(@pixelData), @width(), @height(), 'rgba')
-      png.encode(resolve)
+      png = new PNG(filterType: 4, width: @width(), height: @height())
+
+      png.data = @pixelData
+      resolve(png)
 
   saveAsPng: (output) ->
     new RSVP.Promise (resolve, reject) =>
-      @toPng()
-        .then (image) ->
-          fs.writeFile output, image.toString('binary'), 'binary', resolve
-          
+      @toPng().then (image) ->
+        image
+          .pack()
+          .pipe(fs.createWriteStream(output))
+          .on 'finish', resolve
