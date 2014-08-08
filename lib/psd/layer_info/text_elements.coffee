@@ -14,13 +14,12 @@ module.exports = class TextElements extends LayerInfo
     @transform = {}
     @textVersion = null
     @descriptorVersion = null
-    @textDate = null
+    @textData = null
     @warpVersion = null
     @descriptorVersion = null
-    @warpDate = null
+    @warpData = null
     @coords = {}
 
-    @parse() #lazy貌似没执行啊，手动执行下.
   parse: ->
     @version = @file.readShort()
 
@@ -30,12 +29,13 @@ module.exports = class TextElements extends LayerInfo
     @textVersion = @file.readShort()
     @descriptorVersion = @file.readInt()
 
-    @textDate = new Descriptor(@file).parse()
+    @textData = new Descriptor(@file).parse()
 
     @warpVersion = @file.readShort()
 
-    # @warpDate = new Descriptor(@file).parse()
+    @descriptorVersion = @file.readInt()
 
-    # for name, value 
-    console.log('TextElements loaded')
-  skip: ->
+    @warpData = new Descriptor(@file).parse()
+
+    for name, index in COORDS_VALUE
+      @coords[name] = @file.readDouble()
