@@ -1,5 +1,6 @@
 {jspack} = require 'jspack'
 Util = require './util.coffee'
+iconv = require 'iconv-lite'
 
 module.exports = class File
   FORMATS =
@@ -41,8 +42,8 @@ module.exports = class File
   readString: (length) -> String.fromCharCode.apply(null, @read(length)).replace /\u0000/g, ""
   readUnicodeString: (length = null) ->
     length or= @readInt()
-    # new Buffer(@read(length * 2))
-    @read(length * 2)
+    iconv.decode(new Buffer(@read(length * 2)),'utf-16be')
+    # @read(length * 2)
       # .map((c) -> Util.getUnicodeCharacter(c))
       # .join('')
       # .replace(/\u0000/g, '')
