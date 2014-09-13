@@ -1,3 +1,4 @@
+parseEngineData = require 'parse-engine-data'
 LayerInfo = require '../layer_info.coffee'
 Descriptor = require '../descriptor.coffee'
 
@@ -15,6 +16,7 @@ module.exports = class TextElements extends LayerInfo
     @textVersion = null
     @descriptorVersion = null
     @textData = null
+    @engineData = null
     @textValue = null
     @warpVersion = null
     @descriptorVersion = null
@@ -32,6 +34,7 @@ module.exports = class TextElements extends LayerInfo
 
     @textData = new Descriptor(@file).parse()
     @textValue = @textData['Txt ']
+    @engineData = parseEngineData(@textData.EngineData)
 
     @warpVersion = @file.readShort()
 
@@ -41,3 +44,7 @@ module.exports = class TextElements extends LayerInfo
 
     for name, index in COORDS_VALUE
       @coords[name] = @file.readDouble()
+
+  fonts: ->
+    return [] unless @engineData?
+    @engineData.ResourceDict.FontSet.map (f) -> f.Name
