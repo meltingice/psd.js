@@ -8,7 +8,7 @@ module.exports = class Layer extends Module
   @includes require('./layer/name.coffee')
   @includes require('./layer/info.coffee')
   @includes require('./layer/helpers.coffee')
-  # @includes require('./layer/channel_image.coffee')
+  @includes require('./layer/channel_image.coffee')
 
   constructor: (@file, @header) ->
     @mask = {}
