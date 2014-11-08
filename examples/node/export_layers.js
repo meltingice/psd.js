@@ -6,7 +6,7 @@ var start = new Date();
 PSD.open(file).then(function (psd) {
   psd.tree().descendants().forEach(function (node) {
     if (node.isGroup()) return true;
-    node.layer.image.saveAsPng("./output/" + node.name + ".png").catch(function (err) {
+    node.saveAsPng("./output/" + node.name + ".png").catch(function (err) {
       console.log(err.stack);
     });
   });
