@@ -40,7 +40,9 @@ var PSD = require('psd');
 
 // Load from URL
 PSD.fromURL("/path/to/file.psd").then(function(psd) {
-  document.getElementById('ImageContainer').appendChild(psd.image.toPng());
+  psd.image.toPng().then(function(el) {
+    document.getElementById('ImageContainer').appendChild(el);
+  });
 });
 
 // Load from event, e.g. drag & drop
