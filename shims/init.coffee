@@ -28,3 +28,15 @@ module.exports =
 
         reader.onerror = reject
         reader.readAsArrayBuffer(file)
+
+    @fromDroppedFile = (file) ->
+      new RSVP.Promise (resolve, reject) ->
+        reader = new FileReader()
+        reader.onload = (e) ->
+          psd = new PSD(new Uint8Array(e.target.result))
+          psd.parse()
+
+          resolve(psd)
+
+        reader.onerror = reject
+        reader.readAsArrayBuffer(file)
