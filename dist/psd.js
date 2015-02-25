@@ -1,4 +1,6 @@
-require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({"aS3ana":[function(require,module,exports){
+require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({"psd":[function(require,module,exports){
+module.exports=require('aS3ana');
+},{}],"aS3ana":[function(require,module,exports){
 var File, Header, Image, LayerMask, LazyExecute, Module, PSD, RSVP, Resources,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -85,9 +87,7 @@ module.exports = PSD = (function(_super) {
 })(Module);
 
 
-},{"./psd/file.coffee":6,"./psd/header.coffee":7,"./psd/image.coffee":8,"./psd/init.coffee":"/ioUh4","./psd/layer_mask.coffee":39,"./psd/lazy_execute.coffee":40,"./psd/nodes/root.coffee":47,"./psd/resources.coffee":51,"coffeescript-module":60,"rsvp":82}],"psd":[function(require,module,exports){
-module.exports=require('aS3ana');
-},{}],3:[function(require,module,exports){
+},{"./psd/file.coffee":6,"./psd/header.coffee":7,"./psd/image.coffee":8,"./psd/init.coffee":"/ioUh4","./psd/layer_mask.coffee":39,"./psd/lazy_execute.coffee":40,"./psd/nodes/root.coffee":47,"./psd/resources.coffee":51,"coffeescript-module":60,"rsvp":83}],3:[function(require,module,exports){
 var BlendMode, Module,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1674,9 +1674,11 @@ module.exports = NestedSectionDivider = (function(_super) {
 
 
 },{"../layer_info.coffee":26}],37:[function(require,module,exports){
-var Descriptor, LayerInfo, TextElements,
+var Descriptor, LayerInfo, TextElements, parseEngineData,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+parseEngineData = require('parse-engine-data');
 
 LayerInfo = require('../layer_info.coffee');
 
@@ -1702,6 +1704,7 @@ module.exports = TextElements = (function(_super) {
     this.textVersion = null;
     this.descriptorVersion = null;
     this.textData = null;
+    this.engineData = null;
     this.textValue = null;
     this.warpVersion = null;
     this.descriptorVersion = null;
@@ -1720,6 +1723,7 @@ module.exports = TextElements = (function(_super) {
     this.descriptorVersion = this.file.readInt();
     this.textData = new Descriptor(this.file).parse();
     this.textValue = this.textData['Txt '];
+    this.engineData = parseEngineData(this.textData.EngineData);
     this.warpVersion = this.file.readShort();
     this.descriptorVersion = this.file.readInt();
     this.warpData = new Descriptor(this.file).parse();
@@ -1731,12 +1735,21 @@ module.exports = TextElements = (function(_super) {
     return _results;
   };
 
+  TextElements.prototype.fonts = function() {
+    if (this.engineData == null) {
+      return [];
+    }
+    return this.engineData.ResourceDict.FontSet.map(function(f) {
+      return f.Name;
+    });
+  };
+
   return TextElements;
 
 })(LayerInfo);
 
 
-},{"../descriptor.coffee":5,"../layer_info.coffee":26}],38:[function(require,module,exports){
+},{"../descriptor.coffee":5,"../layer_info.coffee":26,"parse-engine-data":82}],38:[function(require,module,exports){
 var LayerInfo, UnicodeName,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -3820,12 +3833,16 @@ var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 	var NUMBER = '0'.charCodeAt(0)
 	var LOWER  = 'a'.charCodeAt(0)
 	var UPPER  = 'A'.charCodeAt(0)
+	var PLUS_URL_SAFE = '-'.charCodeAt(0)
+	var SLASH_URL_SAFE = '_'.charCodeAt(0)
 
 	function decode (elt) {
 		var code = elt.charCodeAt(0)
-		if (code === PLUS)
+		if (code === PLUS ||
+		    code === PLUS_URL_SAFE)
 			return 62 // '+'
-		if (code === SLASH)
+		if (code === SLASH ||
+		    code === SLASH_URL_SAFE)
 			return 63 // '/'
 		if (code < NUMBER)
 			return -1 //no match
@@ -4437,8 +4454,11 @@ function DBCSCodec(options) {
     this._fillEncodeTable(0, 0, skipEncodeChars);
 
     // Add more encoding pairs when needed.
-    for (var uChar in options.encodeAdd || {})
-        this._setEncodeChar(uChar.charCodeAt(0), options.encodeAdd[uChar]);
+    if (options.encodeAdd) {
+        for (var uChar in options.encodeAdd)
+            if (Object.prototype.hasOwnProperty.call(options.encodeAdd, uChar))
+                this._setEncodeChar(uChar.charCodeAt(0), options.encodeAdd[uChar]);
+    }
 
     this.defCharSB  = this.encodeTable[0][options.iconv.defaultCharSingleByte.charCodeAt(0)];
     if (this.defCharSB === UNASSIGNED) this.defCharSB = this.encodeTable[0]['?'];
@@ -4860,7 +4880,7 @@ function decoderDBCSWrite(buf) {
             uCode = seq[seq.length-1];
         }
         else
-            throw new Error("Unknown table value when decoding: " + val);
+            throw new Error("iconv-lite internal error: invalid decoding table value " + uCode + " at " + nodeIdx + "/" + curByte);
 
         // Write the character to buffer, handling higher planes using surrogate pair.
         if (uCode > 0xFFFF) { 
@@ -4971,8 +4991,8 @@ module.exports = {
     'csshiftjis': 'shiftjis',
     'mskanji': 'shiftjis',
     'sjis': 'shiftjis',
-    'windows-31j': 'shiftjis',
-    'x-sjis': 'shiftjis',
+    'windows31j': 'shiftjis',
+    'xsjis': 'shiftjis',
     'windows932': 'shiftjis',
     '932': 'shiftjis',
     'cp932': 'shiftjis',
@@ -5090,6 +5110,7 @@ module.exports = {
     'xxbig5': 'big5hkscs',
 
 };
+
 },{"./tables/big5-added.json":69,"./tables/cp936.json":70,"./tables/cp949.json":71,"./tables/cp950.json":72,"./tables/eucjp.json":73,"./tables/gb18030-ranges.json":74,"./tables/gbk-added.json":75,"./tables/shiftjis.json":76}],64:[function(require,module,exports){
 
 // Update this array if you add/rename/remove files in this directory.
@@ -5109,7 +5130,8 @@ var modules = [
 for (var i = 0; i < modules.length; i++) {
     var module = modules[i];
     for (var enc in module)
-        exports[enc] = module[enc];
+        if (Object.prototype.hasOwnProperty.call(module, enc))
+            exports[enc] = module[enc];
 }
 
 },{"./dbcs-codec":62,"./dbcs-data":63,"./internal":65,"./sbcs-codec":66,"./sbcs-data":68,"./sbcs-data-generated":67,"./utf16":77,"./utf7":78}],65:[function(require,module,exports){
@@ -5750,15 +5772,15 @@ module.exports = {
     // Aliases of generated encodings.
     "ascii8bit": "ascii",
     "usascii": "ascii",
-    "ansix3.4": "ascii",
-    "ansix3.41968": "ascii",
-    "ansix3.41986": "ascii",
+    "ansix34": "ascii",
+    "ansix341968": "ascii",
+    "ansix341986": "ascii",
     "csascii": "ascii",
     "cp367": "ascii",
     "ibm367": "ascii",
     "isoir6": "ascii",
     "iso646us": "ascii",
-    "iso646.irv": "ascii",
+    "iso646irv": "ascii",
     "us": "ascii",
 
     "latin1": "iso88591",
@@ -5841,8 +5863,8 @@ module.exports = {
     "isoceltic": "iso885914",
 
     "tis6200": "tis620",
-    "tis620.25291": "tis620",
-    "tis620.25330": "tis620",
+    "tis62025291": "tis620",
+    "tis62025330": "tis620",
 
     "10000": "macroman",
     "10006": "macgreek",
@@ -7865,6 +7887,22 @@ function JSPack()
 		a[p+i-d] |= s*128;
 	};
 
+	// Convert int64 to array with 3 elements: [lowBits, highBits, unsignedFlag]
+	// '>>>' trick to convert signed 32bit int to unsigned int (because << always results in a signed 32bit int)
+	m._DeInt64 = function (a, p) {
+		var start = bBE ? 0 : 7, nsb = bBE ? 1 : -1, stop = start + nsb * 8, rv = [0,0, !el.bSigned], i, f, rvi;
+		for (i = start, rvi = 1, f = 0;
+			i != stop;
+			rv[rvi] = (((rv[rvi]<<8)>>>0) + a[p + i]), i += nsb, f++, rvi = (f < 4 ? 1 : 0));
+		return rv;
+	};
+	m._EnInt64 = function (a, p, v) {
+		var start = bBE ? 0 : 7, nsb = bBE ? 1 : -1, stop = start + nsb * 8, i, f, rvi, s;
+		for (i = start, rvi = 1, f = 0, s = 24;
+			i != stop;
+			a[p + i] = v[rvi]>>s & 0xff, i += nsb, f++, rvi = (f < 4 ? 1 : 0), s = 24 - (8 * (f % 4)));
+	};
+	
 
 	// Class data
 	m._sPattern	= '(\\d+)?([AxcbBhHsfdiIlLqQ])';
@@ -7882,8 +7920,8 @@ function JSPack()
 				'L': {en:m._EnInt, de:m._DeInt, len:4, bSigned:false, min:0, max:Math.pow(2, 32)-1},
 				'f': {en:m._En754, de:m._De754, len:4, mLen:23, rt:Math.pow(2, -24)-Math.pow(2, -77)},
 				'd': {en:m._En754, de:m._De754, len:8, mLen:52, rt:0},
-				'q': {en:m._EnInt, de:m._DeInt, len:8, bSigned:true, min:-Math.pow(2, 63), max:Math.pow(2, 63)-1},
-				'Q': {en:m._EnInt, de:m._DeInt, len:8, bSigned:false, min:0, max:Math.pow(2, 64)-1}};
+				'q': {en:m._EnInt64, de:m._DeInt64, bSigned:true},
+				'Q': {en:m._EnInt64, de:m._DeInt64, bSigned:false}};
 
 	// Unpack a series of n elements of size s from array a at offset p with fxn
 	m._UnpackSeries = function (n, s, a, p)
@@ -7953,7 +7991,7 @@ function JSPack()
 					i += 1;
 					break;
 				case 'c': case 'b': case 'B': case 'h': case 'H':
-				case 'i': case 'I': case 'l': case 'L': case 'f': case 'd':
+				case 'i': case 'I': case 'l': case 'L': case 'f': case 'd': case 'q': case 'Q':
 					el = this._elLut[m[2]];
 					if ((i + n) > values.length) { return false; }
 					this._PackSeries(n, s, a, p, values, i);
@@ -14778,2020 +14816,1888 @@ exports.jspack = new JSPack();
 
 }).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],82:[function(require,module,exports){
-"use strict";
-var Promise = require("./rsvp/promise")["default"];
-var EventTarget = require("./rsvp/events")["default"];
-var denodeify = require("./rsvp/node")["default"];
-var all = require("./rsvp/all")["default"];
-var allSettled = require("./rsvp/all-settled")["default"];
-var race = require("./rsvp/race")["default"];
-var hash = require("./rsvp/hash")["default"];
-var hashSettled = require("./rsvp/hash-settled")["default"];
-var rethrow = require("./rsvp/rethrow")["default"];
-var defer = require("./rsvp/defer")["default"];
-var config = require("./rsvp/config").config;
-var configure = require("./rsvp/config").configure;
-var map = require("./rsvp/map")["default"];
-var resolve = require("./rsvp/resolve")["default"];
-var reject = require("./rsvp/reject")["default"];
-var filter = require("./rsvp/filter")["default"];
-var asap = require("./rsvp/asap")["default"];
+(function (Buffer){
+var iconv = require('iconv-lite')
+// engineData is an array form descriptor.coffee
 
-config.async = asap; // default async is asap;
+var MATCH_TYPE = [  hashStart,
+                    hashEnd,
+                    multiLineArrayStart,
+                    multiLineArrayEnd,
+                    property, 
+                    propertyWithData,
+                    singleLineArray,
+                    boolean,
+                    number,
+                    numberWithDecimal,
+                    string];
 
-function async(callback, arg) {
-  config.async(callback, arg);
-}
+var nodeStack = [], propertyStack = [];
+var currentNode = [];
 
-function on() {
-  config.on.apply(config, arguments);
+var paresr = function(engineData){
+
+    nodeStack = propertyStack = currentNode = [];//reset
+    textReg(textSegment(codeToString(engineData)));
+
+    return currentNode.shift();
 }
 
-function off() {
-  config.off.apply(config, arguments);
+
+function codeToString(engineData){
+    return String.fromCharCode.apply(null, engineData);
 }
 
-// Set up instrumentation through `window.__PROMISE_INTRUMENTATION__`
-if (typeof window !== 'undefined' && typeof window.__PROMISE_INSTRUMENTATION__ === 'object') {
-  var callbacks = window.__PROMISE_INSTRUMENTATION__;
-  configure('instrument', true);
-  for (var eventName in callbacks) {
-    if (callbacks.hasOwnProperty(eventName)) {
-      on(eventName, callbacks[eventName]);
-    }
-  }
+function textSegment(text){
+    return text.split('\n');
 }
 
-exports.Promise = Promise;
-exports.EventTarget = EventTarget;
-exports.all = all;
-exports.allSettled = allSettled;
-exports.race = race;
-exports.hash = hash;
-exports.hashSettled = hashSettled;
-exports.rethrow = rethrow;
-exports.defer = defer;
-exports.denodeify = denodeify;
-exports.configure = configure;
-exports.on = on;
-exports.off = off;
-exports.resolve = resolve;
-exports.reject = reject;
-exports.async = async;
-exports.map = map;
-exports.filter = filter;
-},{"./rsvp/all":85,"./rsvp/all-settled":84,"./rsvp/asap":86,"./rsvp/config":87,"./rsvp/defer":88,"./rsvp/events":90,"./rsvp/filter":91,"./rsvp/hash":93,"./rsvp/hash-settled":92,"./rsvp/map":95,"./rsvp/node":96,"./rsvp/promise":98,"./rsvp/race":104,"./rsvp/reject":105,"./rsvp/resolve":106,"./rsvp/rethrow":107}],83:[function(require,module,exports){
-'use strict';
-var objectOrFunction = require('./utils').objectOrFunction;
-var isFunction = require('./utils').isFunction;
-var now = require('./utils').now;
-var instrument = require('./instrument')['default'];
-var config = require('./config').config;
-function noop() {
+function textReg(textArr){
+    textArr.map(function(currentText){
+        typeMatch(currentText.replace(/^\t+/g, ''));
+    });
+
 }
-var PENDING = void 0;
-var FULFILLED = 1;
-var REJECTED = 2;
-var GET_THEN_ERROR = new ErrorObject();
-function getThen(promise) {
-    try {
-        return promise.then;
-    } catch (error) {
-        GET_THEN_ERROR.error = error;
-        return GET_THEN_ERROR;
-    }
-}
-function tryThen(then, value, fulfillmentHandler, rejectionHandler) {
-    try {
-        then.call(value, fulfillmentHandler, rejectionHandler);
-    } catch (e) {
-        return e;
-    }
-}
-function handleForeignThenable(promise, thenable, then) {
-    config.async(function (promise$2) {
-        var sealed = false;
-        var error = tryThen(then, thenable, function (value) {
-                if (sealed) {
-                    return;
-                }
-                sealed = true;
-                if (thenable !== value) {
-                    resolve(promise$2, value);
-                } else {
-                    fulfill(promise$2, value);
-                }
-            }, function (reason) {
-                if (sealed) {
-                    return;
-                }
-                sealed = true;
-                reject(promise$2, reason);
-            }, 'Settle: ' + (promise$2._label || ' unknown promise'));
-        if (!sealed && error) {
-            sealed = true;
-            reject(promise$2, error);
+
+function typeMatch(currentText){
+
+    for (var currentType in MATCH_TYPE) {
+        var t = new MATCH_TYPE[currentType](currentText);
+        if (t.match){
+            return t.parse();
         }
-    }, promise);
+    }
+
+    return currentText;
 }
-function handleOwnThenable(promise, thenable) {
-    promise._onerror = null;
-    if (thenable._state === FULFILLED) {
-        fulfill(promise, thenable._result);
-    } else if (promise._state === REJECTED) {
-        reject(promise, thenable._result);
-    } else {
-        subscribe(thenable, undefined, function (value) {
-            if (thenable !== value) {
-                resolve(promise, value);
-            } else {
-                fulfill(promise, value);
+
+// helper fun
+function Match(reg, text){
+    return reg.test(text);
+}
+function isArray(o){
+    return Object.prototype.toString.call(o) === '[object Array]';
+}
+
+// tyep reg
+function hashStart(text){
+    var reg = /^<<$/;
+
+    return {
+        match: Match(reg, text),
+        parse: function(){
+            stackPush({});
+        }
+    }
+}
+function hashEnd(text){
+    var reg = /^>>$/;
+
+    return {
+        match: Match(reg, text),
+        parse: function(){
+            updateNode();
+        }
+    }
+}
+function multiLineArrayStart(text){
+    var reg = /^\/(\w+) \[$/;
+
+    return {
+        match: Match(reg, text),
+        parse: function(){
+            propertyStack.push(text.match(reg)[1]);
+            stackPush([]);
+        }
+    }
+}
+function multiLineArrayEnd(text){
+    var reg = /^\]$/;
+
+    return {
+        match: Match(reg, text),
+        parse: function(){
+            updateNode();
+        }
+    }
+}
+function property(text){
+    var reg = /^\/([A-Z0-9]+)$/i;
+
+    return {
+        match: Match(reg, text),
+        parse: function(){
+            propertyStack.push(text.match(reg)[1]);
+        }
+    }
+}
+function propertyWithData(text){
+    var reg = /^\/([A-Z0-9]+)\s((.|\r)*)$/i;
+
+    return {
+        match: Match(reg, text),
+        parse: function(){
+            var match = text.match(reg);
+            pushKeyValue(match[1], typeMatch(match[2]));
+        }
+    }
+}
+// value reg
+function boolean(text){
+    var reg = /^(true|false)$/;
+    return {
+        match: Match(reg, text),
+        parse: function(){
+            return text === 'true'? true:false;
+        }
+    }
+}
+function number(text){
+    var reg = /^-?\d+$/;
+    return {
+        match: Match(reg, text),
+        parse: function(){
+            return Number(text);
+        }
+    }
+}
+function numberWithDecimal(text){
+    var reg = /^(-?\d*)\.(\d+)$/;
+    return {
+        match: Match(reg, text),
+        parse: function(){
+            return Number(text);
+        }
+    }
+}
+function singleLineArray(text){
+    //单行数组似乎只有数字数组的情况
+    var reg = /^\[(.*)\]$/;
+    return {
+        match: Match(reg, text),
+        parse: function(){
+            var items = text.match(reg)[1].trim().split(' ');
+            var tempArr = [];
+            for (var i=0, l=items.length; i<l; i++){
+                tempArr.push(typeMatch(items[i]));
             }
-        }, function (reason) {
-            reject(promise, reason);
-        });
+            return tempArr;
+        }
     }
 }
-function handleMaybeThenable(promise, maybeThenable) {
-    if (maybeThenable instanceof promise.constructor) {
-        handleOwnThenable(promise, maybeThenable);
+
+function string(text){
+    //the text in editor has some encoding issues
+    var reg = /^\(((.|\r)*)\)$/;
+    return {
+        match: Match(reg, text),
+        parse: function(){
+            var txt = text.match(reg)[1];
+            var bf = [];
+            for (var i=0,l=txt.length;i<l;i++){
+                bf.push(txt.charCodeAt(i));
+            }
+            return iconv.decode(new Buffer(bf), 'utf-16');//it`s utf-16 with bom
+        }
+    }
+}
+
+// node handle
+function stackPush(node){
+    nodeStack.push(currentNode);
+    currentNode = node;
+}
+function updateNode(){
+    var node = nodeStack.pop();
+    if (isArray(node)){
+        node.push(currentNode);
     } else {
-        var then = getThen(maybeThenable);
-        if (then === GET_THEN_ERROR) {
-            reject(promise, GET_THEN_ERROR.error);
-        } else if (then === undefined) {
-            fulfill(promise, maybeThenable);
-        } else if (isFunction(then)) {
-            handleForeignThenable(promise, maybeThenable, then);
-        } else {
-            fulfill(promise, maybeThenable);
-        }
+        node[propertyStack.pop()] = currentNode;
     }
+    currentNode = node;
 }
-function resolve(promise, value) {
-    if (promise === value) {
-        fulfill(promise, value);
-    } else if (objectOrFunction(value)) {
-        handleMaybeThenable(promise, value);
-    } else {
-        fulfill(promise, value);
-    }
+function pushKeyValue(key,value){
+    currentNode[key] = value;
 }
-function publishRejection(promise) {
-    if (promise._onerror) {
-        promise._onerror(promise._result);
-    }
-    publish(promise);
-}
-function fulfill(promise, value) {
-    if (promise._state !== PENDING) {
-        return;
-    }
-    promise._result = value;
-    promise._state = FULFILLED;
-    if (promise._subscribers.length === 0) {
-        if (config.instrument) {
-            instrument('fulfilled', promise);
-        }
-    } else {
-        config.async(publish, promise);
-    }
-}
-function reject(promise, reason) {
-    if (promise._state !== PENDING) {
-        return;
-    }
-    promise._state = REJECTED;
-    promise._result = reason;
-    config.async(publishRejection, promise);
-}
-function subscribe(parent, child, onFulfillment, onRejection) {
-    var subscribers = parent._subscribers;
-    var length = subscribers.length;
-    parent._onerror = null;
-    subscribers[length] = child;
-    subscribers[length + FULFILLED] = onFulfillment;
-    subscribers[length + REJECTED] = onRejection;
-    if (length === 0 && parent._state) {
-        config.async(publish, parent);
-    }
-}
-function publish(promise) {
-    var subscribers = promise._subscribers;
-    var settled = promise._state;
-    if (config.instrument) {
-        instrument(settled === FULFILLED ? 'fulfilled' : 'rejected', promise);
-    }
-    if (subscribers.length === 0) {
-        return;
-    }
-    var child, callback, detail = promise._result;
-    for (var i = 0; i < subscribers.length; i += 3) {
-        child = subscribers[i];
-        callback = subscribers[i + settled];
-        if (child) {
-            invokeCallback(settled, child, callback, detail);
-        } else {
-            callback(detail);
-        }
-    }
-    promise._subscribers.length = 0;
-}
-function ErrorObject() {
-    this.error = null;
-}
-var TRY_CATCH_ERROR = new ErrorObject();
-function tryCatch(callback, detail) {
-    try {
-        return callback(detail);
-    } catch (e) {
-        TRY_CATCH_ERROR.error = e;
-        return TRY_CATCH_ERROR;
-    }
-}
-function invokeCallback(settled, promise, callback, detail) {
-    var hasCallback = isFunction(callback), value, error, succeeded, failed;
-    if (hasCallback) {
-        value = tryCatch(callback, detail);
-        if (value === TRY_CATCH_ERROR) {
-            failed = true;
-            error = value.error;
-            value = null;
-        } else {
-            succeeded = true;
-        }
-        if (promise === value) {
-            reject(promise, new TypeError('A promises callback cannot return that same promise.'));
-            return;
-        }
-    } else {
-        value = detail;
-        succeeded = true;
-    }
-    if (promise._state !== PENDING) {
-    }    // noop
-    else if (hasCallback && succeeded) {
-        resolve(promise, value);
-    } else if (failed) {
-        reject(promise, error);
-    } else if (settled === FULFILLED) {
-        fulfill(promise, value);
-    } else if (settled === REJECTED) {
-        reject(promise, value);
-    }
-}
-function initializePromise(promise, resolver) {
-    try {
-        resolver(function resolvePromise(value) {
-            resolve(promise, value);
-        }, function rejectPromise(reason) {
-            reject(promise, reason);
-        });
-    } catch (e) {
-        reject(promise, e);
-    }
-}
-exports.noop = noop;
-exports.resolve = resolve;
-exports.reject = reject;
-exports.fulfill = fulfill;
-exports.subscribe = subscribe;
-exports.publish = publish;
-exports.publishRejection = publishRejection;
-exports.initializePromise = initializePromise;
-exports.invokeCallback = invokeCallback;
-exports.FULFILLED = FULFILLED;
-exports.REJECTED = REJECTED;
-},{"./config":87,"./instrument":94,"./utils":108}],84:[function(require,module,exports){
-'use strict';
-var Enumerator = require('./enumerator')['default'];
-var makeSettledResult = require('./enumerator').makeSettledResult;
-var Promise = require('./promise')['default'];
-var o_create = require('./utils').o_create;
-function AllSettled(Constructor, entries, label) {
-    this._superConstructor(Constructor, entries, false, label);
-}
-AllSettled.prototype = o_create(Enumerator.prototype);
-AllSettled.prototype._superConstructor = Enumerator;
-AllSettled.prototype._makeResult = makeSettledResult;
-AllSettled.prototype._validationError = function () {
-    return new Error('allSettled must be called with an array');
-};
-/**
-  `RSVP.allSettled` is similar to `RSVP.all`, but instead of implementing
-  a fail-fast method, it waits until all the promises have returned and
-  shows you all the results. This is useful if you want to handle multiple
-  promises' failure states together as a set.
 
-  Returns a promise that is fulfilled when all the given promises have been
-  settled. The return promise is fulfilled with an array of the states of
-  the promises passed into the `promises` array argument.
-
-  Each state object will either indicate fulfillment or rejection, and
-  provide the corresponding value or reason. The states will take one of
-  the following formats:
-
-  ```javascript
-  { state: 'fulfilled', value: value }
-    or
-  { state: 'rejected', reason: reason }
-  ```
-
-  Example:
-
-  ```javascript
-  var promise1 = RSVP.Promise.resolve(1);
-  var promise2 = RSVP.Promise.reject(new Error('2'));
-  var promise3 = RSVP.Promise.reject(new Error('3'));
-  var promises = [ promise1, promise2, promise3 ];
-
-  RSVP.allSettled(promises).then(function(array){
-    // array == [
-    //   { state: 'fulfilled', value: 1 },
-    //   { state: 'rejected', reason: Error },
-    //   { state: 'rejected', reason: Error }
-    // ]
-    // Note that for the second item, reason.message will be "2", and for the
-    // third item, reason.message will be "3".
-  }, function(error) {
-    // Not run. (This block would only be called if allSettled had failed,
-    // for instance if passed an incorrect argument type.)
-  });
-  ```
-
-  @method allSettled
-  @static
-  @for RSVP
-  @param {Array} promises
-  @param {String} label - optional string that describes the promise.
-  Useful for tooling.
-  @return {Promise} promise that is fulfilled with an array of the settled
-  states of the constituent promises.
-*/
-exports['default'] = function allSettled(entries, label) {
-    return new AllSettled(Promise, entries, label).promise;
-};
-},{"./enumerator":89,"./promise":98,"./utils":108}],85:[function(require,module,exports){
-'use strict';
-var Promise = require('./promise')['default'];
-/**
-  This is a convenient alias for `RSVP.Promise.all`.
-
-  @method all
-  @static
-  @for RSVP
-  @param {Array} array Array of promises.
-  @param {String} label An optional label. This is useful
-  for tooling.
-*/
-exports['default'] = function all(array, label) {
-    return Promise.all(array, label);
-};
-},{"./promise":98}],86:[function(require,module,exports){
+module.exports = paresr;
+}).call(this,require("buffer").Buffer)
+},{"buffer":55,"iconv-lite":79}],83:[function(require,module,exports){
 (function (process){
-'use strict';
-var length = 0;
-exports['default'] = function asap(callback, arg) {
-    queue[length] = callback;
-    queue[length + 1] = arg;
-    length += 2;
-    if (length === 2) {
-        // If length is 1, that means that we need to schedule an async flush.
-        // If additional callbacks are queued before the queue is flushed, they
-        // will be processed by this flush that we are scheduling.
-        scheduleFlush();
+/*!
+ * @overview RSVP - a tiny implementation of Promises/A+.
+ * @copyright Copyright (c) 2014 Yehuda Katz, Tom Dale, Stefan Penner and contributors
+ * @license   Licensed under MIT license
+ *            See https://raw.githubusercontent.com/tildeio/rsvp.js/master/LICENSE
+ * @version   3.0.17
+ */
+
+(function() {
+    "use strict";
+    function lib$rsvp$utils$$objectOrFunction(x) {
+      return typeof x === 'function' || (typeof x === 'object' && x !== null);
     }
-};
-var browserGlobal = typeof window !== 'undefined' ? window : {};
-var BrowserMutationObserver = browserGlobal.MutationObserver || browserGlobal.WebKitMutationObserver;
-// test for web worker but not in IE10
-var isWorker = typeof Uint8ClampedArray !== 'undefined' && typeof importScripts !== 'undefined' && typeof MessageChannel !== 'undefined';
-// node
-function useNextTick() {
-    return function () {
-        process.nextTick(flush);
-    };
-}
-function useMutationObserver() {
-    var iterations = 0;
-    var observer = new BrowserMutationObserver(flush);
-    var node = document.createTextNode('');
-    observer.observe(node, { characterData: true });
-    return function () {
-        node.data = iterations = ++iterations % 2;
-    };
-}
-// web worker
-function useMessageChannel() {
-    var channel = new MessageChannel();
-    channel.port1.onmessage = flush;
-    return function () {
-        channel.port2.postMessage(0);
-    };
-}
-function useSetTimeout() {
-    return function () {
-        setTimeout(flush, 1);
-    };
-}
-var queue = new Array(1000);
-function flush() {
-    for (var i = 0; i < length; i += 2) {
-        var callback = queue[i];
-        var arg = queue[i + 1];
-        callback(arg);
-        queue[i] = undefined;
-        queue[i + 1] = undefined;
+
+    function lib$rsvp$utils$$isFunction(x) {
+      return typeof x === 'function';
     }
-    length = 0;
-}
-var scheduleFlush;
-// Decide what async method to use to triggering processing of queued callbacks:
-if (typeof process !== 'undefined' && {}.toString.call(process) === '[object process]') {
-    scheduleFlush = useNextTick();
-} else if (BrowserMutationObserver) {
-    scheduleFlush = useMutationObserver();
-} else if (isWorker) {
-    scheduleFlush = useMessageChannel();
-} else {
-    scheduleFlush = useSetTimeout();
-}
-}).call(this,require("FWaASH"))
-},{"FWaASH":58}],87:[function(require,module,exports){
-'use strict';
-var EventTarget = require('./events')['default'];
-var config = { instrument: false };
-EventTarget.mixin(config);
-function configure(name, value) {
-    if (name === 'onerror') {
+
+    function lib$rsvp$utils$$isMaybeThenable(x) {
+      return typeof x === 'object' && x !== null;
+    }
+
+    var lib$rsvp$utils$$_isArray;
+    if (!Array.isArray) {
+      lib$rsvp$utils$$_isArray = function (x) {
+        return Object.prototype.toString.call(x) === '[object Array]';
+      };
+    } else {
+      lib$rsvp$utils$$_isArray = Array.isArray;
+    }
+
+    var lib$rsvp$utils$$isArray = lib$rsvp$utils$$_isArray;
+
+    var lib$rsvp$utils$$now = Date.now || function() { return new Date().getTime(); };
+
+    function lib$rsvp$utils$$F() { }
+
+    var lib$rsvp$utils$$o_create = (Object.create || function (o) {
+      if (arguments.length > 1) {
+        throw new Error('Second argument not supported');
+      }
+      if (typeof o !== 'object') {
+        throw new TypeError('Argument must be an object');
+      }
+      lib$rsvp$utils$$F.prototype = o;
+      return new lib$rsvp$utils$$F();
+    });
+    function lib$rsvp$events$$indexOf(callbacks, callback) {
+      for (var i=0, l=callbacks.length; i<l; i++) {
+        if (callbacks[i] === callback) { return i; }
+      }
+
+      return -1;
+    }
+
+    function lib$rsvp$events$$callbacksFor(object) {
+      var callbacks = object._promiseCallbacks;
+
+      if (!callbacks) {
+        callbacks = object._promiseCallbacks = {};
+      }
+
+      return callbacks;
+    }
+
+    var lib$rsvp$events$$default = {
+
+      /**
+        `RSVP.EventTarget.mixin` extends an object with EventTarget methods. For
+        Example:
+
+        ```javascript
+        var object = {};
+
+        RSVP.EventTarget.mixin(object);
+
+        object.on('finished', function(event) {
+          // handle event
+        });
+
+        object.trigger('finished', { detail: value });
+        ```
+
+        `EventTarget.mixin` also works with prototypes:
+
+        ```javascript
+        var Person = function() {};
+        RSVP.EventTarget.mixin(Person.prototype);
+
+        var yehuda = new Person();
+        var tom = new Person();
+
+        yehuda.on('poke', function(event) {
+          console.log('Yehuda says OW');
+        });
+
+        tom.on('poke', function(event) {
+          console.log('Tom says OW');
+        });
+
+        yehuda.trigger('poke');
+        tom.trigger('poke');
+        ```
+
+        @method mixin
+        @for RSVP.EventTarget
+        @private
+        @param {Object} object object to extend with EventTarget methods
+      */
+      'mixin': function(object) {
+        object['on']      = this['on'];
+        object['off']     = this['off'];
+        object['trigger'] = this['trigger'];
+        object._promiseCallbacks = undefined;
+        return object;
+      },
+
+      /**
+        Registers a callback to be executed when `eventName` is triggered
+
+        ```javascript
+        object.on('event', function(eventInfo){
+          // handle the event
+        });
+
+        object.trigger('event');
+        ```
+
+        @method on
+        @for RSVP.EventTarget
+        @private
+        @param {String} eventName name of the event to listen for
+        @param {Function} callback function to be called when the event is triggered.
+      */
+      'on': function(eventName, callback) {
+        var allCallbacks = lib$rsvp$events$$callbacksFor(this), callbacks;
+
+        callbacks = allCallbacks[eventName];
+
+        if (!callbacks) {
+          callbacks = allCallbacks[eventName] = [];
+        }
+
+        if (lib$rsvp$events$$indexOf(callbacks, callback) === -1) {
+          callbacks.push(callback);
+        }
+      },
+
+      /**
+        You can use `off` to stop firing a particular callback for an event:
+
+        ```javascript
+        function doStuff() { // do stuff! }
+        object.on('stuff', doStuff);
+
+        object.trigger('stuff'); // doStuff will be called
+
+        // Unregister ONLY the doStuff callback
+        object.off('stuff', doStuff);
+        object.trigger('stuff'); // doStuff will NOT be called
+        ```
+
+        If you don't pass a `callback` argument to `off`, ALL callbacks for the
+        event will not be executed when the event fires. For example:
+
+        ```javascript
+        var callback1 = function(){};
+        var callback2 = function(){};
+
+        object.on('stuff', callback1);
+        object.on('stuff', callback2);
+
+        object.trigger('stuff'); // callback1 and callback2 will be executed.
+
+        object.off('stuff');
+        object.trigger('stuff'); // callback1 and callback2 will not be executed!
+        ```
+
+        @method off
+        @for RSVP.EventTarget
+        @private
+        @param {String} eventName event to stop listening to
+        @param {Function} callback optional argument. If given, only the function
+        given will be removed from the event's callback queue. If no `callback`
+        argument is given, all callbacks will be removed from the event's callback
+        queue.
+      */
+      'off': function(eventName, callback) {
+        var allCallbacks = lib$rsvp$events$$callbacksFor(this), callbacks, index;
+
+        if (!callback) {
+          allCallbacks[eventName] = [];
+          return;
+        }
+
+        callbacks = allCallbacks[eventName];
+
+        index = lib$rsvp$events$$indexOf(callbacks, callback);
+
+        if (index !== -1) { callbacks.splice(index, 1); }
+      },
+
+      /**
+        Use `trigger` to fire custom events. For example:
+
+        ```javascript
+        object.on('foo', function(){
+          console.log('foo event happened!');
+        });
+        object.trigger('foo');
+        // 'foo event happened!' logged to the console
+        ```
+
+        You can also pass a value as a second argument to `trigger` that will be
+        passed as an argument to all event listeners for the event:
+
+        ```javascript
+        object.on('foo', function(value){
+          console.log(value.name);
+        });
+
+        object.trigger('foo', { name: 'bar' });
+        // 'bar' logged to the console
+        ```
+
+        @method trigger
+        @for RSVP.EventTarget
+        @private
+        @param {String} eventName name of the event to be triggered
+        @param {Any} options optional value to be passed to any event handlers for
+        the given `eventName`
+      */
+      'trigger': function(eventName, options) {
+        var allCallbacks = lib$rsvp$events$$callbacksFor(this), callbacks, callback;
+
+        if (callbacks = allCallbacks[eventName]) {
+          // Don't cache the callbacks.length since it may grow
+          for (var i=0; i<callbacks.length; i++) {
+            callback = callbacks[i];
+
+            callback(options);
+          }
+        }
+      }
+    };
+
+    var lib$rsvp$config$$config = {
+      instrument: false
+    };
+
+    lib$rsvp$events$$default['mixin'](lib$rsvp$config$$config);
+
+    function lib$rsvp$config$$configure(name, value) {
+      if (name === 'onerror') {
         // handle for legacy users that expect the actual
         // error to be passed to their function added via
         // `RSVP.configure('onerror', someFunctionHere);`
-        config.on('error', value);
+        lib$rsvp$config$$config['on']('error', value);
         return;
+      }
+
+      if (arguments.length === 2) {
+        lib$rsvp$config$$config[name] = value;
+      } else {
+        return lib$rsvp$config$$config[name];
+      }
     }
-    if (arguments.length === 2) {
-        config[name] = value;
-    } else {
-        return config[name];
+
+    var lib$rsvp$instrument$$queue = [];
+
+    function lib$rsvp$instrument$$scheduleFlush() {
+      setTimeout(function() {
+        var entry;
+        for (var i = 0; i < lib$rsvp$instrument$$queue.length; i++) {
+          entry = lib$rsvp$instrument$$queue[i];
+
+          var payload = entry.payload;
+
+          payload.guid = payload.key + payload.id;
+          payload.childGuid = payload.key + payload.childId;
+          if (payload.error) {
+            payload.stack = payload.error.stack;
+          }
+
+          lib$rsvp$config$$config['trigger'](entry.name, entry.payload);
+        }
+        lib$rsvp$instrument$$queue.length = 0;
+      }, 50);
     }
-}
-exports.config = config;
-exports.configure = configure;
-},{"./events":90}],88:[function(require,module,exports){
-'use strict';
-var Promise = require('./promise')['default'];
-/**
-  `RSVP.defer` returns an object similar to jQuery's `$.Deferred`.
-  `RSVP.defer` should be used when porting over code reliant on `$.Deferred`'s
-  interface. New code should use the `RSVP.Promise` constructor instead.
 
-  The object returned from `RSVP.defer` is a plain object with three properties:
+    function lib$rsvp$instrument$$instrument(eventName, promise, child) {
+      if (1 === lib$rsvp$instrument$$queue.push({
+          name: eventName,
+          payload: {
+            key: promise._guidKey,
+            id:  promise._id,
+            eventName: eventName,
+            detail: promise._result,
+            childId: child && child._id,
+            label: promise._label,
+            timeStamp: lib$rsvp$utils$$now(),
+            error: lib$rsvp$config$$config["instrument-with-stack"] ? new Error(promise._label) : null
+          }})) {
+            lib$rsvp$instrument$$scheduleFlush();
+          }
+      }
+    var lib$rsvp$instrument$$default = lib$rsvp$instrument$$instrument;
 
-  * promise - an `RSVP.Promise`.
-  * reject - a function that causes the `promise` property on this object to
-    become rejected
-  * resolve - a function that causes the `promise` property on this object to
-    become fulfilled.
-
-  Example:
-
-   ```javascript
-   var deferred = RSVP.defer();
-
-   deferred.resolve("Success!");
-
-   defered.promise.then(function(value){
-     // value here is "Success!"
-   });
-   ```
-
-  @method defer
-  @static
-  @for RSVP
-  @param {String} label optional string for labeling the promise.
-  Useful for tooling.
-  @return {Object}
- */
-exports['default'] = function defer(label) {
-    var deferred = {};
-    deferred.promise = new Promise(function (resolve, reject) {
-        deferred.resolve = resolve;
-        deferred.reject = reject;
-    }, label);
-    return deferred;
-};
-},{"./promise":98}],89:[function(require,module,exports){
-'use strict';
-var isArray = require('./utils').isArray;
-var isMaybeThenable = require('./utils').isMaybeThenable;
-var noop = require('./-internal').noop;
-var reject = require('./-internal').reject;
-var fulfill = require('./-internal').fulfill;
-var subscribe = require('./-internal').subscribe;
-var FULFILLED = require('./-internal').FULFILLED;
-var REJECTED = require('./-internal').REJECTED;
-var PENDING = require('./-internal').PENDING;
-var ABORT_ON_REJECTION = true;
-exports.ABORT_ON_REJECTION = ABORT_ON_REJECTION;
-function makeSettledResult(state, position, value) {
-    if (state === FULFILLED) {
-        return {
-            state: 'fulfilled',
-            value: value
-        };
-    } else {
-        return {
-            state: 'rejected',
-            reason: value
-        };
+    function  lib$rsvp$$internal$$withOwnPromise() {
+      return new TypeError('A promises callback cannot return that same promise.');
     }
-}
-exports.makeSettledResult = makeSettledResult;
-function Enumerator(Constructor, input, abortOnReject, label) {
-    this._instanceConstructor = Constructor;
-    this.promise = new Constructor(noop, label);
-    this._abortOnReject = abortOnReject;
-    if (this._validateInput(input)) {
-        this._input = input;
-        this.length = input.length;
-        this._remaining = input.length;
-        this._init();
-        if (this.length === 0) {
-            fulfill(this.promise, this._result);
-        } else {
-            this.length = this.length || 0;
-            this._enumerate();
-            if (this._remaining === 0) {
-                fulfill(this.promise, this._result);
-            }
-        }
-    } else {
-        reject(this.promise, this._validationError());
+
+    function lib$rsvp$$internal$$noop() {}
+
+    var lib$rsvp$$internal$$PENDING   = void 0;
+    var lib$rsvp$$internal$$FULFILLED = 1;
+    var lib$rsvp$$internal$$REJECTED  = 2;
+
+    var lib$rsvp$$internal$$GET_THEN_ERROR = new lib$rsvp$$internal$$ErrorObject();
+
+    function lib$rsvp$$internal$$getThen(promise) {
+      try {
+        return promise.then;
+      } catch(error) {
+        lib$rsvp$$internal$$GET_THEN_ERROR.error = error;
+        return lib$rsvp$$internal$$GET_THEN_ERROR;
+      }
     }
-}
-Enumerator.prototype._validateInput = function (input) {
-    return isArray(input);
-};
-Enumerator.prototype._validationError = function () {
-    return new Error('Array Methods must be provided an Array');
-};
-Enumerator.prototype._init = function () {
-    this._result = new Array(this.length);
-};
-exports['default'] = Enumerator;
-Enumerator.prototype._enumerate = function () {
-    var length = this.length;
-    var promise = this.promise;
-    var input = this._input;
-    for (var i = 0; promise._state === PENDING && i < length; i++) {
-        this._eachEntry(input[i], i);
+
+    function lib$rsvp$$internal$$tryThen(then, value, fulfillmentHandler, rejectionHandler) {
+      try {
+        then.call(value, fulfillmentHandler, rejectionHandler);
+      } catch(e) {
+        return e;
+      }
     }
-};
-Enumerator.prototype._eachEntry = function (entry, i) {
-    var c = this._instanceConstructor;
-    if (isMaybeThenable(entry)) {
-        if (entry.constructor === c && entry._state !== PENDING) {
-            entry._onerror = null;
-            this._settledAt(entry._state, i, entry._result);
-        } else {
-            this._willSettleAt(c.resolve(entry), i);
-        }
-    } else {
-        this._remaining--;
-        this._result[i] = this._makeResult(FULFILLED, i, entry);
-    }
-};
-Enumerator.prototype._settledAt = function (state, i, value) {
-    var promise = this.promise;
-    if (promise._state === PENDING) {
-        this._remaining--;
-        if (this._abortOnReject && state === REJECTED) {
-            reject(promise, value);
-        } else {
-            this._result[i] = this._makeResult(state, i, value);
-        }
-    }
-    if (this._remaining === 0) {
-        fulfill(promise, this._result);
-    }
-};
-Enumerator.prototype._makeResult = function (state, i, value) {
-    return value;
-};
-Enumerator.prototype._willSettleAt = function (promise, i) {
-    var enumerator = this;
-    subscribe(promise, undefined, function (value) {
-        enumerator._settledAt(FULFILLED, i, value);
-    }, function (reason) {
-        enumerator._settledAt(REJECTED, i, reason);
-    });
-};
-},{"./-internal":83,"./utils":108}],90:[function(require,module,exports){
-'use strict';
-function indexOf(callbacks, callback) {
-    for (var i = 0, l = callbacks.length; i < l; i++) {
-        if (callbacks[i] === callback) {
-            return i;
-        }
-    }
-    return -1;
-}
-function callbacksFor(object) {
-    var callbacks = object._promiseCallbacks;
-    if (!callbacks) {
-        callbacks = object._promiseCallbacks = {};
-    }
-    return callbacks;
-}
-/**
-  @class RSVP.EventTarget
-*/
-exports['default'] = {
-    mixin: function (object) {
-        object.on = this.on;
-        object.off = this.off;
-        object.trigger = this.trigger;
-        object._promiseCallbacks = undefined;
-        return object;
-    },
-    on: function (eventName, callback) {
-        var allCallbacks = callbacksFor(this), callbacks;
-        callbacks = allCallbacks[eventName];
-        if (!callbacks) {
-            callbacks = allCallbacks[eventName] = [];
-        }
-        if (indexOf(callbacks, callback) === -1) {
-            callbacks.push(callback);
-        }
-    },
-    off: function (eventName, callback) {
-        var allCallbacks = callbacksFor(this), callbacks, index;
-        if (!callback) {
-            allCallbacks[eventName] = [];
-            return;
-        }
-        callbacks = allCallbacks[eventName];
-        index = indexOf(callbacks, callback);
-        if (index !== -1) {
-            callbacks.splice(index, 1);
-        }
-    },
-    trigger: function (eventName, options) {
-        var allCallbacks = callbacksFor(this), callbacks, callbackTuple, callback, binding;
-        if (callbacks = allCallbacks[eventName]) {
-            // Don't cache the callbacks.length since it may grow
-            for (var i = 0; i < callbacks.length; i++) {
-                callback = callbacks[i];
-                callback(options);
-            }
-        }
-    }
-};
-},{}],91:[function(require,module,exports){
-'use strict';
-var Promise = require('./promise')['default'];
-var isFunction = require('./utils').isFunction;
-var isMaybeThenable = require('./utils').isMaybeThenable;
-/**
- `RSVP.filter` is similar to JavaScript's native `filter` method, except that it
-  waits for all promises to become fulfilled before running the `filterFn` on
-  each item in given to `promises`. `RSVP.filter` returns a promise that will
-  become fulfilled with the result of running `filterFn` on the values the
-  promises become fulfilled with.
 
-  For example:
-
-  ```javascript
-
-  var promise1 = RSVP.resolve(1);
-  var promise2 = RSVP.resolve(2);
-  var promise3 = RSVP.resolve(3);
-
-  var promises = [promise1, promise2, promise3];
-
-  var filterFn = function(item){
-    return item > 1;
-  };
-
-  RSVP.filter(promises, filterFn).then(function(result){
-    // result is [ 2, 3 ]
-  });
-  ```
-
-  If any of the `promises` given to `RSVP.filter` are rejected, the first promise
-  that is rejected will be given as an argument to the returned promise's
-  rejection handler. For example:
-
-  ```javascript
-  var promise1 = RSVP.resolve(1);
-  var promise2 = RSVP.reject(new Error("2"));
-  var promise3 = RSVP.reject(new Error("3"));
-  var promises = [ promise1, promise2, promise3 ];
-
-  var filterFn = function(item){
-    return item > 1;
-  };
-
-  RSVP.filter(promises, filterFn).then(function(array){
-    // Code here never runs because there are rejected promises!
-  }, function(reason) {
-    // reason.message === "2"
-  });
-  ```
-
-  `RSVP.filter` will also wait for any promises returned from `filterFn`.
-  For instance, you may want to fetch a list of users then return a subset
-  of those users based on some asynchronous operation:
-
-  ```javascript
-
-  var alice = { name: 'alice' };
-  var bob   = { name: 'bob' };
-  var users = [ alice, bob ];
-
-  var promises = users.map(function(user){
-    return RSVP.resolve(user);
-  });
-
-  var filterFn = function(user){
-    // Here, Alice has permissions to create a blog post, but Bob does not.
-    return getPrivilegesForUser(user).then(function(privs){
-      return privs.can_create_blog_post === true;
-    });
-  };
-  RSVP.filter(promises, filterFn).then(function(users){
-    // true, because the server told us only Alice can create a blog post.
-    users.length === 1;
-    // false, because Alice is the only user present in `users`
-    users[0] === bob;
-  });
-  ```
-
-  @method filter
-  @static
-  @for RSVP
-  @param {Array} promises
-  @param {Function} filterFn - function to be called on each resolved value to
-  filter the final results.
-  @param {String} label optional string describing the promise. Useful for
-  tooling.
-  @return {Promise}
-*/
-exports['default'] = function filter(promises, filterFn, label) {
-    return Promise.all(promises, label).then(function (values) {
-        if (!isFunction(filterFn)) {
-            throw new TypeError('You must pass a function as filter\'s second argument.');
-        }
-        var length = values.length;
-        var filtered = new Array(length);
-        for (var i = 0; i < length; i++) {
-            filtered[i] = filterFn(values[i]);
-        }
-        return Promise.all(filtered, label).then(function (filtered$2) {
-            var results = new Array(length);
-            var newLength = 0;
-            for (var i$2 = 0; i$2 < length; i$2++) {
-                if (filtered$2[i$2]) {
-                    results[newLength] = values[i$2];
-                    newLength++;
-                }
-            }
-            results.length = newLength;
-            return results;
-        });
-    });
-};
-},{"./promise":98,"./utils":108}],92:[function(require,module,exports){
-'use strict';
-var Promise = require('./promise')['default'];
-var makeSettledResult = require('./enumerator').makeSettledResult;
-var PromiseHash = require('./promise-hash')['default'];
-var Enumerator = require('./enumerator')['default'];
-var o_create = require('./utils').o_create;
-function HashSettled(Constructor, object, label) {
-    this._superConstructor(Constructor, object, false, label);
-}
-HashSettled.prototype = o_create(PromiseHash.prototype);
-HashSettled.prototype._superConstructor = Enumerator;
-HashSettled.prototype._makeResult = makeSettledResult;
-HashSettled.prototype._validationError = function () {
-    return new Error('hashSettled must be called with an object');
-};
-/**
-  `RSVP.hashSettled` is similar to `RSVP.allSettled`, but takes an object
-  instead of an array for its `promises` argument.
-
-  Unlike `RSVP.all` or `RSVP.hash`, which implement a fail-fast method,
-  but like `RSVP.allSettled`, `hashSettled` waits until all the
-  constituent promises have returned and then shows you all the results
-  with their states and values/reasons. This is useful if you want to
-  handle multiple promises' failure states together as a set.
-
-  Returns a promise that is fulfilled when all the given promises have been
-  settled, or rejected if the passed parameters are invalid.
-
-  The returned promise is fulfilled with a hash that has the same key names as
-  the `promises` object argument. If any of the values in the object are not
-  promises, they will be copied over to the fulfilled object and marked with state
-  'fulfilled'.
-
-  Example:
-
-  ```javascript
-  var promises = {
-    myPromise: RSVP.Promise.resolve(1),
-    yourPromise: RSVP.Promise.resolve(2),
-    theirPromise: RSVP.Promise.resolve(3),
-    notAPromise: 4
-  };
-
-  RSVP.hashSettled(promises).then(function(hash){
-    // hash here is an object that looks like:
-    // {
-    //   myPromise: { state: 'fulfilled', value: 1 },
-    //   yourPromise: { state: 'fulfilled', value: 2 },
-    //   theirPromise: { state: 'fulfilled', value: 3 },
-    //   notAPromise: { state: 'fulfilled', value: 4 }
-    // }
-  });
-  ```
-
-  If any of the `promises` given to `RSVP.hash` are rejected, the state will
-  be set to 'rejected' and the reason for rejection provided.
-
-  Example:
-
-  ```javascript
-  var promises = {
-    myPromise: RSVP.Promise.resolve(1),
-    rejectedPromise: RSVP.Promise.reject(new Error('rejection')),
-    anotherRejectedPromise: RSVP.Promise.reject(new Error('more rejection')),
-  };
-
-  RSVP.hashSettled(promises).then(function(hash){
-    // hash here is an object that looks like:
-    // {
-    //   myPromise:              { state: 'fulfilled', value: 1 },
-    //   rejectedPromise:        { state: 'rejected', reason: Error },
-    //   anotherRejectedPromise: { state: 'rejected', reason: Error },
-    // }
-    // Note that for rejectedPromise, reason.message == 'rejection',
-    // and for anotherRejectedPromise, reason.message == 'more rejection'.
-  });
-  ```
-
-  An important note: `RSVP.hashSettled` is intended for plain JavaScript objects that
-  are just a set of keys and values. `RSVP.hashSettled` will NOT preserve prototype
-  chains.
-
-  Example:
-
-  ```javascript
-  function MyConstructor(){
-    this.example = RSVP.Promise.resolve('Example');
-  }
-
-  MyConstructor.prototype = {
-    protoProperty: RSVP.Promise.resolve('Proto Property')
-  };
-
-  var myObject = new MyConstructor();
-
-  RSVP.hashSettled(myObject).then(function(hash){
-    // protoProperty will not be present, instead you will just have an
-    // object that looks like:
-    // {
-    //   example: { state: 'fulfilled', value: 'Example' }
-    // }
-    //
-    // hash.hasOwnProperty('protoProperty'); // false
-    // 'undefined' === typeof hash.protoProperty
-  });
-  ```
-
-  @method hashSettled
-  @for RSVP
-  @param {Object} promises
-  @param {String} label optional string that describes the promise.
-  Useful for tooling.
-  @return {Promise} promise that is fulfilled when when all properties of `promises`
-  have been settled.
-  @static
-*/
-exports['default'] = function hashSettled(object, label) {
-    return new HashSettled(Promise, object, label).promise;
-};
-},{"./enumerator":89,"./promise":98,"./promise-hash":97,"./utils":108}],93:[function(require,module,exports){
-'use strict';
-var Promise = require('./promise')['default'];
-var PromiseHash = require('./promise-hash')['default'];
-var ABORT_ON_REJECTION = require('./enumerator').ABORT_ON_REJECTION;
-/**
-  `RSVP.hash` is similar to `RSVP.all`, but takes an object instead of an array
-  for its `promises` argument.
-
-  Returns a promise that is fulfilled when all the given promises have been
-  fulfilled, or rejected if any of them become rejected. The returned promise
-  is fulfilled with a hash that has the same key names as the `promises` object
-  argument. If any of the values in the object are not promises, they will
-  simply be copied over to the fulfilled object.
-
-  Example:
-
-  ```javascript
-  var promises = {
-    myPromise: RSVP.resolve(1),
-    yourPromise: RSVP.resolve(2),
-    theirPromise: RSVP.resolve(3),
-    notAPromise: 4
-  };
-
-  RSVP.hash(promises).then(function(hash){
-    // hash here is an object that looks like:
-    // {
-    //   myPromise: 1,
-    //   yourPromise: 2,
-    //   theirPromise: 3,
-    //   notAPromise: 4
-    // }
-  });
-  ````
-
-  If any of the `promises` given to `RSVP.hash` are rejected, the first promise
-  that is rejected will be given as the reason to the rejection handler.
-
-  Example:
-
-  ```javascript
-  var promises = {
-    myPromise: RSVP.resolve(1),
-    rejectedPromise: RSVP.reject(new Error("rejectedPromise")),
-    anotherRejectedPromise: RSVP.reject(new Error("anotherRejectedPromise")),
-  };
-
-  RSVP.hash(promises).then(function(hash){
-    // Code here never runs because there are rejected promises!
-  }, function(reason) {
-    // reason.message === "rejectedPromise"
-  });
-  ```
-
-  An important note: `RSVP.hash` is intended for plain JavaScript objects that
-  are just a set of keys and values. `RSVP.hash` will NOT preserve prototype
-  chains.
-
-  Example:
-
-  ```javascript
-  function MyConstructor(){
-    this.example = RSVP.resolve("Example");
-  }
-
-  MyConstructor.prototype = {
-    protoProperty: RSVP.resolve("Proto Property")
-  };
-
-  var myObject = new MyConstructor();
-
-  RSVP.hash(myObject).then(function(hash){
-    // protoProperty will not be present, instead you will just have an
-    // object that looks like:
-    // {
-    //   example: "Example"
-    // }
-    //
-    // hash.hasOwnProperty('protoProperty'); // false
-    // 'undefined' === typeof hash.protoProperty
-  });
-  ```
-
-  @method hash
-  @static
-  @for RSVP
-  @param {Object} promises
-  @param {String} label optional string that describes the promise.
-  Useful for tooling.
-  @return {Promise} promise that is fulfilled when all properties of `promises`
-  have been fulfilled, or rejected if any of them become rejected.
-*/
-exports['default'] = function hash(object, label) {
-    return new PromiseHash(Promise, object, label).promise;
-};
-},{"./enumerator":89,"./promise":98,"./promise-hash":97}],94:[function(require,module,exports){
-'use strict';
-var config = require('./config').config;
-var now = require('./utils').now;
-var queue = [];
-exports['default'] = function instrument(eventName, promise, child) {
-    if (1 === queue.push({
-            name: eventName,
-            payload: {
-                guid: promise._guidKey + promise._id,
-                eventName: eventName,
-                detail: promise._result,
-                childGuid: child && promise._guidKey + child._id,
-                label: promise._label,
-                timeStamp: now(),
-                stack: new Error(promise._label).stack
-            }
-        })) {
-        setTimeout(function () {
-            var entry;
-            for (var i = 0; i < queue.length; i++) {
-                entry = queue[i];
-                config.trigger(entry.name, entry.payload);
-            }
-            queue.length = 0;
-        }, 50);
-    }
-};
-},{"./config":87,"./utils":108}],95:[function(require,module,exports){
-'use strict';
-var Promise = require('./promise')['default'];
-var isArray = require('./utils').isArray;
-var isFunction = require('./utils').isFunction;
-/**
- `RSVP.map` is similar to JavaScript's native `map` method, except that it
-  waits for all promises to become fulfilled before running the `mapFn` on
-  each item in given to `promises`. `RSVP.map` returns a promise that will
-  become fulfilled with the result of running `mapFn` on the values the promises
-  become fulfilled with.
-
-  For example:
-
-  ```javascript
-
-  var promise1 = RSVP.resolve(1);
-  var promise2 = RSVP.resolve(2);
-  var promise3 = RSVP.resolve(3);
-  var promises = [ promise1, promise2, promise3 ];
-
-  var mapFn = function(item){
-    return item + 1;
-  };
-
-  RSVP.map(promises, mapFn).then(function(result){
-    // result is [ 2, 3, 4 ]
-  });
-  ```
-
-  If any of the `promises` given to `RSVP.map` are rejected, the first promise
-  that is rejected will be given as an argument to the returned promise's
-  rejection handler. For example:
-
-  ```javascript
-  var promise1 = RSVP.resolve(1);
-  var promise2 = RSVP.reject(new Error("2"));
-  var promise3 = RSVP.reject(new Error("3"));
-  var promises = [ promise1, promise2, promise3 ];
-
-  var mapFn = function(item){
-    return item + 1;
-  };
-
-  RSVP.map(promises, mapFn).then(function(array){
-    // Code here never runs because there are rejected promises!
-  }, function(reason) {
-    // reason.message === "2"
-  });
-  ```
-
-  `RSVP.map` will also wait if a promise is returned from `mapFn`. For example,
-  say you want to get all comments from a set of blog posts, but you need
-  the blog posts first because they contain a url to those comments.
-
-  ```javscript
-
-  var mapFn = function(blogPost){
-    // getComments does some ajax and returns an RSVP.Promise that is fulfilled
-    // with some comments data
-    return getComments(blogPost.comments_url);
-  };
-
-  // getBlogPosts does some ajax and returns an RSVP.Promise that is fulfilled
-  // with some blog post data
-  RSVP.map(getBlogPosts(), mapFn).then(function(comments){
-    // comments is the result of asking the server for the comments
-    // of all blog posts returned from getBlogPosts()
-  });
-  ```
-
-  @method map
-  @static
-  @for RSVP
-  @param {Array} promises
-  @param {Function} mapFn function to be called on each fulfilled promise.
-  @param {String} label optional string for labeling the promise.
-  Useful for tooling.
-  @return {Promise} promise that is fulfilled with the result of calling
-  `mapFn` on each fulfilled promise or value when they become fulfilled.
-   The promise will be rejected if any of the given `promises` become rejected.
-  @static
-*/
-exports['default'] = function map(promises, mapFn, label) {
-    return Promise.all(promises, label).then(function (values) {
-        if (!isFunction(mapFn)) {
-            throw new TypeError('You must pass a function as map\'s second argument.');
-        }
-        var length = values.length;
-        var results = new Array(length);
-        for (var i = 0; i < length; i++) {
-            results[i] = mapFn(values[i]);
-        }
-        return Promise.all(results, label);
-    });
-};
-},{"./promise":98,"./utils":108}],96:[function(require,module,exports){
-'use strict';
-/* global  arraySlice */
-var Promise = require('./promise')['default'];
-var isArray = require('./utils').isArray;
-/**
-  `RSVP.denodeify` takes a "node-style" function and returns a function that
-  will return an `RSVP.Promise`. You can use `denodeify` in Node.js or the
-  browser when you'd prefer to use promises over using callbacks. For example,
-  `denodeify` transforms the following:
-
-  ```javascript
-  var fs = require('fs');
-
-  fs.readFile('myfile.txt', function(err, data){
-    if (err) return handleError(err);
-    handleData(data);
-  });
-  ```
-
-  into:
-
-  ```javascript
-  var fs = require('fs');
-  var readFile = RSVP.denodeify(fs.readFile);
-
-  readFile('myfile.txt').then(handleData, handleError);
-  ```
-
-  If the node function has multiple success parameters, then `denodeify`
-  just returns the first one:
-
-  ```javascript
-  var request = RSVP.denodeify(require('request'));
-
-  request('http://example.com').then(function(res) {
-    // ...
-  });
-  ```
-
-  However, if you need all success parameters, setting `denodeify`'s
-  second parameter to `true` causes it to return all success parameters
-  as an array:
-
-  ```javascript
-  var request = RSVP.denodeify(require('request'), true);
-
-  request('http://example.com').then(function(result) {
-    // result[0] -> res
-    // result[1] -> body
-  });
-  ```
-
-  Or if you pass it an array with names it returns the parameters as a hash:
-
-  ```javascript
-  var request = RSVP.denodeify(require('request'), ['res', 'body']);
-
-  request('http://example.com').then(function(result) {
-    // result.res
-    // result.body
-  });
-  ```
-
-  Sometimes you need to retain the `this`:
-
-  ```javascript
-  var app = require('express')();
-  var render = RSVP.denodeify(app.render.bind(app));
-  ```
-
-  The denodified function inherits from the original function. It works in all
-  environments, except IE 10 and below. Consequently all properties of the original
-  function are available to you. However, any properties you change on the
-  denodeified function won't be changed on the original function. Example:
-
-  ```javascript
-  var request = RSVP.denodeify(require('request')),
-      cookieJar = request.jar(); // <- Inheritance is used here
-
-  request('http://example.com', {jar: cookieJar}).then(function(res) {
-    // cookieJar.cookies holds now the cookies returned by example.com
-  });
-  ```
-
-  Using `denodeify` makes it easier to compose asynchronous operations instead
-  of using callbacks. For example, instead of:
-
-  ```javascript
-  var fs = require('fs');
-
-  fs.readFile('myfile.txt', function(err, data){
-    if (err) { ... } // Handle error
-    fs.writeFile('myfile2.txt', data, function(err){
-      if (err) { ... } // Handle error
-      console.log('done')
-    });
-  });
-  ```
-
-  you can chain the operations together using `then` from the returned promise:
-
-  ```javascript
-  var fs = require('fs');
-  var readFile = RSVP.denodeify(fs.readFile);
-  var writeFile = RSVP.denodeify(fs.writeFile);
-
-  readFile('myfile.txt').then(function(data){
-    return writeFile('myfile2.txt', data);
-  }).then(function(){
-    console.log('done')
-  }).catch(function(error){
-    // Handle error
-  });
-  ```
-
-  @method denodeify
-  @static
-  @for RSVP
-  @param {Function} nodeFunc a "node-style" function that takes a callback as
-  its last argument. The callback expects an error to be passed as its first
-  argument (if an error occurred, otherwise null), and the value from the
-  operation as its second argument ("function(err, value){ }").
-  @param {Boolean|Array} argumentNames An optional paramter that if set
-  to `true` causes the promise to fulfill with the callback's success arguments
-  as an array. This is useful if the node function has multiple success
-  paramters. If you set this paramter to an array with names, the promise will
-  fulfill with a hash with these names as keys and the success parameters as
-  values.
-  @return {Function} a function that wraps `nodeFunc` to return an
-  `RSVP.Promise`
-  @static
-*/
-exports['default'] = function denodeify(nodeFunc, argumentNames) {
-    var asArray = argumentNames === true;
-    var asHash = isArray(argumentNames);
-    function denodeifiedFunction() {
-        var length = arguments.length;
-        var nodeArgs = new Array(length);
-        for (var i = 0; i < length; i++) {
-            nodeArgs[i] = arguments[i];
-        }
-        var thisArg;
-        if (!asArray && !asHash && argumentNames) {
-            if (typeof console === 'object') {
-                console.warn('Deprecation: RSVP.denodeify() doesn\'t allow setting the ' + '"this" binding anymore. Use yourFunction.bind(yourThis) instead.');
-            }
-            thisArg = argumentNames;
-        } else {
-            thisArg = this;
-        }
-        return Promise.all(nodeArgs).then(function (nodeArgs$2) {
-            return new Promise(resolver);
-            // sweet.js has a bug, this resolver can't be defined in the constructor
-            // or the arraySlice macro doesn't work
-            function resolver(resolve, reject) {
-                function callback() {
-                    var length$2 = arguments.length;
-                    var args = new Array(length$2);
-                    for (var i$2 = 0; i$2 < length$2; i$2++) {
-                        args[i$2] = arguments[i$2];
-                    }
-                    var error = args[0];
-                    var value = args[1];
-                    if (error) {
-                        reject(error);
-                    } else if (asArray) {
-                        resolve(args.slice(1));
-                    } else if (asHash) {
-                        var obj = {};
-                        var successArguments = args.slice(1);
-                        var name;
-                        var i$3;
-                        for (i$3 = 0; i$3 < argumentNames.length; i$3++) {
-                            name = argumentNames[i$3];
-                            obj[name] = successArguments[i$3];
-                        }
-                        resolve(obj);
-                    } else {
-                        resolve(value);
-                    }
-                }
-                nodeArgs$2.push(callback);
-                nodeFunc.apply(thisArg, nodeArgs$2);
-            }
-        });
-    }
-    denodeifiedFunction.__proto__ = nodeFunc;
-    return denodeifiedFunction;
-};
-},{"./promise":98,"./utils":108}],97:[function(require,module,exports){
-'use strict';
-var Enumerator = require('./enumerator')['default'];
-var PENDING = require('./-internal').PENDING;
-var FULFILLED = require('./-internal').FULFILLED;
-var o_create = require('./utils').o_create;
-function PromiseHash(Constructor, object, label) {
-    this._superConstructor(Constructor, object, true, label);
-}
-exports['default'] = PromiseHash;
-PromiseHash.prototype = o_create(Enumerator.prototype);
-PromiseHash.prototype._superConstructor = Enumerator;
-PromiseHash.prototype._init = function () {
-    this._result = {};
-};
-PromiseHash.prototype._validateInput = function (input) {
-    return input && typeof input === 'object';
-};
-PromiseHash.prototype._validationError = function () {
-    return new Error('Promise.hash must be called with an object');
-};
-PromiseHash.prototype._enumerate = function () {
-    var promise = this.promise;
-    var input = this._input;
-    var results = [];
-    for (var key in input) {
-        if (promise._state === PENDING && input.hasOwnProperty(key)) {
-            results.push({
-                position: key,
-                entry: input[key]
-            });
-        }
-    }
-    var length = results.length;
-    this._remaining = length;
-    var result;
-    for (var i = 0; promise._state === PENDING && i < length; i++) {
-        result = results[i];
-        this._eachEntry(result.entry, result.position);
-    }
-};
-},{"./-internal":83,"./enumerator":89,"./utils":108}],98:[function(require,module,exports){
-'use strict';
-var config = require('./config').config;
-var EventTarget = require('./events')['default'];
-var instrument = require('./instrument')['default'];
-var objectOrFunction = require('./utils').objectOrFunction;
-var isFunction = require('./utils').isFunction;
-var now = require('./utils').now;
-var noop = require('./-internal').noop;
-var resolve = require('./-internal').resolve;
-var reject = require('./-internal').reject;
-var fulfill = require('./-internal').fulfill;
-var subscribe = require('./-internal').subscribe;
-var initializePromise = require('./-internal').initializePromise;
-var invokeCallback = require('./-internal').invokeCallback;
-var FULFILLED = require('./-internal').FULFILLED;
-var REJECTED = require('./-internal').REJECTED;
-var cast = require('./promise/cast')['default'];
-var all = require('./promise/all')['default'];
-var race = require('./promise/race')['default'];
-var Resolve = require('./promise/resolve')['default'];
-var Reject = require('./promise/reject')['default'];
-var guidKey = 'rsvp_' + now() + '-';
-var counter = 0;
-function needsResolver() {
-    throw new TypeError('You must pass a resolver function as the first argument to the promise constructor');
-}
-function needsNew() {
-    throw new TypeError('Failed to construct \'Promise\': Please use the \'new\' operator, this object constructor cannot be called as a function.');
-}
-exports['default'] = Promise;
-/**
-  Promise objects represent the eventual result of an asynchronous operation. The
-  primary way of interacting with a promise is through its `then` method, which
-  registers callbacks to receive either a promise’s eventual value or the reason
-  why the promise cannot be fulfilled.
-
-  Terminology
-  -----------
-
-  - `promise` is an object or function with a `then` method whose behavior conforms to this specification.
-  - `thenable` is an object or function that defines a `then` method.
-  - `value` is any legal JavaScript value (including undefined, a thenable, or a promise).
-  - `exception` is a value that is thrown using the throw statement.
-  - `reason` is a value that indicates why a promise was rejected.
-  - `settled` the final resting state of a promise, fulfilled or rejected.
-
-  A promise can be in one of three states: pending, fulfilled, or rejected.
-
-  Promises that are fulfilled have a fulfillment value and are in the fulfilled
-  state.  Promises that are rejected have a rejection reason and are in the
-  rejected state.  A fulfillment value is never a thenable.
-
-  Promises can also be said to *resolve* a value.  If this value is also a
-  promise, then the original promise's settled state will match the value's
-  settled state.  So a promise that *resolves* a promise that rejects will
-  itself reject, and a promise that *resolves* a promise that fulfills will
-  itself fulfill.
-
-
-  Basic Usage:
-  ------------
-
-  ```js
-  var promise = new Promise(function(resolve, reject) {
-    // on success
-    resolve(value);
-
-    // on failure
-    reject(reason);
-  });
-
-  promise.then(function(value) {
-    // on fulfillment
-  }, function(reason) {
-    // on rejection
-  });
-  ```
-
-  Advanced Usage:
-  ---------------
-
-  Promises shine when abstracting away asynchronous interactions such as
-  `XMLHttpRequest`s.
-
-  ```js
-  function getJSON(url) {
-    return new Promise(function(resolve, reject){
-      var xhr = new XMLHttpRequest();
-
-      xhr.open('GET', url);
-      xhr.onreadystatechange = handler;
-      xhr.responseType = 'json';
-      xhr.setRequestHeader('Accept', 'application/json');
-      xhr.send();
-
-      function handler() {
-        if (this.readyState === this.DONE) {
-          if (this.status === 200) {
-            resolve(this.response);
+    function lib$rsvp$$internal$$handleForeignThenable(promise, thenable, then) {
+      lib$rsvp$config$$config.async(function(promise) {
+        var sealed = false;
+        var error = lib$rsvp$$internal$$tryThen(then, thenable, function(value) {
+          if (sealed) { return; }
+          sealed = true;
+          if (thenable !== value) {
+            lib$rsvp$$internal$$resolve(promise, value);
           } else {
-            reject(new Error("getJSON: `" + url + "` failed with status: [" + this.status + "]"));
+            lib$rsvp$$internal$$fulfill(promise, value);
+          }
+        }, function(reason) {
+          if (sealed) { return; }
+          sealed = true;
+
+          lib$rsvp$$internal$$reject(promise, reason);
+        }, 'Settle: ' + (promise._label || ' unknown promise'));
+
+        if (!sealed && error) {
+          sealed = true;
+          lib$rsvp$$internal$$reject(promise, error);
+        }
+      }, promise);
+    }
+
+    function lib$rsvp$$internal$$handleOwnThenable(promise, thenable) {
+      if (thenable._state === lib$rsvp$$internal$$FULFILLED) {
+        lib$rsvp$$internal$$fulfill(promise, thenable._result);
+      } else if (thenable._state === lib$rsvp$$internal$$REJECTED) {
+        thenable._onError = null;
+        lib$rsvp$$internal$$reject(promise, thenable._result);
+      } else {
+        lib$rsvp$$internal$$subscribe(thenable, undefined, function(value) {
+          if (thenable !== value) {
+            lib$rsvp$$internal$$resolve(promise, value);
+          } else {
+            lib$rsvp$$internal$$fulfill(promise, value);
+          }
+        }, function(reason) {
+          lib$rsvp$$internal$$reject(promise, reason);
+        });
+      }
+    }
+
+    function lib$rsvp$$internal$$handleMaybeThenable(promise, maybeThenable) {
+      if (maybeThenable.constructor === promise.constructor) {
+        lib$rsvp$$internal$$handleOwnThenable(promise, maybeThenable);
+      } else {
+        var then = lib$rsvp$$internal$$getThen(maybeThenable);
+
+        if (then === lib$rsvp$$internal$$GET_THEN_ERROR) {
+          lib$rsvp$$internal$$reject(promise, lib$rsvp$$internal$$GET_THEN_ERROR.error);
+        } else if (then === undefined) {
+          lib$rsvp$$internal$$fulfill(promise, maybeThenable);
+        } else if (lib$rsvp$utils$$isFunction(then)) {
+          lib$rsvp$$internal$$handleForeignThenable(promise, maybeThenable, then);
+        } else {
+          lib$rsvp$$internal$$fulfill(promise, maybeThenable);
+        }
+      }
+    }
+
+    function lib$rsvp$$internal$$resolve(promise, value) {
+      if (promise === value) {
+        lib$rsvp$$internal$$fulfill(promise, value);
+      } else if (lib$rsvp$utils$$objectOrFunction(value)) {
+        lib$rsvp$$internal$$handleMaybeThenable(promise, value);
+      } else {
+        lib$rsvp$$internal$$fulfill(promise, value);
+      }
+    }
+
+    function lib$rsvp$$internal$$publishRejection(promise) {
+      if (promise._onError) {
+        promise._onError(promise._result);
+      }
+
+      lib$rsvp$$internal$$publish(promise);
+    }
+
+    function lib$rsvp$$internal$$fulfill(promise, value) {
+      if (promise._state !== lib$rsvp$$internal$$PENDING) { return; }
+
+      promise._result = value;
+      promise._state = lib$rsvp$$internal$$FULFILLED;
+
+      if (promise._subscribers.length === 0) {
+        if (lib$rsvp$config$$config.instrument) {
+          lib$rsvp$instrument$$default('fulfilled', promise);
+        }
+      } else {
+        lib$rsvp$config$$config.async(lib$rsvp$$internal$$publish, promise);
+      }
+    }
+
+    function lib$rsvp$$internal$$reject(promise, reason) {
+      if (promise._state !== lib$rsvp$$internal$$PENDING) { return; }
+      promise._state = lib$rsvp$$internal$$REJECTED;
+      promise._result = reason;
+      lib$rsvp$config$$config.async(lib$rsvp$$internal$$publishRejection, promise);
+    }
+
+    function lib$rsvp$$internal$$subscribe(parent, child, onFulfillment, onRejection) {
+      var subscribers = parent._subscribers;
+      var length = subscribers.length;
+
+      parent._onError = null;
+
+      subscribers[length] = child;
+      subscribers[length + lib$rsvp$$internal$$FULFILLED] = onFulfillment;
+      subscribers[length + lib$rsvp$$internal$$REJECTED]  = onRejection;
+
+      if (length === 0 && parent._state) {
+        lib$rsvp$config$$config.async(lib$rsvp$$internal$$publish, parent);
+      }
+    }
+
+    function lib$rsvp$$internal$$publish(promise) {
+      var subscribers = promise._subscribers;
+      var settled = promise._state;
+
+      if (lib$rsvp$config$$config.instrument) {
+        lib$rsvp$instrument$$default(settled === lib$rsvp$$internal$$FULFILLED ? 'fulfilled' : 'rejected', promise);
+      }
+
+      if (subscribers.length === 0) { return; }
+
+      var child, callback, detail = promise._result;
+
+      for (var i = 0; i < subscribers.length; i += 3) {
+        child = subscribers[i];
+        callback = subscribers[i + settled];
+
+        if (child) {
+          lib$rsvp$$internal$$invokeCallback(settled, child, callback, detail);
+        } else {
+          callback(detail);
+        }
+      }
+
+      promise._subscribers.length = 0;
+    }
+
+    function lib$rsvp$$internal$$ErrorObject() {
+      this.error = null;
+    }
+
+    var lib$rsvp$$internal$$TRY_CATCH_ERROR = new lib$rsvp$$internal$$ErrorObject();
+
+    function lib$rsvp$$internal$$tryCatch(callback, detail) {
+      try {
+        return callback(detail);
+      } catch(e) {
+        lib$rsvp$$internal$$TRY_CATCH_ERROR.error = e;
+        return lib$rsvp$$internal$$TRY_CATCH_ERROR;
+      }
+    }
+
+    function lib$rsvp$$internal$$invokeCallback(settled, promise, callback, detail) {
+      var hasCallback = lib$rsvp$utils$$isFunction(callback),
+          value, error, succeeded, failed;
+
+      if (hasCallback) {
+        value = lib$rsvp$$internal$$tryCatch(callback, detail);
+
+        if (value === lib$rsvp$$internal$$TRY_CATCH_ERROR) {
+          failed = true;
+          error = value.error;
+          value = null;
+        } else {
+          succeeded = true;
+        }
+
+        if (promise === value) {
+          lib$rsvp$$internal$$reject(promise, lib$rsvp$$internal$$withOwnPromise());
+          return;
+        }
+
+      } else {
+        value = detail;
+        succeeded = true;
+      }
+
+      if (promise._state !== lib$rsvp$$internal$$PENDING) {
+        // noop
+      } else if (hasCallback && succeeded) {
+        lib$rsvp$$internal$$resolve(promise, value);
+      } else if (failed) {
+        lib$rsvp$$internal$$reject(promise, error);
+      } else if (settled === lib$rsvp$$internal$$FULFILLED) {
+        lib$rsvp$$internal$$fulfill(promise, value);
+      } else if (settled === lib$rsvp$$internal$$REJECTED) {
+        lib$rsvp$$internal$$reject(promise, value);
+      }
+    }
+
+    function lib$rsvp$$internal$$initializePromise(promise, resolver) {
+      var resolved = false;
+      try {
+        resolver(function resolvePromise(value){
+          if (resolved) { return; }
+          resolved = true;
+          lib$rsvp$$internal$$resolve(promise, value);
+        }, function rejectPromise(reason) {
+          if (resolved) { return; }
+          resolved = true;
+          lib$rsvp$$internal$$reject(promise, reason);
+        });
+      } catch(e) {
+        lib$rsvp$$internal$$reject(promise, e);
+      }
+    }
+
+    function lib$rsvp$enumerator$$makeSettledResult(state, position, value) {
+      if (state === lib$rsvp$$internal$$FULFILLED) {
+        return {
+          state: 'fulfilled',
+          value: value
+        };
+      } else {
+        return {
+          state: 'rejected',
+          reason: value
+        };
+      }
+    }
+
+    function lib$rsvp$enumerator$$Enumerator(Constructor, input, abortOnReject, label) {
+      this._instanceConstructor = Constructor;
+      this.promise = new Constructor(lib$rsvp$$internal$$noop, label);
+      this._abortOnReject = abortOnReject;
+
+      if (this._validateInput(input)) {
+        this._input     = input;
+        this.length     = input.length;
+        this._remaining = input.length;
+
+        this._init();
+
+        if (this.length === 0) {
+          lib$rsvp$$internal$$fulfill(this.promise, this._result);
+        } else {
+          this.length = this.length || 0;
+          this._enumerate();
+          if (this._remaining === 0) {
+            lib$rsvp$$internal$$fulfill(this.promise, this._result);
           }
         }
-      };
-    });
-  }
-
-  getJSON('/posts.json').then(function(json) {
-    // on fulfillment
-  }, function(reason) {
-    // on rejection
-  });
-  ```
-
-  Unlike callbacks, promises are great composable primitives.
-
-  ```js
-  Promise.all([
-    getJSON('/posts'),
-    getJSON('/comments')
-  ]).then(function(values){
-    values[0] // => postsJSON
-    values[1] // => commentsJSON
-
-    return values;
-  });
-  ```
-
-  @class RSVP.Promise
-  @param {function} resolver
-  @param {String} label optional string for labeling the promise.
-  Useful for tooling.
-  @constructor
-*/
-function Promise(resolver, label) {
-    this._id = counter++;
-    this._label = label;
-    this._subscribers = [];
-    if (config.instrument) {
-        instrument('created', this);
+      } else {
+        lib$rsvp$$internal$$reject(this.promise, this._validationError());
+      }
     }
-    if (noop !== resolver) {
-        if (!isFunction(resolver)) {
-            needsResolver();
+
+    var lib$rsvp$enumerator$$default = lib$rsvp$enumerator$$Enumerator;
+
+    lib$rsvp$enumerator$$Enumerator.prototype._validateInput = function(input) {
+      return lib$rsvp$utils$$isArray(input);
+    };
+
+    lib$rsvp$enumerator$$Enumerator.prototype._validationError = function() {
+      return new Error('Array Methods must be provided an Array');
+    };
+
+    lib$rsvp$enumerator$$Enumerator.prototype._init = function() {
+      this._result = new Array(this.length);
+    };
+
+    lib$rsvp$enumerator$$Enumerator.prototype._enumerate = function() {
+      var length  = this.length;
+      var promise = this.promise;
+      var input   = this._input;
+
+      for (var i = 0; promise._state === lib$rsvp$$internal$$PENDING && i < length; i++) {
+        this._eachEntry(input[i], i);
+      }
+    };
+
+    lib$rsvp$enumerator$$Enumerator.prototype._eachEntry = function(entry, i) {
+      var c = this._instanceConstructor;
+      if (lib$rsvp$utils$$isMaybeThenable(entry)) {
+        if (entry.constructor === c && entry._state !== lib$rsvp$$internal$$PENDING) {
+          entry._onError = null;
+          this._settledAt(entry._state, i, entry._result);
+        } else {
+          this._willSettleAt(c.resolve(entry), i);
         }
-        if (!(this instanceof Promise)) {
-            needsNew();
+      } else {
+        this._remaining--;
+        this._result[i] = this._makeResult(lib$rsvp$$internal$$FULFILLED, i, entry);
+      }
+    };
+
+    lib$rsvp$enumerator$$Enumerator.prototype._settledAt = function(state, i, value) {
+      var promise = this.promise;
+
+      if (promise._state === lib$rsvp$$internal$$PENDING) {
+        this._remaining--;
+
+        if (this._abortOnReject && state === lib$rsvp$$internal$$REJECTED) {
+          lib$rsvp$$internal$$reject(promise, value);
+        } else {
+          this._result[i] = this._makeResult(state, i, value);
         }
-        initializePromise(this, resolver);
+      }
+
+      if (this._remaining === 0) {
+        lib$rsvp$$internal$$fulfill(promise, this._result);
+      }
+    };
+
+    lib$rsvp$enumerator$$Enumerator.prototype._makeResult = function(state, i, value) {
+      return value;
+    };
+
+    lib$rsvp$enumerator$$Enumerator.prototype._willSettleAt = function(promise, i) {
+      var enumerator = this;
+
+      lib$rsvp$$internal$$subscribe(promise, undefined, function(value) {
+        enumerator._settledAt(lib$rsvp$$internal$$FULFILLED, i, value);
+      }, function(reason) {
+        enumerator._settledAt(lib$rsvp$$internal$$REJECTED, i, reason);
+      });
+    };
+    function lib$rsvp$promise$all$$all(entries, label) {
+      return new lib$rsvp$enumerator$$default(this, entries, true /* abort on reject */, label).promise;
     }
-}
-Promise.cast = cast;
-Promise.all = all;
-Promise.race = race;
-Promise.resolve = Resolve;
-Promise.reject = Reject;
-Promise.prototype = {
-    constructor: Promise,
-    _id: undefined,
-    _guidKey: guidKey,
-    _label: undefined,
-    _state: undefined,
-    _result: undefined,
-    _subscribers: undefined,
-    _onerror: function (reason) {
-        config.trigger('error', reason);
-    },
-    then: function (onFulfillment, onRejection, label) {
+    var lib$rsvp$promise$all$$default = lib$rsvp$promise$all$$all;
+    function lib$rsvp$promise$race$$race(entries, label) {
+      /*jshint validthis:true */
+      var Constructor = this;
+
+      var promise = new Constructor(lib$rsvp$$internal$$noop, label);
+
+      if (!lib$rsvp$utils$$isArray(entries)) {
+        lib$rsvp$$internal$$reject(promise, new TypeError('You must pass an array to race.'));
+        return promise;
+      }
+
+      var length = entries.length;
+
+      function onFulfillment(value) {
+        lib$rsvp$$internal$$resolve(promise, value);
+      }
+
+      function onRejection(reason) {
+        lib$rsvp$$internal$$reject(promise, reason);
+      }
+
+      for (var i = 0; promise._state === lib$rsvp$$internal$$PENDING && i < length; i++) {
+        lib$rsvp$$internal$$subscribe(Constructor.resolve(entries[i]), undefined, onFulfillment, onRejection);
+      }
+
+      return promise;
+    }
+    var lib$rsvp$promise$race$$default = lib$rsvp$promise$race$$race;
+    function lib$rsvp$promise$resolve$$resolve(object, label) {
+      /*jshint validthis:true */
+      var Constructor = this;
+
+      if (object && typeof object === 'object' && object.constructor === Constructor) {
+        return object;
+      }
+
+      var promise = new Constructor(lib$rsvp$$internal$$noop, label);
+      lib$rsvp$$internal$$resolve(promise, object);
+      return promise;
+    }
+    var lib$rsvp$promise$resolve$$default = lib$rsvp$promise$resolve$$resolve;
+    function lib$rsvp$promise$reject$$reject(reason, label) {
+      /*jshint validthis:true */
+      var Constructor = this;
+      var promise = new Constructor(lib$rsvp$$internal$$noop, label);
+      lib$rsvp$$internal$$reject(promise, reason);
+      return promise;
+    }
+    var lib$rsvp$promise$reject$$default = lib$rsvp$promise$reject$$reject;
+
+    var lib$rsvp$promise$$guidKey = 'rsvp_' + lib$rsvp$utils$$now() + '-';
+    var lib$rsvp$promise$$counter = 0;
+
+    function lib$rsvp$promise$$needsResolver() {
+      throw new TypeError('You must pass a resolver function as the first argument to the promise constructor');
+    }
+
+    function lib$rsvp$promise$$needsNew() {
+      throw new TypeError("Failed to construct 'Promise': Please use the 'new' operator, this object constructor cannot be called as a function.");
+    }
+
+    /**
+      Promise objects represent the eventual result of an asynchronous operation. The
+      primary way of interacting with a promise is through its `then` method, which
+      registers callbacks to receive either a promise’s eventual value or the reason
+      why the promise cannot be fulfilled.
+
+      Terminology
+      -----------
+
+      - `promise` is an object or function with a `then` method whose behavior conforms to this specification.
+      - `thenable` is an object or function that defines a `then` method.
+      - `value` is any legal JavaScript value (including undefined, a thenable, or a promise).
+      - `exception` is a value that is thrown using the throw statement.
+      - `reason` is a value that indicates why a promise was rejected.
+      - `settled` the final resting state of a promise, fulfilled or rejected.
+
+      A promise can be in one of three states: pending, fulfilled, or rejected.
+
+      Promises that are fulfilled have a fulfillment value and are in the fulfilled
+      state.  Promises that are rejected have a rejection reason and are in the
+      rejected state.  A fulfillment value is never a thenable.
+
+      Promises can also be said to *resolve* a value.  If this value is also a
+      promise, then the original promise's settled state will match the value's
+      settled state.  So a promise that *resolves* a promise that rejects will
+      itself reject, and a promise that *resolves* a promise that fulfills will
+      itself fulfill.
+
+
+      Basic Usage:
+      ------------
+
+      ```js
+      var promise = new Promise(function(resolve, reject) {
+        // on success
+        resolve(value);
+
+        // on failure
+        reject(reason);
+      });
+
+      promise.then(function(value) {
+        // on fulfillment
+      }, function(reason) {
+        // on rejection
+      });
+      ```
+
+      Advanced Usage:
+      ---------------
+
+      Promises shine when abstracting away asynchronous interactions such as
+      `XMLHttpRequest`s.
+
+      ```js
+      function getJSON(url) {
+        return new Promise(function(resolve, reject){
+          var xhr = new XMLHttpRequest();
+
+          xhr.open('GET', url);
+          xhr.onreadystatechange = handler;
+          xhr.responseType = 'json';
+          xhr.setRequestHeader('Accept', 'application/json');
+          xhr.send();
+
+          function handler() {
+            if (this.readyState === this.DONE) {
+              if (this.status === 200) {
+                resolve(this.response);
+              } else {
+                reject(new Error('getJSON: `' + url + '` failed with status: [' + this.status + ']'));
+              }
+            }
+          };
+        });
+      }
+
+      getJSON('/posts.json').then(function(json) {
+        // on fulfillment
+      }, function(reason) {
+        // on rejection
+      });
+      ```
+
+      Unlike callbacks, promises are great composable primitives.
+
+      ```js
+      Promise.all([
+        getJSON('/posts'),
+        getJSON('/comments')
+      ]).then(function(values){
+        values[0] // => postsJSON
+        values[1] // => commentsJSON
+
+        return values;
+      });
+      ```
+
+      @class RSVP.Promise
+      @param {function} resolver
+      @param {String} label optional string for labeling the promise.
+      Useful for tooling.
+      @constructor
+    */
+    function lib$rsvp$promise$$Promise(resolver, label) {
+      this._id = lib$rsvp$promise$$counter++;
+      this._label = label;
+      this._state = undefined;
+      this._result = undefined;
+      this._subscribers = [];
+
+      if (lib$rsvp$config$$config.instrument) {
+        lib$rsvp$instrument$$default('created', this);
+      }
+
+      if (lib$rsvp$$internal$$noop !== resolver) {
+        if (!lib$rsvp$utils$$isFunction(resolver)) {
+          lib$rsvp$promise$$needsResolver();
+        }
+
+        if (!(this instanceof lib$rsvp$promise$$Promise)) {
+          lib$rsvp$promise$$needsNew();
+        }
+
+        lib$rsvp$$internal$$initializePromise(this, resolver);
+      }
+    }
+
+    var lib$rsvp$promise$$default = lib$rsvp$promise$$Promise;
+
+    // deprecated
+    lib$rsvp$promise$$Promise.cast = lib$rsvp$promise$resolve$$default;
+    lib$rsvp$promise$$Promise.all = lib$rsvp$promise$all$$default;
+    lib$rsvp$promise$$Promise.race = lib$rsvp$promise$race$$default;
+    lib$rsvp$promise$$Promise.resolve = lib$rsvp$promise$resolve$$default;
+    lib$rsvp$promise$$Promise.reject = lib$rsvp$promise$reject$$default;
+
+    lib$rsvp$promise$$Promise.prototype = {
+      constructor: lib$rsvp$promise$$Promise,
+
+      _guidKey: lib$rsvp$promise$$guidKey,
+
+      _onError: function (reason) {
+        lib$rsvp$config$$config.async(function(promise) {
+          setTimeout(function() {
+            if (promise._onError) {
+              lib$rsvp$config$$config['trigger']('error', reason);
+            }
+          }, 0);
+        }, this);
+      },
+
+    /**
+      The primary way of interacting with a promise is through its `then` method,
+      which registers callbacks to receive either a promise's eventual value or the
+      reason why the promise cannot be fulfilled.
+
+      ```js
+      findUser().then(function(user){
+        // user is available
+      }, function(reason){
+        // user is unavailable, and you are given the reason why
+      });
+      ```
+
+      Chaining
+      --------
+
+      The return value of `then` is itself a promise.  This second, 'downstream'
+      promise is resolved with the return value of the first promise's fulfillment
+      or rejection handler, or rejected if the handler throws an exception.
+
+      ```js
+      findUser().then(function (user) {
+        return user.name;
+      }, function (reason) {
+        return 'default name';
+      }).then(function (userName) {
+        // If `findUser` fulfilled, `userName` will be the user's name, otherwise it
+        // will be `'default name'`
+      });
+
+      findUser().then(function (user) {
+        throw new Error('Found user, but still unhappy');
+      }, function (reason) {
+        throw new Error('`findUser` rejected and we're unhappy');
+      }).then(function (value) {
+        // never reached
+      }, function (reason) {
+        // if `findUser` fulfilled, `reason` will be 'Found user, but still unhappy'.
+        // If `findUser` rejected, `reason` will be '`findUser` rejected and we're unhappy'.
+      });
+      ```
+      If the downstream promise does not specify a rejection handler, rejection reasons will be propagated further downstream.
+
+      ```js
+      findUser().then(function (user) {
+        throw new PedagogicalException('Upstream error');
+      }).then(function (value) {
+        // never reached
+      }).then(function (value) {
+        // never reached
+      }, function (reason) {
+        // The `PedgagocialException` is propagated all the way down to here
+      });
+      ```
+
+      Assimilation
+      ------------
+
+      Sometimes the value you want to propagate to a downstream promise can only be
+      retrieved asynchronously. This can be achieved by returning a promise in the
+      fulfillment or rejection handler. The downstream promise will then be pending
+      until the returned promise is settled. This is called *assimilation*.
+
+      ```js
+      findUser().then(function (user) {
+        return findCommentsByAuthor(user);
+      }).then(function (comments) {
+        // The user's comments are now available
+      });
+      ```
+
+      If the assimliated promise rejects, then the downstream promise will also reject.
+
+      ```js
+      findUser().then(function (user) {
+        return findCommentsByAuthor(user);
+      }).then(function (comments) {
+        // If `findCommentsByAuthor` fulfills, we'll have the value here
+      }, function (reason) {
+        // If `findCommentsByAuthor` rejects, we'll have the reason here
+      });
+      ```
+
+      Simple Example
+      --------------
+
+      Synchronous Example
+
+      ```javascript
+      var result;
+
+      try {
+        result = findResult();
+        // success
+      } catch(reason) {
+        // failure
+      }
+      ```
+
+      Errback Example
+
+      ```js
+      findResult(function(result, err){
+        if (err) {
+          // failure
+        } else {
+          // success
+        }
+      });
+      ```
+
+      Promise Example;
+
+      ```javascript
+      findResult().then(function(result){
+        // success
+      }, function(reason){
+        // failure
+      });
+      ```
+
+      Advanced Example
+      --------------
+
+      Synchronous Example
+
+      ```javascript
+      var author, books;
+
+      try {
+        author = findAuthor();
+        books  = findBooksByAuthor(author);
+        // success
+      } catch(reason) {
+        // failure
+      }
+      ```
+
+      Errback Example
+
+      ```js
+
+      function foundBooks(books) {
+
+      }
+
+      function failure(reason) {
+
+      }
+
+      findAuthor(function(author, err){
+        if (err) {
+          failure(err);
+          // failure
+        } else {
+          try {
+            findBoooksByAuthor(author, function(books, err) {
+              if (err) {
+                failure(err);
+              } else {
+                try {
+                  foundBooks(books);
+                } catch(reason) {
+                  failure(reason);
+                }
+              }
+            });
+          } catch(error) {
+            failure(err);
+          }
+          // success
+        }
+      });
+      ```
+
+      Promise Example;
+
+      ```javascript
+      findAuthor().
+        then(findBooksByAuthor).
+        then(function(books){
+          // found books
+      }).catch(function(reason){
+        // something went wrong
+      });
+      ```
+
+      @method then
+      @param {Function} onFulfilled
+      @param {Function} onRejected
+      @param {String} label optional string for labeling the promise.
+      Useful for tooling.
+      @return {Promise}
+    */
+      then: function(onFulfillment, onRejection, label) {
         var parent = this;
         var state = parent._state;
-        if (state === FULFILLED && !onFulfillment || state === REJECTED && !onRejection) {
-            if (config.instrument) {
-                instrument('chained', this, this);
-            }
-            return this;
+
+        if (state === lib$rsvp$$internal$$FULFILLED && !onFulfillment || state === lib$rsvp$$internal$$REJECTED && !onRejection) {
+          if (lib$rsvp$config$$config.instrument) {
+            lib$rsvp$instrument$$default('chained', this, this);
+          }
+          return this;
         }
-        parent._onerror = null;
-        var child = new this.constructor(noop, label);
+
+        parent._onError = null;
+
+        var child = new this.constructor(lib$rsvp$$internal$$noop, label);
         var result = parent._result;
-        if (config.instrument) {
-            instrument('chained', parent, child);
+
+        if (lib$rsvp$config$$config.instrument) {
+          lib$rsvp$instrument$$default('chained', parent, child);
         }
+
         if (state) {
-            var callback = arguments[state - 1];
-            config.async(function () {
-                invokeCallback(state, child, callback, result);
-            });
+          var callback = arguments[state - 1];
+          lib$rsvp$config$$config.async(function(){
+            lib$rsvp$$internal$$invokeCallback(state, child, callback, result);
+          });
         } else {
-            subscribe(parent, child, onFulfillment, onRejection);
+          lib$rsvp$$internal$$subscribe(parent, child, onFulfillment, onRejection);
         }
+
         return child;
-    },
-    'catch': function (onRejection, label) {
+      },
+
+    /**
+      `catch` is simply sugar for `then(undefined, onRejection)` which makes it the same
+      as the catch block of a try/catch statement.
+
+      ```js
+      function findAuthor(){
+        throw new Error('couldn't find that author');
+      }
+
+      // synchronous
+      try {
+        findAuthor();
+      } catch(reason) {
+        // something went wrong
+      }
+
+      // async with promises
+      findAuthor().catch(function(reason){
+        // something went wrong
+      });
+      ```
+
+      @method catch
+      @param {Function} onRejection
+      @param {String} label optional string for labeling the promise.
+      Useful for tooling.
+      @return {Promise}
+    */
+      'catch': function(onRejection, label) {
         return this.then(null, onRejection, label);
-    },
-    'finally': function (callback, label) {
+      },
+
+    /**
+      `finally` will be invoked regardless of the promise's fate just as native
+      try/catch/finally behaves
+
+      Synchronous example:
+
+      ```js
+      findAuthor() {
+        if (Math.random() > 0.5) {
+          throw new Error();
+        }
+        return new Author();
+      }
+
+      try {
+        return findAuthor(); // succeed or fail
+      } catch(error) {
+        return findOtherAuther();
+      } finally {
+        // always runs
+        // doesn't affect the return value
+      }
+      ```
+
+      Asynchronous example:
+
+      ```js
+      findAuthor().catch(function(reason){
+        return findOtherAuther();
+      }).finally(function(){
+        // author was either found, or not
+      });
+      ```
+
+      @method finally
+      @param {Function} callback
+      @param {String} label optional string for labeling the promise.
+      Useful for tooling.
+      @return {Promise}
+    */
+      'finally': function(callback, label) {
         var constructor = this.constructor;
-        return this.then(function (value) {
-            return constructor.resolve(callback()).then(function () {
-                return value;
-            });
-        }, function (reason) {
-            return constructor.resolve(callback()).then(function () {
-                throw reason;
-            });
+
+        return this.then(function(value) {
+          return constructor.resolve(callback()).then(function(){
+            return value;
+          });
+        }, function(reason) {
+          return constructor.resolve(callback()).then(function(){
+            throw reason;
+          });
         }, label);
-    }
-};
-},{"./-internal":83,"./config":87,"./events":90,"./instrument":94,"./promise/all":99,"./promise/cast":100,"./promise/race":101,"./promise/reject":102,"./promise/resolve":103,"./utils":108}],99:[function(require,module,exports){
-'use strict';
-var Enumerator = require('../enumerator')['default'];
-/**
-  `RSVP.Promise.all` accepts an array of promises, and returns a new promise which
-  is fulfilled with an array of fulfillment values for the passed promises, or
-  rejected with the reason of the first passed promise to be rejected. It casts all
-  elements of the passed iterable to promises as it runs this algorithm.
-
-  Example:
-
-  ```javascript
-  var promise1 = RSVP.resolve(1);
-  var promise2 = RSVP.resolve(2);
-  var promise3 = RSVP.resolve(3);
-  var promises = [ promise1, promise2, promise3 ];
-
-  RSVP.Promise.all(promises).then(function(array){
-    // The array here would be [ 1, 2, 3 ];
-  });
-  ```
-
-  If any of the `promises` given to `RSVP.all` are rejected, the first promise
-  that is rejected will be given as an argument to the returned promises's
-  rejection handler. For example:
-
-  Example:
-
-  ```javascript
-  var promise1 = RSVP.resolve(1);
-  var promise2 = RSVP.reject(new Error("2"));
-  var promise3 = RSVP.reject(new Error("3"));
-  var promises = [ promise1, promise2, promise3 ];
-
-  RSVP.Promise.all(promises).then(function(array){
-    // Code here never runs because there are rejected promises!
-  }, function(error) {
-    // error.message === "2"
-  });
-  ```
-
-  @method all
-  @static
-  @param {Array} entries array of promises
-  @param {String} label optional string for labeling the promise.
-  Useful for tooling.
-  @return {Promise} promise that is fulfilled when all `promises` have been
-  fulfilled, or rejected if any of them become rejected.
-  @static
-*/
-exports['default'] = function all(entries, label) {
-    return new Enumerator(this, entries, true, label).promise;
-};
-},{"../enumerator":89}],100:[function(require,module,exports){
-'use strict';
-var resolve = require('./resolve')['default'];
-/**
-  @deprecated
-
-  `RSVP.Promise.cast` coerces its argument to a promise, or returns the
-  argument if it is already a promise which shares a constructor with the caster.
-
-  Example:
-
-  ```javascript
-  var promise = RSVP.Promise.resolve(1);
-  var casted = RSVP.Promise.cast(promise);
-
-  console.log(promise === casted); // true
-  ```
-
-  In the case of a promise whose constructor does not match, it is assimilated.
-  The resulting promise will fulfill or reject based on the outcome of the
-  promise being casted.
-
-  Example:
-
-  ```javascript
-  var thennable = $.getJSON('/api/foo');
-  var casted = RSVP.Promise.cast(thennable);
-
-  console.log(thennable === casted); // false
-  console.log(casted instanceof RSVP.Promise) // true
-
-  casted.then(function(data) {
-    // data is the value getJSON fulfills with
-  });
-  ```
-
-  In the case of a non-promise, a promise which will fulfill with that value is
-  returned.
-
-  Example:
-
-  ```javascript
-  var value = 1; // could be a number, boolean, string, undefined...
-  var casted = RSVP.Promise.cast(value);
-
-  console.log(value === casted); // false
-  console.log(casted instanceof RSVP.Promise) // true
-
-  casted.then(function(val) {
-    val === value // => true
-  });
-  ```
-
-  `RSVP.Promise.cast` is similar to `RSVP.Promise.resolve`, but `RSVP.Promise.cast` differs in the
-  following ways:
-
-  * `RSVP.Promise.cast` serves as a memory-efficient way of getting a promise, when you
-  have something that could either be a promise or a value. RSVP.resolve
-  will have the same effect but will create a new promise wrapper if the
-  argument is a promise.
-  * `RSVP.Promise.cast` is a way of casting incoming thenables or promise subclasses to
-  promises of the exact class specified, so that the resulting object's `then` is
-  ensured to have the behavior of the constructor you are calling cast on (i.e., RSVP.Promise).
-
-  @method cast
-  @static
-  @param {Object} object to be casted
-  @param {String} label optional string for labeling the promise.
-  Useful for tooling.
-  @return {Promise} promise
-*/
-exports['default'] = resolve;
-},{"./resolve":103}],101:[function(require,module,exports){
-'use strict';
-var isArray = require('../utils').isArray;
-var isFunction = require('../utils').isFunction;
-var isMaybeThenable = require('../utils').isMaybeThenable;
-var noop = require('../-internal').noop;
-var resolve = require('../-internal').resolve;
-var reject = require('../-internal').reject;
-var subscribe = require('../-internal').subscribe;
-var PENDING = require('../-internal').PENDING;
-/**
-  `RSVP.Promise.race` returns a new promise which is settled in the same way as the
-  first passed promise to settle.
-
-  Example:
-
-  ```javascript
-  var promise1 = new RSVP.Promise(function(resolve, reject){
-    setTimeout(function(){
-      resolve("promise 1");
-    }, 200);
-  });
-
-  var promise2 = new RSVP.Promise(function(resolve, reject){
-    setTimeout(function(){
-      resolve("promise 2");
-    }, 100);
-  });
-
-  RSVP.Promise.race([promise1, promise2]).then(function(result){
-    // result === "promise 2" because it was resolved before promise1
-    // was resolved.
-  });
-  ```
-
-  `RSVP.Promise.race` is deterministic in that only the state of the first
-  settled promise matters. For example, even if other promises given to the
-  `promises` array argument are resolved, but the first settled promise has
-  become rejected before the other promises became fulfilled, the returned
-  promise will become rejected:
-
-  ```javascript
-  var promise1 = new RSVP.Promise(function(resolve, reject){
-    setTimeout(function(){
-      resolve("promise 1");
-    }, 200);
-  });
-
-  var promise2 = new RSVP.Promise(function(resolve, reject){
-    setTimeout(function(){
-      reject(new Error("promise 2"));
-    }, 100);
-  });
-
-  RSVP.Promise.race([promise1, promise2]).then(function(result){
-    // Code here never runs
-  }, function(reason){
-    // reason.message === "promise 2" because promise 2 became rejected before
-    // promise 1 became fulfilled
-  });
-  ```
-
-  An example real-world use case is implementing timeouts:
-
-  ```javascript
-  RSVP.Promise.race([ajax('foo.json'), timeout(5000)])
-  ```
-
-  @method race
-  @static
-  @param {Array} promises array of promises to observe
-  @param {String} label optional string for describing the promise returned.
-  Useful for tooling.
-  @return {Promise} a promise which settles in the same way as the first passed
-  promise to settle.
-*/
-exports['default'] = function race(entries, label) {
-    /*jshint validthis:true */
-    var Constructor = this, entry;
-    var promise = new Constructor(noop, label);
-    if (!isArray(entries)) {
-        reject(promise, new TypeError('You must pass an array to race.'));
-        return promise;
-    }
-    var length = entries.length;
-    function onFulfillment(value) {
-        resolve(promise, value);
-    }
-    function onRejection(reason) {
-        reject(promise, reason);
-    }
-    for (var i = 0; promise._state === PENDING && i < length; i++) {
-        subscribe(Constructor.resolve(entries[i]), undefined, onFulfillment, onRejection);
-    }
-    return promise;
-};
-},{"../-internal":83,"../utils":108}],102:[function(require,module,exports){
-'use strict';
-var noop = require('../-internal').noop;
-var _reject = require('../-internal').reject;
-/**
-  `RSVP.Promise.reject` returns a promise rejected with the passed `reason`.
-  It is shorthand for the following:
-
-  ```javascript
-  var promise = new RSVP.Promise(function(resolve, reject){
-    reject(new Error('WHOOPS'));
-  });
-
-  promise.then(function(value){
-    // Code here doesn't run because the promise is rejected!
-  }, function(reason){
-    // reason.message === 'WHOOPS'
-  });
-  ```
-
-  Instead of writing the above, your code now simply becomes the following:
-
-  ```javascript
-  var promise = RSVP.Promise.reject(new Error('WHOOPS'));
-
-  promise.then(function(value){
-    // Code here doesn't run because the promise is rejected!
-  }, function(reason){
-    // reason.message === 'WHOOPS'
-  });
-  ```
-
-  @method reject
-  @static
-  @param {Any} reason value that the returned promise will be rejected with.
-  @param {String} label optional string for identifying the returned promise.
-  Useful for tooling.
-  @return {Promise} a promise rejected with the given `reason`.
-*/
-exports['default'] = function reject(reason, label) {
-    /*jshint validthis:true */
-    var Constructor = this;
-    var promise = new Constructor(noop, label);
-    _reject(promise, reason);
-    return promise;
-};
-},{"../-internal":83}],103:[function(require,module,exports){
-'use strict';
-var noop = require('../-internal').noop;
-var _resolve = require('../-internal').resolve;
-/**
-  `RSVP.Promise.resolve` returns a promise that will become resolved with the
-  passed `value`. It is shorthand for the following:
-
-  ```javascript
-  var promise = new RSVP.Promise(function(resolve, reject){
-    resolve(1);
-  });
-
-  promise.then(function(value){
-    // value === 1
-  });
-  ```
-
-  Instead of writing the above, your code now simply becomes the following:
-
-  ```javascript
-  var promise = RSVP.Promise.resolve(1);
-
-  promise.then(function(value){
-    // value === 1
-  });
-  ```
-
-  @method resolve
-  @static
-  @param {Any} value value that the returned promise will be resolved with
-  @param {String} label optional string for identifying the returned promise.
-  Useful for tooling.
-  @return {Promise} a promise that will become fulfilled with the given
-  `value`
-*/
-exports['default'] = function resolve(object, label) {
-    /*jshint validthis:true */
-    var Constructor = this;
-    if (object && typeof object === 'object' && object.constructor === Constructor) {
-        return object;
-    }
-    var promise = new Constructor(noop, label);
-    _resolve(promise, object);
-    return promise;
-};
-},{"../-internal":83}],104:[function(require,module,exports){
-'use strict';
-var Promise = require('./promise')['default'];
-/**
-  This is a convenient alias for `RSVP.Promise.race`.
-
-  @method race
-  @static
-  @for RSVP
-  @param {Array} array Array of promises.
-  @param {String} label An optional label. This is useful
-  for tooling.
- */
-exports['default'] = function race(array, label) {
-    return Promise.race(array, label);
-};
-},{"./promise":98}],105:[function(require,module,exports){
-'use strict';
-var Promise = require('./promise')['default'];
-/**
-  This is a convenient alias for `RSVP.Promise.reject`.
-
-  @method reject
-  @static
-  @for RSVP
-  @param {Any} reason value that the returned promise will be rejected with.
-  @param {String} label optional string for identifying the returned promise.
-  Useful for tooling.
-  @return {Promise} a promise rejected with the given `reason`.
-*/
-exports['default'] = function reject(reason, label) {
-    return Promise.reject(reason, label);
-};
-},{"./promise":98}],106:[function(require,module,exports){
-'use strict';
-var Promise = require('./promise')['default'];
-/**
-  This is a convenient alias for `RSVP.Promise.resolve`.
-
-  @method resolve
-  @static
-  @for RSVP
-  @param {Any} value value that the returned promise will be resolved with
-  @param {String} label optional string for identifying the returned promise.
-  Useful for tooling.
-  @return {Promise} a promise that will become fulfilled with the given
-  `value`
-*/
-exports['default'] = function resolve(value, label) {
-    return Promise.resolve(value, label);
-};
-},{"./promise":98}],107:[function(require,module,exports){
-'use strict';
-/**
-  `RSVP.rethrow` will rethrow an error on the next turn of the JavaScript event
-  loop in order to aid debugging.
-
-  Promises A+ specifies that any exceptions that occur with a promise must be
-  caught by the promises implementation and bubbled to the last handler. For
-  this reason, it is recommended that you always specify a second rejection
-  handler function to `then`. However, `RSVP.rethrow` will throw the exception
-  outside of the promise, so it bubbles up to your console if in the browser,
-  or domain/cause uncaught exception in Node. `rethrow` will also throw the
-  error again so the error can be handled by the promise per the spec.
-
-  ```javascript
-  function throws(){
-    throw new Error('Whoops!');
-  }
-
-  var promise = new RSVP.Promise(function(resolve, reject){
-    throws();
-  });
-
-  promise.catch(RSVP.rethrow).then(function(){
-    // Code here doesn't run because the promise became rejected due to an
-    // error!
-  }, function (err){
-    // handle the error here
-  });
-  ```
-
-  The 'Whoops' error will be thrown on the next turn of the event loop
-  and you can watch for it in your console. You can also handle it using a
-  rejection handler given to `.then` or `.catch` on the returned promise.
-
-  @method rethrow
-  @static
-  @for RSVP
-  @param {Error} reason reason the promise became rejected.
-  @throws Error
-  @static
-*/
-exports['default'] = function rethrow(reason) {
-    setTimeout(function () {
-        throw reason;
-    });
-    throw reason;
-};
-},{}],108:[function(require,module,exports){
-'use strict';
-function objectOrFunction(x) {
-    return typeof x === 'function' || typeof x === 'object' && x !== null;
-}
-exports.objectOrFunction = objectOrFunction;
-function isFunction(x) {
-    return typeof x === 'function';
-}
-exports.isFunction = isFunction;
-function isMaybeThenable(x) {
-    return typeof x === 'object' && x !== null;
-}
-exports.isMaybeThenable = isMaybeThenable;
-var _isArray;
-if (!Array.isArray) {
-    _isArray = function (x) {
-        return Object.prototype.toString.call(x) === '[object Array]';
+      }
     };
-} else {
-    _isArray = Array.isArray;
-}
-var isArray = _isArray;
-exports.isArray = isArray;
-// Date.now is not available in browsers < IE9
-// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/now#Compatibility
-var now = Date.now || function () {
-        return new Date().getTime();
+
+    function lib$rsvp$all$settled$$AllSettled(Constructor, entries, label) {
+      this._superConstructor(Constructor, entries, false /* don't abort on reject */, label);
+    }
+
+    lib$rsvp$all$settled$$AllSettled.prototype = lib$rsvp$utils$$o_create(lib$rsvp$enumerator$$default.prototype);
+    lib$rsvp$all$settled$$AllSettled.prototype._superConstructor = lib$rsvp$enumerator$$default;
+    lib$rsvp$all$settled$$AllSettled.prototype._makeResult = lib$rsvp$enumerator$$makeSettledResult;
+    lib$rsvp$all$settled$$AllSettled.prototype._validationError = function() {
+      return new Error('allSettled must be called with an array');
     };
-exports.now = now;
-var o_create = Object.create || function (object) {
-        var o = function () {
+
+    function lib$rsvp$all$settled$$allSettled(entries, label) {
+      return new lib$rsvp$all$settled$$AllSettled(lib$rsvp$promise$$default, entries, label).promise;
+    }
+    var lib$rsvp$all$settled$$default = lib$rsvp$all$settled$$allSettled;
+    function lib$rsvp$all$$all(array, label) {
+      return lib$rsvp$promise$$default.all(array, label);
+    }
+    var lib$rsvp$all$$default = lib$rsvp$all$$all;
+    var lib$rsvp$asap$$len = 0;
+    var lib$rsvp$asap$$toString = {}.toString;
+    var lib$rsvp$asap$$vertxNext;
+    function lib$rsvp$asap$$asap(callback, arg) {
+      lib$rsvp$asap$$queue[lib$rsvp$asap$$len] = callback;
+      lib$rsvp$asap$$queue[lib$rsvp$asap$$len + 1] = arg;
+      lib$rsvp$asap$$len += 2;
+      if (lib$rsvp$asap$$len === 2) {
+        // If len is 1, that means that we need to schedule an async flush.
+        // If additional callbacks are queued before the queue is flushed, they
+        // will be processed by this flush that we are scheduling.
+        lib$rsvp$asap$$scheduleFlush();
+      }
+    }
+
+    var lib$rsvp$asap$$default = lib$rsvp$asap$$asap;
+
+    var lib$rsvp$asap$$browserWindow = (typeof window !== 'undefined') ? window : undefined;
+    var lib$rsvp$asap$$browserGlobal = lib$rsvp$asap$$browserWindow || {};
+    var lib$rsvp$asap$$BrowserMutationObserver = lib$rsvp$asap$$browserGlobal.MutationObserver || lib$rsvp$asap$$browserGlobal.WebKitMutationObserver;
+    var lib$rsvp$asap$$isNode = typeof process !== 'undefined' && {}.toString.call(process) === '[object process]';
+
+    // test for web worker but not in IE10
+    var lib$rsvp$asap$$isWorker = typeof Uint8ClampedArray !== 'undefined' &&
+      typeof importScripts !== 'undefined' &&
+      typeof MessageChannel !== 'undefined';
+
+    // node
+    function lib$rsvp$asap$$useNextTick() {
+      var nextTick = process.nextTick;
+      // node version 0.10.x displays a deprecation warning when nextTick is used recursively
+      // setImmediate should be used instead instead
+      var version = process.versions.node.match(/^(?:(\d+)\.)?(?:(\d+)\.)?(\*|\d+)$/);
+      if (Array.isArray(version) && version[1] === '0' && version[2] === '10') {
+        nextTick = setImmediate;
+      }
+      return function() {
+        nextTick(lib$rsvp$asap$$flush);
+      };
+    }
+
+    // vertx
+    function lib$rsvp$asap$$useVertxTimer() {
+      return function() {
+        lib$rsvp$asap$$vertxNext(lib$rsvp$asap$$flush);
+      };
+    }
+
+    function lib$rsvp$asap$$useMutationObserver() {
+      var iterations = 0;
+      var observer = new lib$rsvp$asap$$BrowserMutationObserver(lib$rsvp$asap$$flush);
+      var node = document.createTextNode('');
+      observer.observe(node, { characterData: true });
+
+      return function() {
+        node.data = (iterations = ++iterations % 2);
+      };
+    }
+
+    // web worker
+    function lib$rsvp$asap$$useMessageChannel() {
+      var channel = new MessageChannel();
+      channel.port1.onmessage = lib$rsvp$asap$$flush;
+      return function () {
+        channel.port2.postMessage(0);
+      };
+    }
+
+    function lib$rsvp$asap$$useSetTimeout() {
+      return function() {
+        setTimeout(lib$rsvp$asap$$flush, 1);
+      };
+    }
+
+    var lib$rsvp$asap$$queue = new Array(1000);
+    function lib$rsvp$asap$$flush() {
+      for (var i = 0; i < lib$rsvp$asap$$len; i+=2) {
+        var callback = lib$rsvp$asap$$queue[i];
+        var arg = lib$rsvp$asap$$queue[i+1];
+
+        callback(arg);
+
+        lib$rsvp$asap$$queue[i] = undefined;
+        lib$rsvp$asap$$queue[i+1] = undefined;
+      }
+
+      lib$rsvp$asap$$len = 0;
+    }
+
+    function lib$rsvp$asap$$attemptVertex() {
+      try {
+        var r = require;
+        var vertx = r('vertx');
+        lib$rsvp$asap$$vertxNext = vertx.runOnLoop || vertx.runOnContext;
+        return lib$rsvp$asap$$useVertxTimer();
+      } catch(e) {
+        return lib$rsvp$asap$$useSetTimeout();
+      }
+    }
+
+    var lib$rsvp$asap$$scheduleFlush;
+    // Decide what async method to use to triggering processing of queued callbacks:
+    if (lib$rsvp$asap$$isNode) {
+      lib$rsvp$asap$$scheduleFlush = lib$rsvp$asap$$useNextTick();
+    } else if (lib$rsvp$asap$$BrowserMutationObserver) {
+      lib$rsvp$asap$$scheduleFlush = lib$rsvp$asap$$useMutationObserver();
+    } else if (lib$rsvp$asap$$isWorker) {
+      lib$rsvp$asap$$scheduleFlush = lib$rsvp$asap$$useMessageChannel();
+    } else if (lib$rsvp$asap$$browserWindow === undefined && typeof require === 'function') {
+      lib$rsvp$asap$$scheduleFlush = lib$rsvp$asap$$attemptVertex();
+    } else {
+      lib$rsvp$asap$$scheduleFlush = lib$rsvp$asap$$useSetTimeout();
+    }
+    function lib$rsvp$defer$$defer(label) {
+      var deferred = { };
+
+      deferred['promise'] = new lib$rsvp$promise$$default(function(resolve, reject) {
+        deferred['resolve'] = resolve;
+        deferred['reject'] = reject;
+      }, label);
+
+      return deferred;
+    }
+    var lib$rsvp$defer$$default = lib$rsvp$defer$$defer;
+    function lib$rsvp$filter$$filter(promises, filterFn, label) {
+      return lib$rsvp$promise$$default.all(promises, label).then(function(values) {
+        if (!lib$rsvp$utils$$isFunction(filterFn)) {
+          throw new TypeError("You must pass a function as filter's second argument.");
+        }
+
+        var length = values.length;
+        var filtered = new Array(length);
+
+        for (var i = 0; i < length; i++) {
+          filtered[i] = filterFn(values[i]);
+        }
+
+        return lib$rsvp$promise$$default.all(filtered, label).then(function(filtered) {
+          var results = new Array(length);
+          var newLength = 0;
+
+          for (var i = 0; i < length; i++) {
+            if (filtered[i]) {
+              results[newLength] = values[i];
+              newLength++;
+            }
+          }
+
+          results.length = newLength;
+
+          return results;
+        });
+      });
+    }
+    var lib$rsvp$filter$$default = lib$rsvp$filter$$filter;
+
+    function lib$rsvp$promise$hash$$PromiseHash(Constructor, object, label) {
+      this._superConstructor(Constructor, object, true, label);
+    }
+
+    var lib$rsvp$promise$hash$$default = lib$rsvp$promise$hash$$PromiseHash;
+
+    lib$rsvp$promise$hash$$PromiseHash.prototype = lib$rsvp$utils$$o_create(lib$rsvp$enumerator$$default.prototype);
+    lib$rsvp$promise$hash$$PromiseHash.prototype._superConstructor = lib$rsvp$enumerator$$default;
+    lib$rsvp$promise$hash$$PromiseHash.prototype._init = function() {
+      this._result = {};
+    };
+
+    lib$rsvp$promise$hash$$PromiseHash.prototype._validateInput = function(input) {
+      return input && typeof input === 'object';
+    };
+
+    lib$rsvp$promise$hash$$PromiseHash.prototype._validationError = function() {
+      return new Error('Promise.hash must be called with an object');
+    };
+
+    lib$rsvp$promise$hash$$PromiseHash.prototype._enumerate = function() {
+      var promise = this.promise;
+      var input   = this._input;
+      var results = [];
+
+      for (var key in input) {
+        if (promise._state === lib$rsvp$$internal$$PENDING && input.hasOwnProperty(key)) {
+          results.push({
+            position: key,
+            entry: input[key]
+          });
+        }
+      }
+
+      var length = results.length;
+      this._remaining = length;
+      var result;
+
+      for (var i = 0; promise._state === lib$rsvp$$internal$$PENDING && i < length; i++) {
+        result = results[i];
+        this._eachEntry(result.entry, result.position);
+      }
+    };
+
+    function lib$rsvp$hash$settled$$HashSettled(Constructor, object, label) {
+      this._superConstructor(Constructor, object, false, label);
+    }
+
+    lib$rsvp$hash$settled$$HashSettled.prototype = lib$rsvp$utils$$o_create(lib$rsvp$promise$hash$$default.prototype);
+    lib$rsvp$hash$settled$$HashSettled.prototype._superConstructor = lib$rsvp$enumerator$$default;
+    lib$rsvp$hash$settled$$HashSettled.prototype._makeResult = lib$rsvp$enumerator$$makeSettledResult;
+
+    lib$rsvp$hash$settled$$HashSettled.prototype._validationError = function() {
+      return new Error('hashSettled must be called with an object');
+    };
+
+    function lib$rsvp$hash$settled$$hashSettled(object, label) {
+      return new lib$rsvp$hash$settled$$HashSettled(lib$rsvp$promise$$default, object, label).promise;
+    }
+    var lib$rsvp$hash$settled$$default = lib$rsvp$hash$settled$$hashSettled;
+    function lib$rsvp$hash$$hash(object, label) {
+      return new lib$rsvp$promise$hash$$default(lib$rsvp$promise$$default, object, label).promise;
+    }
+    var lib$rsvp$hash$$default = lib$rsvp$hash$$hash;
+    function lib$rsvp$map$$map(promises, mapFn, label) {
+      return lib$rsvp$promise$$default.all(promises, label).then(function(values) {
+        if (!lib$rsvp$utils$$isFunction(mapFn)) {
+          throw new TypeError("You must pass a function as map's second argument.");
+        }
+
+        var length = values.length;
+        var results = new Array(length);
+
+        for (var i = 0; i < length; i++) {
+          results[i] = mapFn(values[i]);
+        }
+
+        return lib$rsvp$promise$$default.all(results, label);
+      });
+    }
+    var lib$rsvp$map$$default = lib$rsvp$map$$map;
+
+    function lib$rsvp$node$$Result() {
+      this.value = undefined;
+    }
+
+    var lib$rsvp$node$$ERROR = new lib$rsvp$node$$Result();
+    var lib$rsvp$node$$GET_THEN_ERROR = new lib$rsvp$node$$Result();
+
+    function lib$rsvp$node$$getThen(obj) {
+      try {
+       return obj.then;
+      } catch(error) {
+        lib$rsvp$node$$ERROR.value= error;
+        return lib$rsvp$node$$ERROR;
+      }
+    }
+
+
+    function lib$rsvp$node$$tryApply(f, s, a) {
+      try {
+        f.apply(s, a);
+      } catch(error) {
+        lib$rsvp$node$$ERROR.value = error;
+        return lib$rsvp$node$$ERROR;
+      }
+    }
+
+    function lib$rsvp$node$$makeObject(_, argumentNames) {
+      var obj = {};
+      var name;
+      var i;
+      var length = _.length;
+      var args = new Array(length);
+
+      for (var x = 0; x < length; x++) {
+        args[x] = _[x];
+      }
+
+      for (i = 0; i < argumentNames.length; i++) {
+        name = argumentNames[i];
+        obj[name] = args[i + 1];
+      }
+
+      return obj;
+    }
+
+    function lib$rsvp$node$$arrayResult(_) {
+      var length = _.length;
+      var args = new Array(length - 1);
+
+      for (var i = 1; i < length; i++) {
+        args[i - 1] = _[i];
+      }
+
+      return args;
+    }
+
+    function lib$rsvp$node$$wrapThenable(then, promise) {
+      return {
+        then: function(onFulFillment, onRejection) {
+          return then.call(promise, onFulFillment, onRejection);
+        }
+      };
+    }
+
+    function lib$rsvp$node$$denodeify(nodeFunc, options) {
+      var fn = function() {
+        var self = this;
+        var l = arguments.length;
+        var args = new Array(l + 1);
+        var arg;
+        var promiseInput = false;
+
+        for (var i = 0; i < l; ++i) {
+          arg = arguments[i];
+
+          if (!promiseInput) {
+            // TODO: clean this up
+            promiseInput = lib$rsvp$node$$needsPromiseInput(arg);
+            if (promiseInput === lib$rsvp$node$$GET_THEN_ERROR) {
+              var p = new lib$rsvp$promise$$default(lib$rsvp$$internal$$noop);
+              lib$rsvp$$internal$$reject(p, lib$rsvp$node$$GET_THEN_ERROR.value);
+              return p;
+            } else if (promiseInput && promiseInput !== true) {
+              arg = lib$rsvp$node$$wrapThenable(promiseInput, arg);
+            }
+          }
+          args[i] = arg;
+        }
+
+        var promise = new lib$rsvp$promise$$default(lib$rsvp$$internal$$noop);
+
+        args[l] = function(err, val) {
+          if (err)
+            lib$rsvp$$internal$$reject(promise, err);
+          else if (options === undefined)
+            lib$rsvp$$internal$$resolve(promise, val);
+          else if (options === true)
+            lib$rsvp$$internal$$resolve(promise, lib$rsvp$node$$arrayResult(arguments));
+          else if (lib$rsvp$utils$$isArray(options))
+            lib$rsvp$$internal$$resolve(promise, lib$rsvp$node$$makeObject(arguments, options));
+          else
+            lib$rsvp$$internal$$resolve(promise, val);
         };
-        o.prototype = object;
-        return o;
+
+        if (promiseInput) {
+          return lib$rsvp$node$$handlePromiseInput(promise, args, nodeFunc, self);
+        } else {
+          return lib$rsvp$node$$handleValueInput(promise, args, nodeFunc, self);
+        }
+      };
+
+      fn.__proto__ = nodeFunc;
+
+      return fn;
+    }
+
+    var lib$rsvp$node$$default = lib$rsvp$node$$denodeify;
+
+    function lib$rsvp$node$$handleValueInput(promise, args, nodeFunc, self) {
+      var result = lib$rsvp$node$$tryApply(nodeFunc, self, args);
+      if (result === lib$rsvp$node$$ERROR) {
+        lib$rsvp$$internal$$reject(promise, result.value);
+      }
+      return promise;
+    }
+
+    function lib$rsvp$node$$handlePromiseInput(promise, args, nodeFunc, self){
+      return lib$rsvp$promise$$default.all(args).then(function(args){
+        var result = lib$rsvp$node$$tryApply(nodeFunc, self, args);
+        if (result === lib$rsvp$node$$ERROR) {
+          lib$rsvp$$internal$$reject(promise, result.value);
+        }
+        return promise;
+      });
+    }
+
+    function lib$rsvp$node$$needsPromiseInput(arg) {
+      if (arg && typeof arg === 'object') {
+        if (arg.constructor === lib$rsvp$promise$$default) {
+          return true;
+        } else {
+          return lib$rsvp$node$$getThen(arg);
+        }
+      } else {
+        return false;
+      }
+    }
+    function lib$rsvp$race$$race(array, label) {
+      return lib$rsvp$promise$$default.race(array, label);
+    }
+    var lib$rsvp$race$$default = lib$rsvp$race$$race;
+    function lib$rsvp$reject$$reject(reason, label) {
+      return lib$rsvp$promise$$default.reject(reason, label);
+    }
+    var lib$rsvp$reject$$default = lib$rsvp$reject$$reject;
+    function lib$rsvp$resolve$$resolve(value, label) {
+      return lib$rsvp$promise$$default.resolve(value, label);
+    }
+    var lib$rsvp$resolve$$default = lib$rsvp$resolve$$resolve;
+    function lib$rsvp$rethrow$$rethrow(reason) {
+      setTimeout(function() {
+        throw reason;
+      });
+      throw reason;
+    }
+    var lib$rsvp$rethrow$$default = lib$rsvp$rethrow$$rethrow;
+
+    // default async is asap;
+    lib$rsvp$config$$config.async = lib$rsvp$asap$$default;
+    var lib$rsvp$$cast = lib$rsvp$resolve$$default;
+    function lib$rsvp$$async(callback, arg) {
+      lib$rsvp$config$$config.async(callback, arg);
+    }
+
+    function lib$rsvp$$on() {
+      lib$rsvp$config$$config['on'].apply(lib$rsvp$config$$config, arguments);
+    }
+
+    function lib$rsvp$$off() {
+      lib$rsvp$config$$config['off'].apply(lib$rsvp$config$$config, arguments);
+    }
+
+    // Set up instrumentation through `window.__PROMISE_INTRUMENTATION__`
+    if (typeof window !== 'undefined' && typeof window['__PROMISE_INSTRUMENTATION__'] === 'object') {
+      var lib$rsvp$$callbacks = window['__PROMISE_INSTRUMENTATION__'];
+      lib$rsvp$config$$configure('instrument', true);
+      for (var lib$rsvp$$eventName in lib$rsvp$$callbacks) {
+        if (lib$rsvp$$callbacks.hasOwnProperty(lib$rsvp$$eventName)) {
+          lib$rsvp$$on(lib$rsvp$$eventName, lib$rsvp$$callbacks[lib$rsvp$$eventName]);
+        }
+      }
+    }
+
+    var lib$rsvp$umd$$RSVP = {
+      'race': lib$rsvp$race$$default,
+      'Promise': lib$rsvp$promise$$default,
+      'allSettled': lib$rsvp$all$settled$$default,
+      'hash': lib$rsvp$hash$$default,
+      'hashSettled': lib$rsvp$hash$settled$$default,
+      'denodeify': lib$rsvp$node$$default,
+      'on': lib$rsvp$$on,
+      'off': lib$rsvp$$off,
+      'map': lib$rsvp$map$$default,
+      'filter': lib$rsvp$filter$$default,
+      'resolve': lib$rsvp$resolve$$default,
+      'reject': lib$rsvp$reject$$default,
+      'all': lib$rsvp$all$$default,
+      'rethrow': lib$rsvp$rethrow$$default,
+      'defer': lib$rsvp$defer$$default,
+      'EventTarget': lib$rsvp$events$$default,
+      'configure': lib$rsvp$config$$configure,
+      'async': lib$rsvp$$async
     };
-exports.o_create = o_create;
-},{}],"/ioUh4":[function(require,module,exports){
+
+    /* global define:true module:true window: true */
+    if (typeof define === 'function' && define['amd']) {
+      define(function() { return lib$rsvp$umd$$RSVP; });
+    } else if (typeof module !== 'undefined' && module['exports']) {
+      module['exports'] = lib$rsvp$umd$$RSVP;
+    } else if (typeof this !== 'undefined') {
+      this['RSVP'] = lib$rsvp$umd$$RSVP;
+    }
+}).call(this);
+
+
+}).call(this,require("FWaASH"))
+},{"FWaASH":58}],"/ioUh4":[function(require,module,exports){
 var RSVP;
 
 RSVP = require('rsvp');
@@ -16814,10 +16720,24 @@ module.exports = {
         return xhr.send(null);
       });
     };
-    return this.fromEvent = function(e) {
+    this.fromEvent = function(e) {
       return new RSVP.Promise(function(resolve, reject) {
         var file, reader;
         file = e.dataTransfer.files[0];
+        reader = new FileReader();
+        reader.onload = function(e) {
+          var psd;
+          psd = new PSD(new Uint8Array(e.target.result));
+          psd.parse();
+          return resolve(psd);
+        };
+        reader.onerror = reject;
+        return reader.readAsArrayBuffer(file);
+      });
+    };
+    return this.fromDroppedFile = function(file) {
+      return new RSVP.Promise(function(resolve, reject) {
+        var reader;
         reader = new FileReader();
         reader.onload = function(e) {
           var psd;
@@ -16833,7 +16753,7 @@ module.exports = {
 };
 
 
-},{"rsvp":82}],"./psd/init.coffee":[function(require,module,exports){
+},{"rsvp":83}],"./psd/init.coffee":[function(require,module,exports){
 module.exports=require('/ioUh4');
 },{}],"bZ5QlH":[function(require,module,exports){
 var RSVP;
@@ -16841,26 +16761,31 @@ var RSVP;
 RSVP = require('rsvp');
 
 module.exports = {
+  toBase64: function() {
+    var canvas, context, i, imageData, pixel, pixelData, _i, _len, _ref;
+    canvas = document.createElement('canvas');
+    canvas.width = this.width();
+    canvas.height = this.height();
+    context = canvas.getContext('2d');
+    imageData = context.getImageData(0, 0, this.width(), this.height());
+    pixelData = imageData.data;
+    _ref = this.pixelData;
+    for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
+      pixel = _ref[i];
+      pixelData[i] = pixel;
+    }
+    context.putImageData(imageData, 0, 0);
+    return canvas.toDataURL('image/png');
+  },
   toPng: function() {
     return new RSVP.Promise((function(_this) {
       return function(resolve, reject) {
-        var canvas, context, i, image, imageData, pixel, pixelData, _i, _len, _ref;
-        canvas = document.createElement('canvas');
-        canvas.width = _this.width();
-        canvas.height = _this.height();
-        context = canvas.getContext('2d');
-        imageData = context.getImageData(0, 0, _this.width(), _this.height());
-        pixelData = imageData.data;
-        _ref = _this.pixelData;
-        for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
-          pixel = _ref[i];
-          pixelData[i] = pixel;
-        }
-        context.putImageData(imageData, 0, 0);
+        var dataUrl, image;
+        dataUrl = _this.toBase64();
         image = new Image();
         image.width = _this.width();
         image.height = _this.height();
-        image.src = canvas.toDataURL('image/png');
+        image.src = dataUrl;
         return resolve(image);
       };
     })(this));
@@ -16871,6 +16796,6 @@ module.exports = {
 };
 
 
-},{"rsvp":82}],"./image_exports/png.coffee":[function(require,module,exports){
+},{"rsvp":83}],"./image_exports/png.coffee":[function(require,module,exports){
 module.exports=require('bZ5QlH');
 },{}]},{},[])
