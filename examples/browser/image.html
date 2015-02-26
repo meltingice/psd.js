@@ -58,9 +58,7 @@
       PSD.fromEvent(e).then(function (psd) {
         var data = JSON.stringify(psd.tree().export(), undefined, 2);
         document.getElementById('data').innerHTML = data;
-        psd.image.toPng().then(function (image) {
-          document.getElementById('image').appendChild(image);
-        });
+        document.getElementById('image').appendChild(psd.image.toPng());
       });
     }
   }());

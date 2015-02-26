@@ -18,16 +18,15 @@ module.exports =
     canvas.toDataURL 'image/png'
 
   toPng: ->
-    new RSVP.Promise (resolve, reject) =>
-      dataUrl = @toBase64()
-      # Create the image and set the source to the
-      # canvas data URL.
-      image = new Image()
-      image.width = @width()
-      image.height = @height()
-      image.src = dataUrl
+    dataUrl = @toBase64()
+    # Create the image and set the source to the
+    # canvas data URL.
+    image = new Image()
+    image.width = @width()
+    image.height = @height()
+    image.src = dataUrl
 
-      resolve(image)
+    image
 
   saveAsPng: ->
     throw "Not available in the browser. Use toPng() instead."

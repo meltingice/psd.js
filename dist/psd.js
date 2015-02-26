@@ -16778,17 +16778,13 @@ module.exports = {
     return canvas.toDataURL('image/png');
   },
   toPng: function() {
-    return new RSVP.Promise((function(_this) {
-      return function(resolve, reject) {
-        var dataUrl, image;
-        dataUrl = _this.toBase64();
-        image = new Image();
-        image.width = _this.width();
-        image.height = _this.height();
-        image.src = dataUrl;
-        return resolve(image);
-      };
-    })(this));
+    var dataUrl, image;
+    dataUrl = this.toBase64();
+    image = new Image();
+    image.width = this.width();
+    image.height = this.height();
+    image.src = dataUrl;
+    return image;
   },
   saveAsPng: function() {
     throw "Not available in the browser. Use toPng() instead.";
