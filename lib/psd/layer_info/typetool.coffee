@@ -1,3 +1,4 @@
+_ = require 'lodash'
 parseEngineData = require 'parse-engine-data'
 LayerInfo = require '../layer_info.coffee'
 Descriptor = require '../descriptor.coffee'
@@ -48,3 +49,27 @@ module.exports = class TextElements extends LayerInfo
   fonts: ->
     return [] unless @engineData?
     @engineData.ResourceDict.FontSet.map (f) -> f.Name
+
+  sizes: ->
+    return [] if not @engineData? and not @styles().FontSize?
+    _.uniq @styles().FontSize
+
+  alignment: ->
+    return [] unless @engineData?
+    alignments = ['left', 'right', 'center', 'justify']
+    @engineData.EngineDict.ParagraphRun.RunArray.map (s) ->
+      alignments[Math.min(parseInt(s.ParagraphSheet.Properties.Justification, 10), 3)]
+
+  styles: ->
+    return {} unless @engineData?
+    return @_styles if @_styles?
+
+    data = @engineData.EngineDict.StyleRun.RunArray.map (r) ->
+      r.StyleSheet.StyleSheetData
+
+    @_styles = _.reduce(data, (m, o) ->
+      for own k, v of o
+        m[k] or= []
+        m[k].push v
+      m
+    , {})
