@@ -8,9 +8,6 @@ PSD.open(file).then(function (psd) {
     type = node.get('typeTool');
     if (!type) return;
     fonts = fonts.concat(type.fonts());
-    console.log(type.sizes());
-    console.log(type.alignment());
-    // type.styles();
   });
 
   console.log(_.uniq(fonts));

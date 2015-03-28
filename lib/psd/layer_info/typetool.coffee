@@ -52,7 +52,7 @@ module.exports = class TextElements extends LayerInfo
 
   sizes: ->
     return [] if not @engineData? and not @styles().FontSize?
-    _.uniq @styles().FontSize
+    @styles().FontSize
 
   alignment: ->
     return [] unless @engineData?
@@ -84,3 +84,31 @@ module.exports = class TextElements extends LayerInfo
         m[k].push v
       m
     , {})
+
+  # Creates the CSS string and returns it. Each property is newline separated
+  # and not all properties may be present depending on the document.
+  #
+  # Colors are returned in rgba() format and fonts may include some internal
+  # Photoshop fonts.
+  toCSS: ->
+    definition =
+      'font-family': @fonts().join(', ')
+      'font-size': "#{@sizes()[0]}pt"
+      'color': "rgba(#{@colors()[0].join(', ')})"
+      'text-align': @alignment()[0]
+
+    css = []
+    for k, v of definition
+      continue unless v?
+      css.push "#{k}: #{v};"
+
+    css.join("\n")
+
+  export: ->
+    value: @textValue
+    font: @fonts()[0]
+    left: @coords.left
+    top: @coords.top
+    right: @coords.right
+    bottom: @coords.bottom
+    transform: @transform
