@@ -1674,9 +1674,11 @@ module.exports = NestedSectionDivider = (function(_super) {
 
 
 },{"../layer_info.coffee":26}],37:[function(require,module,exports){
-var Descriptor, LayerInfo, TextElements, parseEngineData,
+var Descriptor, LayerInfo, TextElements, parseEngineData, _,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+_ = require('lodash');
 
 parseEngineData = require('parse-engine-data');
 
@@ -1744,12 +1746,98 @@ module.exports = TextElements = (function(_super) {
     });
   };
 
+  TextElements.prototype.sizes = function() {
+    if ((this.engineData == null) && (this.styles().FontSize == null)) {
+      return [];
+    }
+    return this.styles().FontSize;
+  };
+
+  TextElements.prototype.alignment = function() {
+    var alignments;
+    if (this.engineData == null) {
+      return [];
+    }
+    alignments = ['left', 'right', 'center', 'justify'];
+    return this.engineData.EngineDict.ParagraphRun.RunArray.map(function(s) {
+      return alignments[Math.min(parseInt(s.ParagraphSheet.Properties.Justification, 10), 3)];
+    });
+  };
+
+  TextElements.prototype.colors = function() {
+    if ((this.engineData == null) || (this.styles().FillColor == null)) {
+      return [[0, 0, 0, 255]];
+    }
+    return this.styles().FillColor.map(function(s) {
+      var values;
+      values = s.Values.map(function(v) {
+        return Math.round(v * 255);
+      });
+      values.push(values.shift());
+      return values;
+    });
+  };
+
+  TextElements.prototype.styles = function() {
+    var data;
+    if (this.engineData == null) {
+      return {};
+    }
+    if (this._styles != null) {
+      return this._styles;
+    }
+    data = this.engineData.EngineDict.StyleRun.RunArray.map(function(r) {
+      return r.StyleSheet.StyleSheetData;
+    });
+    return this._styles = _.reduce(data, function(m, o) {
+      var k, v;
+      for (k in o) {
+        if (!__hasProp.call(o, k)) continue;
+        v = o[k];
+        m[k] || (m[k] = []);
+        m[k].push(v);
+      }
+      return m;
+    }, {});
+  };
+
+  TextElements.prototype.toCSS = function() {
+    var css, definition, k, v;
+    definition = {
+      'font-family': this.fonts().join(', '),
+      'font-size': "" + (this.sizes()[0]) + "pt",
+      'color': "rgba(" + (this.colors()[0].join(', ')) + ")",
+      'text-align': this.alignment()[0]
+    };
+    css = [];
+    for (k in definition) {
+      v = definition[k];
+      if (v == null) {
+        continue;
+      }
+      css.push("" + k + ": " + v + ";");
+    }
+    return css.join("\n");
+  };
+
+  TextElements.prototype["export"] = function() {
+    return {
+      value: this.textValue,
+      font: this.fonts()[0],
+      left: this.coords.left,
+      top: this.coords.top,
+      right: this.coords.right,
+      bottom: this.coords.bottom,
+      transform: this.transform
+    };
+  };
+
   return TextElements;
 
 })(LayerInfo);
 
 
-},{"../descriptor.coffee":5,"../layer_info.coffee":26,"parse-engine-data":82}],38:[function(require,module,exports){
+},{"../descriptor.coffee":5,"../layer_info.coffee":26,"lodash":81,"parse-engine-data":82}],38:[function(require,module,exports){
 var LayerInfo, UnicodeName,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2357,9 +2445,11 @@ module.exports = Layer = (function(_super) {
   };
 
   Layer.prototype["export"] = function() {
-    return _.merge(Layer.__super__["export"].apply(this, arguments), {
+    var _ref;
+    return _.merge(Layer.__super__["export"].call(this), {
       type: 'layer',
       mask: this.layer.mask["export"](),
+      text: (_ref = this.get('typeTool')) != null ? _ref["export"]() : void 0,
       image: {}
     });
   };
