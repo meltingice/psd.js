@@ -8,6 +8,7 @@ module.exports = class Image extends Module
   @includes ImageFormat.RAW
   @includes ImageFormat.RLE
   @includes ImageMode.RGB
+  @includes ImageMode.Greyscale
   @includes Export.PNG
   
   COMPRESSIONS = [
@@ -38,6 +39,7 @@ module.exports = class Image extends Module
 
   setChannelsInfo: ->
     switch @mode()
+      when 1 then @setGreyscaleChannels()
       when 3 then @setRgbChannels()
 
   calculateLength: ->
