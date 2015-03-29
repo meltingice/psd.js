@@ -31,16 +31,14 @@ module.exports = class Image extends Module
     @startPos = @file.tell()
     @endPos = @startPos + @length
 
-    @channelsInfo = [
-      {id: 0}
-      {id: 1}
-      {id: 2}
-    ]
-
-    @channelsInfo.push {id: -1} if @channels() is 4
+    @setChannelsInfo()
 
   for attr in ['width', 'height', 'channels', 'depth', 'mode'] then do (attr) =>
     @::[attr] = -> @header[attr]
+
+  setChannelsInfo: ->
+    switch @mode()
+      when 3 then @setRgbChannels()
 
   calculateLength: ->
     @length = switch @depth()

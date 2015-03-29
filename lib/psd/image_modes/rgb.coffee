@@ -1,8 +1,17 @@
 module.exports =
+  setRgbChannels: ->
+    @channelsInfo = [
+      {id: 0}
+      {id: 1}
+      {id: 2}
+    ]
+
+    @channelsInfo.push {id: -1} if @channels() is 4
+
   combineRgbChannel: ->
     rgbChannels = @channelsInfo
       .map (ch) -> ch.id
-      .filter (ch) -> ch >= -1
+      .filter (ch) -> ch >= -1 # Mask data is -2
 
     for i in [0...@numPixels]
       r = g = b = 0
