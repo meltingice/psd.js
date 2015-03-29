@@ -13,6 +13,7 @@ LAYER_INFO = {
   metadata:               require('../layer_info/metadata.coffee')
   name:                   require('../layer_info/unicode_name.coffee')
   nestedSectionDivider:   require('../layer_info/nested_section_divider.coffee')
+  objectEffects:          require('../layer_info/object_effects.coffee')
   sectionDivider:         require('../layer_info/section_divider.coffee')
   typeTool:               require('../layer_info/typetool.coffee')
 }
