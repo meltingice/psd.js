@@ -8,6 +8,7 @@ LAYER_INFO = {
   gradientFill:           require('../layer_info/gradient_fill.coffee')
   layerId:                require('../layer_info/layer_id.coffee')
   layerNameSource:        require('../layer_info/layer_name_source.coffee')
+  legacyTypetool:         require('../layer_info/legacy_typetool.coffee')
   locked:                 require('../layer_info/locked.coffee')
   metadata:               require('../layer_info/metadata.coffee')
   name:                   require('../layer_info/unicode_name.coffee')

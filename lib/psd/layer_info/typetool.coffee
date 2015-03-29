@@ -27,8 +27,7 @@ module.exports = class TextElements extends LayerInfo
   parse: ->
     @version = @file.readShort()
 
-    for name, index in TRANSFORM_VALUE
-      @transform[name] = @file.readDouble()
+    @parseTransformInfo()
 
     @textVersion = @file.readShort()
     @descriptorVersion = @file.readInt()
@@ -45,6 +44,10 @@ module.exports = class TextElements extends LayerInfo
 
     for name, index in COORDS_VALUE
       @coords[name] = @file.readDouble()
+
+  parseTransformInfo: ->
+    for name, index in TRANSFORM_VALUE
+      @transform[name] = @file.readDouble()
 
   fonts: ->
     return [] unless @engineData?

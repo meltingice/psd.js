@@ -1,5 +1,6 @@
 {jspack} = require 'jspack'
 iconv = require 'iconv-lite'
+Color = require './color.coffee'
 Util = require './util.coffee'
 
 module.exports = class File
@@ -46,3 +47,10 @@ module.exports = class File
 
   readByte: -> @read(1)[0]
   readBoolean: -> @readByte() isnt 0
+
+  # Reads a 32-bit color space value.
+  readSpaceColor: ->
+    colorSpace = @readShort()
+    colorComponent = (@readShort() >> 8) for i in [0...4]
+
+    colorSpace: colorSpace, components: colorComponent
