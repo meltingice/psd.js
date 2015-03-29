@@ -1,7 +1,7 @@
-module.exports = class Util
-  @pad2: (i) -> (i + 1) & ~0x01
-  @pad4: (i) -> ((i + 4) & ~0x03) - 1
-  @getUnicodeCharacter: (cp) ->
+module.exports =
+  pad2: (i) -> (i + 1) & ~0x01
+  pad4: (i) -> ((i + 4) & ~0x03) - 1
+  getUnicodeCharacter: (cp) ->
     if cp >= 0 and cp <= 0xD7FF or cp >= 0xE000 and cp <= 0xFFFF
       return String.fromCharCode(cp)
     else if cp >= 0x10000 and cp <= 0x10FFFF
@@ -18,3 +18,6 @@ module.exports = class Util
       second = (0x3ff & cp) + 0xDC00
 
       String.fromCharCode(first) + String.fromCharCode(second)
+
+  clamp: (num, min, max) ->
+    Math.min(Math.max(num, min), max)

@@ -7,8 +7,9 @@ Export      = require './image_export.coffee'
 module.exports = class Image extends Module
   @includes ImageFormat.RAW
   @includes ImageFormat.RLE
-  @includes ImageMode.RGB
   @includes ImageMode.Greyscale
+  @includes ImageMode.RGB
+  @includes ImageMode.CMYK
   @includes Export.PNG
   
   COMPRESSIONS = [
@@ -41,6 +42,7 @@ module.exports = class Image extends Module
     switch @mode()
       when 1 then @setGreyscaleChannels()
       when 3 then @setRgbChannels()
+      when 4 then @setCmykChannels()
 
   calculateLength: ->
     @length = switch @depth()
