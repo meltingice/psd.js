@@ -147,7 +147,11 @@ Which produces something like:
             mask: {},
             text: 
              { value: 'Make a change and save.',
-               font: 'HelveticaNeue-Light',
+               font: 
+                { name: 'HelveticaNeue-Light',
+                  sizes: [ 33 ],
+                  colors: [ [ 85, 96, 110, 255 ] ],
+                  alignment: [ 'center' ] },
                left: 0,
                top: 0,
                right: 0,
