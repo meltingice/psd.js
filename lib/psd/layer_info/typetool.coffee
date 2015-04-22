@@ -43,7 +43,7 @@ module.exports = class TextElements extends LayerInfo
     @warpData = new Descriptor(@file).parse()
 
     for name, index in COORDS_VALUE
-      @coords[name] = @file.readDouble()
+      @coords[name] = @file.readInt()
 
   parseTransformInfo: ->
     for name, index in TRANSFORM_VALUE
@@ -109,7 +109,11 @@ module.exports = class TextElements extends LayerInfo
 
   export: ->
     value: @textValue
-    font: @fonts()[0]
+    font:
+      name: @fonts()[0]
+      sizes: @sizes()
+      colors: @colors()
+      alignment: @alignment()
     left: @coords.left
     top: @coords.top
     right: @coords.right
