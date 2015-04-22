@@ -54,3 +54,16 @@ module.exports = class File
     colorComponent = (@readShort() >> 8) for i in [0...4]
 
     colorSpace: colorSpace, components: colorComponent
+
+  # Adobe's lovely signed 32-bit fixed-point number with 8bits.24bits
+  #   http://www.adobe.com/devnet-apps/photoshop/fileformatashtml/PhotoshopFileFormats.htm#50577409_17587
+  readPathNumber: ->
+    a = @readByte()
+    
+    arr = @read(3)
+    b1 = arr[0] << 16
+    b2 = arr[1] << 8
+    b3 = arr[2]
+    b = b1 | b2 | b3
+
+    parseFloat(a, 10) + parseFloat(b / Math.pow(2, 24), 10)

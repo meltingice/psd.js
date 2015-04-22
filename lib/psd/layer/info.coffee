@@ -16,6 +16,7 @@ LAYER_INFO = {
   objectEffects:          require('../layer_info/object_effects.coffee')
   sectionDivider:         require('../layer_info/section_divider.coffee')
   typeTool:               require('../layer_info/typetool.coffee')
+  vectorMask:             require('../layer_info/vector_mask.coffee')
 }
 
 module.exports =
@@ -40,6 +41,7 @@ module.exports =
         unless @[name]?
           do (name) => @[name] = => @adjustments[name]
 
+        @infoKeys.push key
         keyParseable = true
         break
 
