@@ -18,6 +18,7 @@ LAYER_INFO = {
   solidColor:             require('../layer_info/solid_color.coffee')
   typeTool:               require('../layer_info/typetool.coffee')
   vectorMask:             require('../layer_info/vector_mask.coffee')
+  vectorOrigination:      require('../layer_info/vector_origination.coffee')
 }
 
 module.exports =
