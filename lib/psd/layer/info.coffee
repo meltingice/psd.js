@@ -20,6 +20,7 @@ LAYER_INFO = {
   vectorMask:             require('../layer_info/vector_mask.coffee')
   vectorOrigination:      require('../layer_info/vector_origination.coffee')
   vectorStroke:           require('../layer_info/vector_stroke.coffee')
+  vectorStrokeContent:    require('../layer_info/vector_stroke_content.coffee')
 }
 
 module.exports =
