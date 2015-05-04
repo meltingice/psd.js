@@ -15,6 +15,7 @@ LAYER_INFO = {
   nestedSectionDivider:   require('../layer_info/nested_section_divider.coffee')
   objectEffects:          require('../layer_info/object_effects.coffee')
   sectionDivider:         require('../layer_info/section_divider.coffee')
+  solidColor:             require('../layer_info/solid_color.coffee')
   typeTool:               require('../layer_info/typetool.coffee')
   vectorMask:             require('../layer_info/vector_mask.coffee')
 }
