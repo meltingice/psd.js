@@ -18,4 +18,4 @@ module.exports = class SolidColor extends LayerInfo
     @b = Math.round @colorData()['Bl  ']
 
   colorData: -> @data['Clr ']
-
+  color: -> [@r, @g, @b]
