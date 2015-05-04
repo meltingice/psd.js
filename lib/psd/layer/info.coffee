@@ -19,6 +19,7 @@ LAYER_INFO = {
   typeTool:               require('../layer_info/typetool.coffee')
   vectorMask:             require('../layer_info/vector_mask.coffee')
   vectorOrigination:      require('../layer_info/vector_origination.coffee')
+  vectorStroke:           require('../layer_info/vector_stroke.coffee')
 }
 
 module.exports =
