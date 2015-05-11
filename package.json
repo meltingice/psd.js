@@ -19,7 +19,8 @@
     "iconv-lite": "~ 0.4.4"
   },
   "scripts": {
-    "test": "mocha test"
+    "test": "mocha test",
+    "docs": "node_modules/docco-husky/bin/generate lib shims"
   },
   "devDependencies": {
     "coffeeify": "~ 0.6.0",
@@ -27,6 +28,6 @@
     "mocha": "~ 1.18.2",
     "should": "~ 3.3.1",
     "rimraf": "~ 2.2.8",
-    "codo": "~ 2.0.11"
+    "docco-husky": "*"
   }
 }

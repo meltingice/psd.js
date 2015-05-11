@@ -13,24 +13,29 @@ Image     = require './psd/image.coffee'
 # the header, resources, the layer mask (including layers), and the preview image. We parse
 # each of these sections in order.
 # 
-# @example How to read and parse a PSD asynchronously
-#   PSD.open('path/to/file.psd').then (psd) ->
-#     console.log psd.tree().export()
-#     
-# @example How to read and parse a PSD synchronously
-#   psd = PSD.fromFile('path/to/file.psd')
-#   psd.parse()
+# ## NodeJS Examples
+# 
+# ** Parsing asynchronously **
+# ``` coffeescript
+# PSD.open('path/to/file.psd').then (psd) ->
 #   console.log psd.tree().export()
+# ```
+#     
+# ** Parsing synchronously **
+# ``` coffeescript
+# psd = PSD.fromFile('path/to/file.psd')
+# psd.parse()
+# console.log psd.tree().export()
+# ```
 module.exports = class PSD extends Module
-  # @nodoc
   @Node:
     Root: require('./psd/nodes/root.coffee')
 
   @extends require('./psd/init.coffee')
 
-  # Creates a new PSD object.
-  # 
-  # @param [Uint8Array] The PSD file data.
+  # Creates a new PSD object. Typically you will use a helper method to instantiate
+  # the PSD object. However, if you already have the PSD data stored as a Uint8Array,
+  # you can instantiate the PSD object directly.
   constructor: (data) ->
     @file = new File(data)
     @parsed = false
@@ -54,12 +59,12 @@ module.exports = class PSD extends Module
 
     @parsed = true
 
-  # @private
+  # The next 4 methods are responsible for parsing the 4 main sections of the PSD.
+  # These are private, and you should never call them from your own code.
   parseHeader: ->
     @header = new Header(@file)
     @header.parse()
 
-  # @private
   parseResources: ->
     resources = new Resources(@file)
     @resources = new LazyExecute(resources, @file)
@@ -67,7 +72,6 @@ module.exports = class PSD extends Module
       .later('parse')
       .get()
 
-  # @private
   parseLayerMask: ->
     layerMask = new LayerMask(@file, @header)
     @layerMask = new LazyExecute(layerMask, @file)
@@ -75,7 +79,6 @@ module.exports = class PSD extends Module
       .later('parse')
       .get()
 
-  # @private
   parseImage: ->
     image = new Image(@file, @header)
     @image = new LazyExecute(image, @file)
@@ -84,7 +87,5 @@ module.exports = class PSD extends Module
       .get()
 
   # Returns a tree representation of the PSD document, which is the
-  # preferred way of accessing most PSD data.
-  # 
-  # @return [Node.Root] The root node of the PSD.
+  # preferred way of accessing most of the PSD's data.
   tree: -> new PSD.Node.Root(@)

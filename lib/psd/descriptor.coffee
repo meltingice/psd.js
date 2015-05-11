@@ -4,45 +4,47 @@
 # and allows us to dynamically define data of any size. It's always represented by an Object
 # at the root.
 module.exports = class Descriptor
-  # The object that will store the resulting data.
-  data: {}
-
   # Creates a new Descriptor.
-  # @param [File] The PSD file.
   constructor: (@file) ->
+    # The object that will store the resulting data.
+    @data = {}
 
   # Parses the Descriptor at the current location in the file.
   parse: ->
     @data.class = @parseClass()
+
+    # The descriptor defines the number of items it contains at the root.
     numItems = @file.readInt()
 
+    # Each item consists of a key/value combination, which is why our
+    # descriptor is stored as an object instead of an array at the root.
     for i in [0...numItems]
       [id, value] = @parseKeyItem()
       @data[id] = value
 
     @data
 
+  # ## Note
+  # The rest of the methods in this class are considered private. You will never
+  # call any of them from outside this class.
+
   # Parses a class representation, which consists of a name and a unique ID.
-  # @private
   parseClass: ->
     name: @file.readUnicodeString()
     id: @parseId()
 
   # Parses an ID, which is a unique String.
-  # @private
   parseId: ->
     len = @file.readInt()
     if len is 0 then @file.readString(4) else @file.readString(len)
 
   # Parses a key/item value, which consists of an ID and an Item of any type.
-  # @private
   parseKeyItem: ->
     id = @parseId()
     value = @parseItem()
     return [id, value]
 
   # Parses an Item, which can be one of many types of data, depending on the key.
-  # @private
   parseItem: (type = null) ->
     type = @file.readString(4) unless type?
 
@@ -64,63 +66,44 @@ module.exports = class Descriptor
       when 'UntF'         then @parseUnitDouble()
       when 'UnFl'         then @parseUnitFloat()
 
-  # @private
   parseBoolean: -> @file.readBoolean()
-
-  # @private
   parseDouble: -> @file.readDouble()
-
-  # @private
   parseInteger: -> @file.readInt()
   parseLargeInteger: -> @file.readLongLong()
-
-  # An identifier is an Integer.
-  # @private
   parseIdentifier: -> @file.readInt()
-
-  # An index is an Integer.
-  # @private
   parseIndex: -> @file.readInt()
-
-  # An office is an Integer.
-  # @private
   parseOffset: -> @file.readInt()
 
   # Parses a Property, which consists of a class and a unique ID.
-  # @private
   parseProperty: ->
     class: @parseClass()
     id: @parseId()
 
   # Parses an enumerator, which consists of 2 IDs, one of which is
   # the type, and the other is the value.
-  # @private
   parseEnum: ->
     type: @parseId()
     value: @parseId()
 
   # Parses an enumerator reference, which consists of a class and
   # 2 IDs: a type and value.
-  # @private
   parseEnumReference: ->
     class: @parseClass()
     type: @parseId()
     value: @parseId()
 
   # Parses an Alias, which is a string of arbitrary length.
-  # @private
   parseAlias: ->
     len = @file.readInt()
     @file.readString(len)
 
   # Parses a file path, which consists of a 4 character signature
   # and a path.
-  # @private
   parseFilePath: ->
     len = @file.readInt()
     sig = @file.readString(4)
 
-    # Little endian
+    # Little endian. Who knows.
     pathSize = @file.read('<i')
     numChars = @file.read('<i')
 
@@ -130,7 +113,6 @@ module.exports = class Descriptor
     path: path
 
   # Parses a list/array of Items.
-  # @private
   parseList: ->
     count = @file.readInt()
     items = []
@@ -140,18 +122,18 @@ module.exports = class Descriptor
 
     items
 
-  # @todo Not documented anywhere and unsure of the data format.
+  # Not documented anywhere and unsure of the data format. Luckily, this
+  # type is extremely rare. In fact, it's so rare, that I've never run into it
+  # among any of my PSDs.
   parseObjectArray: ->
     throw "Descriptor object array not implemented yet @ #{@file.tell()}"
 
   # Parses raw byte data of arbitrary length.
-  # @private
   parseRawData: ->
     len = @file.readInt()
     @file.read(len)
 
   # Parses a Reference, which is an array of items of multiple types.
-  # @private
   parseReference: ->
     numItems = @file.readInt()
     items = []
@@ -173,7 +155,6 @@ module.exports = class Descriptor
 
   # Parses a double with a unit, such as angle, percent, pixels, etc.
   # Returns an object with an ID, a unit, and a value.
-  # @private
   parseUnitDouble: ->
     unitId = @file.readString(4)
     unit = switch unitId
@@ -191,7 +172,6 @@ module.exports = class Descriptor
 
   # Parses a float with a unit, such as angle, percent, pixels, etc.
   # Returns an object with an ID, a unit, and a value.
-  # @private
   parseUnitFloat: ->
     unitId = @file.readString(4)
     unit = switch unitId

@@ -13,11 +13,9 @@ module.exports = class ChannelImage extends Image
   @includes ImageFormat.LayerRLE
 
   # Creates a new ChannelImage.
-  # 
-  # @param [File] The PSD File reference.
-  # @param [Header] The PSD header.
-  # @param [Layer] The PSD layer for this image.
   constructor: (file, header, @layer) ->
+    # We copy the layer's width and height to private variables because, as you'll see below,
+    # the dimensions can change if we're parsing a mask channel.
     @_width = @layer.width
     @_height = @layer.height
 
@@ -53,6 +51,8 @@ module.exports = class ChannelImage extends Image
 
       @chan = chan
 
+      # If we're working with a mask channel, then the mask can define it's own dimensions separate
+      # from the image dimensions. We grab these dimensions from the layer's mask data.
       if chan.id < -1
         @_width = @layer.mask.width
         @_height = @layer.mask.height
@@ -75,7 +75,9 @@ module.exports = class ChannelImage extends Image
 
     @processImageData()
 
-  # @private
+  # Initiates parsing of the image data, which is based on the compression type of the channel. Every
+  # channel defines it's own compression type, unlike the full PSD preview, which has a single compression
+  # type for the entire image.
   parseImageData: ->
     @compression = @parseCompression()
 

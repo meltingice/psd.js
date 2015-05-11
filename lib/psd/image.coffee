@@ -4,7 +4,11 @@ ImageFormat = require './image_format.coffee'
 ImageMode   = require './image_mode.coffee'
 Export      = require './image_export.coffee'
 
+# Represents the full preview image at the end of the PSD document. For this image, the
+# compression is defined for all channels, and there is no mask data. The width and height
+# are derived from the PSD header, which is the full size of the PSD document.
 module.exports = class Image extends Module
+  # Here we include all of our important mixins.
   @includes ImageFormat.RAW
   @includes ImageFormat.RLE
   @includes ImageMode.Greyscale
@@ -12,6 +16,8 @@ module.exports = class Image extends Module
   @includes ImageMode.CMYK
   @includes Export.PNG
   
+  # Images can be 1 of 4 different compression types. RLE is the most prevalent, followed by
+  # RAW. ZIP compression only happens under special circumstances, and is somewhat rare.
   COMPRESSIONS = [
     'Raw'
     'RLE'
@@ -20,13 +26,18 @@ module.exports = class Image extends Module
   ]
 
   constructor: (@file, @header) ->
+    # We can easily calculate the number of pixels with the width and height.
     @numPixels = @width() * @height()
     @numPixels *= 2 if @depth() is 16
 
     @calculateLength()
 
+    # The resulting array that stores the pixel data, formatted in RGBA format.
+    pixelData: []
+
+    # This temporarily holds the raw channel data after it's been parsed, but not
+    # processed.
     @channelData = []
-    @pixelData = []
     @opacity = 1.0
     @hasMask = false
 
@@ -35,15 +46,18 @@ module.exports = class Image extends Module
 
     @setChannelsInfo()
 
+  # Some helper methods that grab data from the PSD header.
   for attr in ['width', 'height', 'channels', 'depth', 'mode'] then do (attr) =>
     @::[attr] = -> @header[attr]
 
+  # Sets the channel info based on the PSD color mode.
   setChannelsInfo: ->
     switch @mode()
       when 1 then @setGreyscaleChannels()
       when 3 then @setRgbChannels()
       when 4 then @setCmykChannels()
 
+  # Calculates the length of the image data.
   calculateLength: ->
     @length = switch @depth()
       when 1 then (@width() + 7) / 8 * @height()
@@ -53,6 +67,7 @@ module.exports = class Image extends Module
     @channelLength = @length
     @length *= @channels()
 
+  # Parses the image and formats the image data.
   parse: ->
     @compression = @parseCompression()
 
@@ -62,8 +77,10 @@ module.exports = class Image extends Module
 
     @parseImageData()
 
+  # Parses the compression mode.
   parseCompression: -> @file.readShort()
     
+  # Parses the image data based on the compression mode.
   parseImageData: ->
     switch @compression
       when 0 then @parseRaw()
@@ -73,6 +90,7 @@ module.exports = class Image extends Module
 
     @processImageData()
 
+  # Processes the parsed image data based on the color mode.
   processImageData: ->
     switch @mode()
       when 1 then @combineGreyscaleChannel()

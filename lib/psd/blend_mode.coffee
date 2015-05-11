@@ -1,5 +1,7 @@
 {Module} = require 'coffeescript-module'
 
+# The blend mode describes important data regarding a layer, such as
+# the blending mode, the opacity, and whether it's a part of a clipping mask.
 module.exports = class BlendMode extends Module
   @aliasProperty 'blendingMode', 'mode'
 
@@ -36,28 +38,25 @@ module.exports = class BlendMode extends Module
     fdiv: 'divide'
   }
 
-  # @property [String] The 4 character key for the blending mode.
-  blendKey: null
-
-  # @property [Number] The opacity of the layer, from [0, 255].
-  opacity: null
-
-  # @property [Number] Raw value for the clipping state of this layer.
-  clipping: null
-
-  # @property [Boolean] Is this layer a clipping mask?
-  clipped: null
-
-  # @nodoc
-  flags: null
-
-  # @property [String] The readable representation of the blend mode.
-  mode: null
-
-  # @property [Boolean] Is this layer visible?
-  visible: null
-
   constructor: (@file) ->
+    # The 4 character key for the blending mode.
+    @blendKey = null
+
+    # The opacity of the layer, from [0, 255].
+    @opacity = null
+
+    # Raw value for the clipping state of this layer.
+    @clipping = null
+
+    # Is this layer a clipping mask?
+    @clipped = null
+    @flags = null
+
+    # The readable representation of the blend mode.
+    @mode = null
+
+    # Is this layer visible?
+    @visible = null
 
   # Parses the blend mode data.
   parse: ->

@@ -1,6 +1,10 @@
 {Module} = require 'coffeescript-module'
 
+# Represents a single layer and all of the data associated with
+# that layer. Typically you will access this data from a Node
+# object, which simplifies access for you.
 module.exports = class Layer extends Module
+  # Mixins for all of the various data each layer contains.
   @includes require('./layer/position_channels.coffee')
   @includes require('./layer/blend_modes.coffee')
   @includes require('./layer/mask.coffee')
