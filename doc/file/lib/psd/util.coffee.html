@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta charset='UTF-8'>
+  <title>CoffeeScript API Documentation</title>
+  <script src='../../../javascript/application.js'></script>
+  <script src='../../../javascript/search.js'></script>
+  <link rel='stylesheet' href='../../../stylesheets/application.css' type='text/css'>
+</head>
+  <body>
+    <div id='base' data-path='../../../'></div>
+<div id='header'>
+  <div id='menu'>
+    <a href='../../../extra/README.md.html' title='Psd'>
+      Psd
+    </a>
+    &raquo;
+    <a href='../../../alphabetical_index.html' title='Index'>
+      Index
+    </a>
+    &raquo;
+    <span class='title'>lib</span>
+    &raquo;
+    <span class='title'>psd</span>
+    &raquo;
+    <span class='title'>util.coffee</span>
+  </div>
+</div>
+    <div id='content'>
+      <h1>
+        File:
+        util.coffee
+      </h1>
+      <table class='box'>
+        <tr>
+          <td>Defined in:</td>
+          <td>lib&#47;psd</td>
+        </tr>
+      </table>
+      <h2>Variables Summary</h2>
+      <dl class='constants'>
+  <dt id='module.exports-variable'>
+    module.exports
+    =
+  </dt>
+  <dd>
+    <pre><code class='coffeescript'>{
+  pad2: function(i) {
+    return (i + 1) &amp; ~0x01;
+  },
+  pad4: function(i) {
+    return ((i + 4) &amp; ~0x03) - 1;
+  },
+  getUnicodeCharacter: function(cp) {
+    var first, second;
+    if (cp &gt;= 0 &amp;&amp; cp &lt;= 0xD7FF || cp &gt;= 0xE000 &amp;&amp; cp &lt;= 0xFFFF) {
+      return String.fromCharCode(cp);
+    } else if (cp &gt;= 0x10000 &amp;&amp; cp &lt;= 0x10FFFF) {
+      cp -= 0x10000;
+
+      &#47;*
+      we add 0xD800 to the number formed by the first 10 bits
+      to give the first byte
+       *&#47;
+      first = ((0xffc00 &amp; cp) &gt;&gt; 10) + 0xD800;
+
+      &#47;*
+      we add 0xDC00 to the number formed by the low 10 bits
+      to give the second byte
+       *&#47;
+      second = (0x3ff &amp; cp) + 0xDC00;
+      return String.fromCharCode(first) + String.fromCharCode(second);
+    }
+  },
+  clamp: function(num, min, max) {
+    return Math.min(Math.max(num, min), max);
+  }
+}</code></pre>
+    
+  </dd>
+</dl>
+    </div>
+    <div id='footer'>
+  May 11, 15 11:20:26 by
+  <a href='https://github.com/coffeedoc/codo' title='CoffeeScript API documentation generator'>
+    Codo
+  </a>
+  2.0.11
+  &#10034;
+  Press H to see the keyboard shortcuts
+  &#10034;
+  <a href='http://twitter.com/netzpirat' target='_parent'>@netzpirat</a>
+  &#10034;
+  <a href='http://twitter.com/_inossidabile' target='_parent'>@_inossidabile</a>
+</div>
+<iframe id='search_frame'></iframe>
+<div id='fuzzySearch'>
+  <input type='text'>
+  <ol></ol>
+</div>
+<div id='help'>
+  <p>
+    Quickly fuzzy find classes, mixins, methods, file:
+  </p>
+  <ul>
+    <li>
+      <span>T</span>
+      Open fuzzy finder dialog
+    </li>
+  </ul>
+  <p>
+    Control the navigation frame:
+  </p>
+  <ul>
+    <li>
+      <span>L</span>
+      Toggle list view
+    </li>
+    <li>
+      <span>C</span>
+      Show class list
+    </li>
+    <li>
+      <span>I</span>
+      Show mixin list
+    </li>
+    <li>
+      <span>F</span>
+      Show file list
+    </li>
+    <li>
+      <span>M</span>
+      Show method list
+    </li>
+    <li>
+      <span>E</span>
+      Show extras list
+    </li>
+  </ul>
+  <p>
+    You can focus and blur the search input:
+  </p>
+  <ul>
+    <li>
+      <span>S</span>
+      Focus search input
+    </li>
+    <li>
+      <span>Esc</span>
+      Blur search input
+    </li>
+  </ul>
+</div>
+  </body>
+</html>

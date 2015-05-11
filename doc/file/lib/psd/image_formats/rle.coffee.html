@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta charset='UTF-8'>
+  <title>CoffeeScript API Documentation</title>
+  <script src='../../../../javascript/application.js'></script>
+  <script src='../../../../javascript/search.js'></script>
+  <link rel='stylesheet' href='../../../../stylesheets/application.css' type='text/css'>
+</head>
+  <body>
+    <div id='base' data-path='../../../../'></div>
+<div id='header'>
+  <div id='menu'>
+    <a href='../../../../extra/README.md.html' title='Psd'>
+      Psd
+    </a>
+    &raquo;
+    <a href='../../../../alphabetical_index.html' title='Index'>
+      Index
+    </a>
+    &raquo;
+    <span class='title'>lib</span>
+    &raquo;
+    <span class='title'>psd</span>
+    &raquo;
+    <span class='title'>image_formats</span>
+    &raquo;
+    <span class='title'>rle.coffee</span>
+  </div>
+</div>
+    <div id='content'>
+      <h1>
+        File:
+        rle.coffee
+      </h1>
+      <table class='box'>
+        <tr>
+          <td>Defined in:</td>
+          <td>lib&#47;psd&#47;image_formats</td>
+        </tr>
+      </table>
+      <h2>Variables Summary</h2>
+      <dl class='constants'>
+  <dt id='module.exports-variable'>
+    module.exports
+    =
+  </dt>
+  <dd>
+    <pre><code class='coffeescript'>{
+  parseRLE: function() {
+    this.byteCounts = this.parseByteCounts();
+    return this.parseChannelData();
+  },
+  parseByteCounts: function() {
+    var i, _i, _ref, _results;
+    _results = [];
+    for (i = _i = 0, _ref = this.channels() * this.height(); 0 &lt;= _ref ? _i &lt; _ref : _i &gt; _ref; i = 0 &lt;= _ref ? ++_i : --_i) {
+      _results.push(this.file.readShort());
+    }
+    return _results;
+  },
+  parseChannelData: function() {
+    var i, _i, _ref, _results;
+    this.chanPos = 0;
+    this.lineIndex = 0;
+    _results = [];
+    for (i = _i = 0, _ref = this.channels(); 0 &lt;= _ref ? _i &lt; _ref : _i &gt; _ref; i = 0 &lt;= _ref ? ++_i : --_i) {
+      this.decodeRLEChannel();
+      _results.push(this.lineIndex += this.height());
+    }
+    return _results;
+  },
+  decodeRLEChannel: function() {
+    var byteCount, finish, i, j, len, val, _i, _ref, _results,
+      __slice = [].slice;
+    _results = [];
+    for (j = _i = 0, _ref = this.height(); 0 &lt;= _ref ? _i &lt; _ref : _i &gt; _ref; j = 0 &lt;= _ref ? ++_i : --_i) {
+      byteCount = this.byteCounts[this.lineIndex + j];
+      finish = this.file.tell() + byteCount;
+      _results.push((function() {
+        var _ref1, _results1;
+        _results1 = [];
+        while (this.file.tell() &lt; finish) {
+          len = this.file.read(1)[0];
+          if (len &lt; 128) {
+            len += 1;
+            (_ref1 = this.channelData).splice.apply(_ref1, [this.chanPos, 0].concat(__slice.call(this.file.read(len))));
+            _results1.push(this.chanPos += len);
+          } else if (len &gt; 128) {
+            len ^= 0xff;
+            len += 2;
+            val = this.file.read(1)[0];
+            _results1.push((function() {
+              var _j, _results2;
+              _results2 = [];
+              for (i = _j = 0; 0 &lt;= len ? _j &lt; len : _j &gt; len; i = 0 &lt;= len ? ++_j : --_j) {
+                _results2.push(this.channelData[this.chanPos++] = val);
+              }
+              return _results2;
+            }).call(this));
+          } else {
+            _results1.push(void 0);
+          }
+        }
+        return _results1;
+      }).call(this));
+    }
+    return _results;
+  }
+}</code></pre>
+    
+  </dd>
+</dl>
+    </div>
+    <div id='footer'>
+  May 11, 15 11:20:26 by
+  <a href='https://github.com/coffeedoc/codo' title='CoffeeScript API documentation generator'>
+    Codo
+  </a>
+  2.0.11
+  &#10034;
+  Press H to see the keyboard shortcuts
+  &#10034;
+  <a href='http://twitter.com/netzpirat' target='_parent'>@netzpirat</a>
+  &#10034;
+  <a href='http://twitter.com/_inossidabile' target='_parent'>@_inossidabile</a>
+</div>
+<iframe id='search_frame'></iframe>
+<div id='fuzzySearch'>
+  <input type='text'>
+  <ol></ol>
+</div>
+<div id='help'>
+  <p>
+    Quickly fuzzy find classes, mixins, methods, file:
+  </p>
+  <ul>
+    <li>
+      <span>T</span>
+      Open fuzzy finder dialog
+    </li>
+  </ul>
+  <p>
+    Control the navigation frame:
+  </p>
+  <ul>
+    <li>
+      <span>L</span>
+      Toggle list view
+    </li>
+    <li>
+      <span>C</span>
+      Show class list
+    </li>
+    <li>
+      <span>I</span>
+      Show mixin list
+    </li>
+    <li>
+      <span>F</span>
+      Show file list
+    </li>
+    <li>
+      <span>M</span>
+      Show method list
+    </li>
+    <li>
+      <span>E</span>
+      Show extras list
+    </li>
+  </ul>
+  <p>
+    You can focus and blur the search input:
+  </p>
+  <ul>
+    <li>
+      <span>S</span>
+      Focus search input
+    </li>
+    <li>
+      <span>Esc</span>
+      Blur search input
+    </li>
+  </ul>
+</div>
+  </body>
+</html>

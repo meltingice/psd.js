@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta charset='UTF-8'>
+  <title>CoffeeScript API Documentation</title>
+  <script src='../../../../javascript/application.js'></script>
+  <script src='../../../../javascript/search.js'></script>
+  <link rel='stylesheet' href='../../../../stylesheets/application.css' type='text/css'>
+</head>
+  <body>
+    <div id='base' data-path='../../../../'></div>
+<div id='header'>
+  <div id='menu'>
+    <a href='../../../../extra/README.md.html' title='Psd'>
+      Psd
+    </a>
+    &raquo;
+    <a href='../../../../alphabetical_index.html' title='Index'>
+      Index
+    </a>
+    &raquo;
+    <span class='title'>lib</span>
+    &raquo;
+    <span class='title'>psd</span>
+    &raquo;
+    <span class='title'>nodes</span>
+    &raquo;
+    <span class='title'>ancestry.coffee</span>
+  </div>
+</div>
+    <div id='content'>
+      <h1>
+        File:
+        ancestry.coffee
+      </h1>
+      <table class='box'>
+        <tr>
+          <td>Defined in:</td>
+          <td>lib&#47;psd&#47;nodes</td>
+        </tr>
+      </table>
+      <h2>Variables Summary</h2>
+      <dl class='constants'>
+  <dt id='module.exports-variable'>
+    module.exports
+    =
+  </dt>
+  <dd>
+    <pre><code class='coffeescript'>{
+  root: function() {
+    if (isRoot()) {
+      return this;
+    }
+    return this.parent.root();
+  },
+  isRoot: function() {
+    return this.depth() === 0;
+  },
+  children: function() {
+    return this._children;
+  },
+  ancestors: function() {
+    if ((this.parent == null) || this.parent.isRoot()) {
+      return [];
+    }
+    return this.parent.ancestors().concat([this.parent]);
+  },
+  hasChildren: function() {
+    return this._children.length &gt; 0;
+  },
+  childless: function() {
+    return !this.hasChildren();
+  },
+  siblings: function() {
+    if (this.parent == null) {
+      return [];
+    }
+    return this.parent.children();
+  },
+  nextSibling: function() {
+    var index;
+    if (this.parent == null) {
+      return null;
+    }
+    index = this.siblings().indexOf(this);
+    return this.siblings()[index + 1];
+  },
+  prevSibling: function() {
+    var index;
+    if (this.parent == null) {
+      return null;
+    }
+    index = this.siblings().indexOf(this);
+    return this.siblings()[index - 1];
+  },
+  hasSiblings: function() {
+    return this.siblings().length &gt; 1;
+  },
+  onlyChild: function() {
+    return !this.hasSiblings();
+  },
+  descendants: function() {
+    return _.flatten(this._children.map(function(n) {
+      return n.subtree();
+    }));
+  },
+  subtree: function() {
+    return [this].concat(this.descendants());
+  },
+  depth: function() {
+    return this.ancestors().length + 1;
+  },
+  path: function(asArray) {
+    var path;
+    if (asArray == null) {
+      asArray = false;
+    }
+    path = this.ancestors().map(function(n) {
+      return n.name;
+    }).concat([this.name]);
+    if (asArray) {
+      return path;
+    } else {
+      return path.join(&#39;&#47;&#39;);
+    }
+  }
+}</code></pre>
+    
+  </dd>
+</dl>
+    </div>
+    <div id='footer'>
+  May 11, 15 11:20:26 by
+  <a href='https://github.com/coffeedoc/codo' title='CoffeeScript API documentation generator'>
+    Codo
+  </a>
+  2.0.11
+  &#10034;
+  Press H to see the keyboard shortcuts
+  &#10034;
+  <a href='http://twitter.com/netzpirat' target='_parent'>@netzpirat</a>
+  &#10034;
+  <a href='http://twitter.com/_inossidabile' target='_parent'>@_inossidabile</a>
+</div>
+<iframe id='search_frame'></iframe>
+<div id='fuzzySearch'>
+  <input type='text'>
+  <ol></ol>
+</div>
+<div id='help'>
+  <p>
+    Quickly fuzzy find classes, mixins, methods, file:
+  </p>
+  <ul>
+    <li>
+      <span>T</span>
+      Open fuzzy finder dialog
+    </li>
+  </ul>
+  <p>
+    Control the navigation frame:
+  </p>
+  <ul>
+    <li>
+      <span>L</span>
+      Toggle list view
+    </li>
+    <li>
+      <span>C</span>
+      Show class list
+    </li>
+    <li>
+      <span>I</span>
+      Show mixin list
+    </li>
+    <li>
+      <span>F</span>
+      Show file list
+    </li>
+    <li>
+      <span>M</span>
+      Show method list
+    </li>
+    <li>
+      <span>E</span>
+      Show extras list
+    </li>
+  </ul>
+  <p>
+    You can focus and blur the search input:
+  </p>
+  <ul>
+    <li>
+      <span>S</span>
+      Focus search input
+    </li>
+    <li>
+      <span>Esc</span>
+      Blur search input
+    </li>
+  </ul>
+</div>
+  </body>
+</html>

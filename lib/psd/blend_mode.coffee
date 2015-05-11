@@ -36,13 +36,30 @@ module.exports = class BlendMode extends Module
     fdiv: 'divide'
   }
 
-  constructor: (@file) ->
-    @blendKey = null
-    @opacity = null
-    @clipping = null
-    @flags = null
-    @mode = null
+  # @property [String] The 4 character key for the blending mode.
+  blendKey: null
 
+  # @property [Number] The opacity of the layer, from [0, 255].
+  opacity: null
+
+  # @property [Number] Raw value for the clipping state of this layer.
+  clipping: null
+
+  # @property [Boolean] Is this layer a clipping mask?
+  clipped: null
+
+  # @nodoc
+  flags: null
+
+  # @property [String] The readable representation of the blend mode.
+  mode: null
+
+  # @property [Boolean] Is this layer visible?
+  visible: null
+
+  constructor: (@file) ->
+
+  # Parses the blend mode data.
   parse: ->
     @file.seek 4, true
 
@@ -58,4 +75,5 @@ module.exports = class BlendMode extends Module
 
     @file.seek 1, true
 
+  # Returns the layer opacity as a percentage.
   opacityPercentage: -> @opacity * 100 / 255
