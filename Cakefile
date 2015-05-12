@@ -2,6 +2,8 @@ fs = require 'fs'
 browserify = require 'browserify'
 UglifyJS = require 'uglify-js'
 Promise = require 'bluebird'
+{spawn} = require 'child_process'
+util = require 'util'
 
 writeFile = (dest, src) ->
   new Promise (resolve, reject) ->
@@ -34,3 +36,8 @@ task 'compile', 'Compile with browserify for the web', ->
         writeFile './dist/psd.js.map', minSrc.map
       .then ->
         console.log 'Finished!'
+
+task 'docs', 'Generate documentation', ->
+  npm = spawn 'npm', ['run-script', 'docs']
+  npm.stdout.pipe(process.stdout)
+  npm.stderr.pipe(process.stderr)
