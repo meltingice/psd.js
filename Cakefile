@@ -2,7 +2,7 @@ fs = require 'fs'
 browserify = require 'browserify'
 UglifyJS = require 'uglify-js'
 Promise = require 'bluebird'
-{spawn} = require 'child_process'
+{spawn, exec} = require 'child_process'
 util = require 'util'
 
 writeFile = (dest, src) ->
@@ -37,7 +37,24 @@ task 'compile', 'Compile with browserify for the web', ->
       .then ->
         console.log 'Finished!'
 
-task 'docs', 'Generate documentation', ->
+task 'docs', 'Generate documentation', docs = (cb = ->) ->
   npm = spawn 'npm', ['run-script', 'docs']
   npm.stdout.pipe(process.stdout)
   npm.stderr.pipe(process.stderr)
+  npm.on 'close', -> cb()
+
+task 'docs:deploy', 'Deploys updated documentation to GitHub Pages', ->
+  docs ->
+    console.log 'Switching to gh-pages'
+    exec 'git checkout gh-pages', (err) ->
+      return console.log(err) if err?
+      console.log 'Checking out docs from master'
+      exec 'git checkout master docs', (err) ->
+        return console.log(err) if err?
+        console.log 'Committing new documentation'
+        exec 'git commit -a -m "Update documentation"', (err) ->
+          return console.log(err) if err?
+          console.log 'Switching back to master'
+          exec 'git checkout master', (err) ->
+            return console.log(err) if err?
+            console.log 'Deployed!'
