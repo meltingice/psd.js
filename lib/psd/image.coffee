@@ -33,7 +33,7 @@ module.exports = class Image extends Module
     @calculateLength()
 
     # The resulting array that stores the pixel data, formatted in RGBA format.
-    pixelData: []
+    @pixelData = []
 
     # This temporarily holds the raw channel data after it's been parsed, but not
     # processed.
