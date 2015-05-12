@@ -52,7 +52,10 @@ task 'docs:deploy', 'Deploys updated documentation to GitHub Pages', ->
       console.log 'Committing new documentation'
       exec 'git commit -a -m "Update documentation"', (err) ->
         return console.log(err) if err?
-        console.log 'Switching back to master'
-        exec 'git checkout master', (err) ->
+        console.log 'Pushing to GitHub...'
+        exec 'git push origin gh-pages', (err) ->
           return console.log(err) if err?
-          console.log 'Deployed!'
+          console.log 'Switching back to master'
+          exec 'git checkout master', (err) ->
+            return console.log(err) if err?
+            console.log 'Deployed!'
