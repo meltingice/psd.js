@@ -1,4 +1,7 @@
 module.exports =
+  # Blending ranges let you control which pixels from this layer and which
+  # pixels from the underlying layers appear in the final image. This describes
+  # the ranges in both greyscale and for each color channel.
   parseBlendingRanges: ->
     length = @file.readInt()
 

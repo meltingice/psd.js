@@ -22,16 +22,18 @@ object, which simplifies access for you.</p>
     <span class="vi">@blendMode = </span><span class="p">{}</span>
     <span class="vi">@groupLayer = </span><span class="kc">null</span>
 
-    <span class="vi">@infoKeys = </span><span class="p">[]</span>
+    <span class="vi">@infoKeys = </span><span class="p">[]</span></pre></div></td></tr><tr id="section-4"><td class="docs"><div class="pilwrap"><a href="#section-4" class="pilcrow">&#182;</a></div><p>The layer&#39;s name can come from one of two places, depending on 
+what version of Photoshop was used to create the PSD.</p>
 
-    <span class="nb">Object</span><span class="p">.</span><span class="nx">defineProperty</span> <span class="nx">@</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">,</span>
+</td><td class="code"><div class="highlight"><pre>    <span class="nb">Object</span><span class="p">.</span><span class="nx">defineProperty</span> <span class="nx">@</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">,</span>
       <span class="nv">get: </span><span class="nf">-&gt;</span>
         <span class="k">if</span> <span class="nx">@adjustments</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]</span><span class="o">?</span>
           <span class="nx">@adjustments</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">].</span><span class="nx">data</span>
         <span class="k">else</span>
-          <span class="nx">@legacyName</span>
+          <span class="nx">@legacyName</span></pre></div></td></tr><tr id="section-5"><td class="docs"><div class="pilwrap"><a href="#section-5" class="pilcrow">&#182;</a></div><p>Every layer starts with the same set of data, and ends with a dynamic
+number of layer info blocks.</p>
 
-  <span class="nv">parse: </span><span class="nf">-&gt;</span>
+</td><td class="code"><div class="highlight"><pre>  <span class="nv">parse: </span><span class="nf">-&gt;</span>
     <span class="nx">@parsePositionAndChannels</span><span class="p">()</span>
     <span class="nx">@parseBlendModes</span><span class="p">()</span>
 
@@ -59,4 +61,4 @@ object, which simplifies access for you.</p>
     <span class="nv">clipped: </span><span class="nx">@clipped</span>
     <span class="nv">mask: </span><span class="nx">@mask</span><span class="p">.</span><span class="nx">export</span><span class="p">()</span>
 
-</pre></div></td></tr></tbody></table><div id="generated">generated Mon May 11 2015 16:38:06 GMT-0400 (EDT)  </div></div></body></html>
+</pre></div></td></tr></tbody></table><div id="generated">generated Tue May 12 2015 10:08:56 GMT-0400 (EDT)  </div></div></body></html>

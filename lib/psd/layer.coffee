@@ -24,6 +24,8 @@ module.exports = class Layer extends Module
 
     @infoKeys = []
 
+    # The layer's name can come from one of two places, depending on 
+    # what version of Photoshop was used to create the PSD.
     Object.defineProperty @, 'name',
       get: ->
         if @adjustments['name']?
@@ -31,6 +33,8 @@ module.exports = class Layer extends Module
         else
           @legacyName
 
+  # Every layer starts with the same set of data, and ends with a dynamic
+  # number of layer info blocks.
   parse: ->
     @parsePositionAndChannels()
     @parseBlendModes()

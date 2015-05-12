@@ -2,6 +2,16 @@ _ = require 'lodash'
 Util = require './util.coffee'
 Layer = require './layer.coffee'
 
+# The layer mask is the overarching data structure that describes both
+# the layers/groups in the PSD document, and the global mask.
+# This part of the document is ordered as such:
+# 
+# * Layers
+# * Layer images
+# * Global Mask
+# 
+# The file does not need to have a global mask. If there is none, then
+# its length will be zero.
 module.exports = class LayerMask
   constructor: (@file, @header) ->
     @layers = []
@@ -19,6 +29,8 @@ module.exports = class LayerMask
     @parseLayers()
     @parseGlobalMask()
 
+    # The layers are stored in the reverse order that we would like them. In other
+    # words, they're stored bottom to top and we want them top to bottom.
     @layers.reverse()
 
     @file.seek finish
