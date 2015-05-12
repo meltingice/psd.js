@@ -23,6 +23,12 @@ Runs in both NodeJS and the browser (using browserify). There are still some pie
 
 PSD.js has no native dependencies. Simply add `psd` to your package.json or run `npm install psd`.
 
+## Documentation
+
+** Note: work in progress **
+
+Annotated source code documentation is available [here](http://meltingice.github.io/psd.js/docs/). PROTIP: if you're wondering how to access various metadata from a layer, you'll want to see this [file](http://meltingice.github.io/psd.js/docs/lib/psd/layer/info.coffee.html).
+
 ## Usage
 
 PSD.js works almost exactly the same in the browser and NodeJS.
