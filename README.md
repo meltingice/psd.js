@@ -25,7 +25,7 @@ PSD.js has no native dependencies. Simply add `psd` to your package.json or run 
 
 ## Documentation
 
-** Note: work in progress **
+**Note: work in progress**
 
 Annotated source code documentation is available [here](http://meltingice.github.io/psd.js/docs/). PROTIP: if you're wondering how to access various metadata from a layer, you'll want to see this [file](http://meltingice.github.io/psd.js/docs/lib/psd/layer/info.coffee.html).
 
