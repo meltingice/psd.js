@@ -3,13 +3,11 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>psd.js by meltingice</title>
+    <title>PSD.js by meltingice</title>
 
     <link rel="stylesheet" href="stylesheets/styles.css">
     <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <script src="javascripts/scale.fix.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
@@ -17,9 +15,12 @@
   <body>
     <div class="wrapper">
       <header>
-        <h1>psd.js</h1>
-        <p>A Photoshop psd file parser in Javascript</p>
+        <h1>PSD.js</h1>
+        <p>A Photoshop PSD file parser in Javascript for NodeJS and the browser.</p>
+
         <p class="view"><a href="https://github.com/meltingice/psd.js">View the Project on GitHub <small>meltingice/psd.js</small></a></p>
+
+
         <ul>
           <li><a href="https://github.com/meltingice/psd.js/zipball/master">Download <strong>ZIP File</strong></a></li>
           <li><a href="https://github.com/meltingice/psd.js/tarball/master">Download <strong>TAR Ball</strong></a></li>
@@ -27,16 +28,209 @@
         </ul>
       </header>
       <section>
-        <h1>psd.js</h1>
+        <p><a href="https://travis-ci.org/meltingice/psd.js"><img src="https://travis-ci.org/meltingice/psd.js.svg?branch=master" alt="Build Status"></a></p>
 
-<p>Ownership of psd.js has been transferred to Twitpic. All questions regarding the project or its code should be sent to <a href="http://twitpic.helpmint.com">Twitpic Support</a>.</p>
+<p>A general purpose PSD parser written in Coffeescript. Based off of <a href="https://github.com/layervault/psd.rb">PSD.rb</a>. It allows you to work with a Photoshop document in a manageable tree structure and find out important data such as:</p>
+
+<ul>
+<li>Document structure</li>
+<li>Document size</li>
+<li>Layer/folder size + positioning</li>
+<li>Layer/folder names</li>
+<li>Layer/folder visibility and opacity</li>
+<li>Font data (via <a href="https://github.com/layervault/psd-enginedata">psd-enginedata</a>)
+
+<ul>
+<li>Text area contents</li>
+<li>Font names, sizes, and colors</li>
+</ul>
+</li>
+<li>Color mode and bit-depth</li>
+<li>Vector mask data</li>
+<li>Flattened image data</li>
+<li>Layer comps</li>
+</ul>
+
+<p>Runs in both NodeJS and the browser (using browserify). There are still some pieces missing that are present in PSD.rb, such as layer comp filtering, a built-in renderer, and many layer info blocks. The eventual goal is full feature parity with PSD.rb.</p>
+
+<h2>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h2>
+
+<p>PSD.js has no native dependencies. Simply add <code>psd</code> to your package.json or run <code>npm install psd</code>.</p>
+
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<p>PSD.js works almost exactly the same in the browser and NodeJS.</p>
+
+<h3>
+<a id="nodejs-example" class="anchor" href="#nodejs-example" aria-hidden="true"><span class="octicon octicon-link"></span></a>NodeJS Example</h3>
+
+<div class="highlight highlight-js"><pre><span class="pl-k">var</span> PSD <span class="pl-k">=</span> <span class="pl-c1">require</span>(<span class="pl-s"><span class="pl-pds">'</span>psd<span class="pl-pds">'</span></span>);
+<span class="pl-k">var</span> psd <span class="pl-k">=</span> PSD.fromFile(<span class="pl-s"><span class="pl-pds">"</span>path/to/file.psd<span class="pl-pds">"</span></span>);
+psd.<span class="pl-c1">parse</span>();
+
+<span class="pl-en">console</span><span class="pl-c1">.log</span>(psd.tree().export());
+<span class="pl-en">console</span><span class="pl-c1">.log</span>(psd.tree().childrenAtPath(<span class="pl-s"><span class="pl-pds">'</span>A/B/C<span class="pl-pds">'</span></span>)[<span class="pl-c1">0</span>].export());
+
+<span class="pl-c">// You can also use promises syntax for opening and parsing</span>
+PSD.<span class="pl-c1">open</span>(<span class="pl-s"><span class="pl-pds">"</span>path/to/file.psd<span class="pl-pds">"</span></span>).then(<span class="pl-k">function</span> (<span class="pl-smi">psd</span>) {
+  <span class="pl-k">return</span> psd.image.saveAsPng(<span class="pl-s"><span class="pl-pds">'</span>./output.png<span class="pl-pds">'</span></span>);
+}).then(<span class="pl-k">function</span> () {
+  <span class="pl-en">console</span><span class="pl-c1">.log</span>(<span class="pl-s"><span class="pl-pds">"</span>Finished!<span class="pl-pds">"</span></span>);
+});
+</pre></div>
+
+<h3>
+<a id="browser-example" class="anchor" href="#browser-example" aria-hidden="true"><span class="octicon octicon-link"></span></a>Browser Example</h3>
+
+<div class="highlight highlight-js"><pre><span class="pl-k">var</span> PSD <span class="pl-k">=</span> <span class="pl-c1">require</span>(<span class="pl-s"><span class="pl-pds">'</span>psd<span class="pl-pds">'</span></span>);
+
+<span class="pl-c">// Load from URL</span>
+PSD.fromURL(<span class="pl-s"><span class="pl-pds">"</span>/path/to/file.psd<span class="pl-pds">"</span></span>).then(<span class="pl-k">function</span>(<span class="pl-smi">psd</span>) {
+  <span class="pl-c1">document</span>.<span class="pl-c1">getElementById</span>(<span class="pl-s"><span class="pl-pds">'</span>ImageContainer<span class="pl-pds">'</span></span>).<span class="pl-c1">appendChild</span>(psd.image.toPng());
+});
+
+<span class="pl-c">// Load from event, e.g. drag &amp; drop</span>
+<span class="pl-k">function</span> <span class="pl-en">onDrop</span>(<span class="pl-smi">evt</span>) {
+  PSD.fromEvent(evt).then(<span class="pl-k">function</span> (<span class="pl-smi">psd</span>) {
+    <span class="pl-en">console</span><span class="pl-c1">.log</span>(psd.tree().export());
+  }); 
+}</pre></div>
+
+<h3>
+<a id="traversing-the-document" class="anchor" href="#traversing-the-document" aria-hidden="true"><span class="octicon octicon-link"></span></a>Traversing the Document</h3>
+
+<p>To access the document as a tree structure, use <code>psd.tree()</code> to get the root node. From there, work with the tree using any of these methods:</p>
+
+<ul>
+<li>
+<code>root()</code>: get the root node from anywhere in the tree</li>
+<li>
+<code>isRoot()</code>: is this the root node?</li>
+<li>
+<code>children()</code>: get all immediate children of the node</li>
+<li>
+<code>hasChildren()</code>: does this node have any children?</li>
+<li>
+<code>childless()</code>: opposite of <code>hasChildren()</code>
+</li>
+<li>
+<code>ancestors()</code>: get all ancestors in the path of this node (excluding the root)</li>
+<li>
+<code>siblings()</code>: get all sibling tree nodes including the current one (e.g. all layers in a folder)</li>
+<li>
+<code>nextSibling()</code>: gets the sibling immediately following the current node</li>
+<li>
+<code>prevSibling()</code>: gets the sibling immediately before the current node</li>
+<li>
+<code>hasSiblings()</code>: does this node have any siblings?</li>
+<li>
+<code>onlyChild()</code>: opposite of <code>hasSiblings()</code>
+</li>
+<li>
+<code>descendants()</code>: get all descendant nodes not including the current one</li>
+<li>
+<code>subtree()</code>: same as descendants but starts with the current node</li>
+<li>
+<code>depth()</code>: calculate the depth of the current node (root node is 0)</li>
+<li>
+<code>path()</code>: gets the path to the current node</li>
+</ul>
+
+<p>If you know the path to a group or layer within the tree, you can search by that path. Note that this always returns an Array because layer/group names do not have to be unique. The search is always scoped to the descendants of the current node, as well.</p>
+
+<div class="highlight highlight-js"><pre>psd.tree().childrenAtPath(<span class="pl-s"><span class="pl-pds">'</span>Version A/Matte<span class="pl-pds">'</span></span>);
+psd.tree().childrenAtPath([<span class="pl-s"><span class="pl-pds">'</span>Version A<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>Matte<span class="pl-pds">'</span></span>]);</pre></div>
+
+<h3>
+<a id="accessing-layer-data" class="anchor" href="#accessing-layer-data" aria-hidden="true"><span class="octicon octicon-link"></span></a>Accessing Layer Data</h3>
+
+<p>To get data such as the name or dimensions of a layer:</p>
+
+<div class="highlight highlight-js"><pre>node <span class="pl-k">=</span> psd.tree().descendants()[<span class="pl-c1">0</span>];
+node.get(<span class="pl-s"><span class="pl-pds">'</span>name<span class="pl-pds">'</span></span>);
+node.get(<span class="pl-s"><span class="pl-pds">'</span>width<span class="pl-pds">'</span></span>);</pre></div>
+
+<p>PSD files also store various pieces of information in "layer info" blocks. See <a href="https://github.com/meltingice/psd.js/blob/master/lib/psd/layer/info.coffee">this file</a> for all of the possible layer info blocks that PSD.js parses (in <code>LAYER_INFO</code>). Which blocks a layer has varies from layer-to-layer, but to access them you can do:</p>
+
+<div class="highlight highlight-js"><pre>node <span class="pl-k">=</span> psd.tree().descendants()[<span class="pl-c1">0</span>]
+node.get(<span class="pl-s"><span class="pl-pds">'</span>typeTool<span class="pl-pds">'</span></span>).export()
+node.get(<span class="pl-s"><span class="pl-pds">'</span>vectorMask<span class="pl-pds">'</span></span>).export()</pre></div>
+
+<h3>
+<a id="exporting-data" class="anchor" href="#exporting-data" aria-hidden="true"><span class="octicon octicon-link"></span></a>Exporting Data</h3>
+
+<p>When working with the tree structure, you can recursively export any node to an object. This does not dump <em>everything</em>, but it does include the most commonly accessed information.</p>
+
+<div class="highlight highlight-js"><pre><span class="pl-en">console</span><span class="pl-c1">.log</span>(psd.tree().export());</pre></div>
+
+<p>Which produces something like:</p>
+
+<div class="highlight highlight-js"><pre>{ children<span class="pl-k">:</span> 
+   [ { type<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>group<span class="pl-pds">'</span></span>,
+       visible<span class="pl-k">:</span> <span class="pl-c1">false</span>,
+       opacity<span class="pl-k">:</span> <span class="pl-c1">1</span>,
+       blendingMode<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>normal<span class="pl-pds">'</span></span>,
+       name<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>Version D<span class="pl-pds">'</span></span>,
+       left<span class="pl-k">:</span> <span class="pl-c1">0</span>,
+       right<span class="pl-k">:</span> <span class="pl-c1">900</span>,
+       top<span class="pl-k">:</span> <span class="pl-c1">0</span>,
+       bottom<span class="pl-k">:</span> <span class="pl-c1">600</span>,
+       height<span class="pl-k">:</span> <span class="pl-c1">600</span>,
+       width<span class="pl-k">:</span> <span class="pl-c1">900</span>,
+       children<span class="pl-k">:</span> 
+        [ { type<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>layer<span class="pl-pds">'</span></span>,
+            visible<span class="pl-k">:</span> <span class="pl-c1">true</span>,
+            opacity<span class="pl-k">:</span> <span class="pl-c1">1</span>,
+            blendingMode<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>normal<span class="pl-pds">'</span></span>,
+            name<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>Make a change and save.<span class="pl-pds">'</span></span>,
+            left<span class="pl-k">:</span> <span class="pl-c1">275</span>,
+            right<span class="pl-k">:</span> <span class="pl-c1">636</span>,
+            top<span class="pl-k">:</span> <span class="pl-c1">435</span>,
+            bottom<span class="pl-k">:</span> <span class="pl-c1">466</span>,
+            height<span class="pl-k">:</span> <span class="pl-c1">31</span>,
+            width<span class="pl-k">:</span> <span class="pl-c1">361</span>,
+            mask<span class="pl-k">:</span> {},
+            text<span class="pl-k">:</span> 
+             { value<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>Make a change and save.<span class="pl-pds">'</span></span>,
+               font<span class="pl-k">:</span> 
+                { name<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>HelveticaNeue-Light<span class="pl-pds">'</span></span>,
+                  sizes<span class="pl-k">:</span> [ <span class="pl-c1">33</span> ],
+                  colors<span class="pl-k">:</span> [ [ <span class="pl-c1">85</span>, <span class="pl-c1">96</span>, <span class="pl-c1">110</span>, <span class="pl-c1">255</span> ] ],
+                  alignment<span class="pl-k">:</span> [ <span class="pl-s"><span class="pl-pds">'</span>center<span class="pl-pds">'</span></span> ] },
+               left<span class="pl-k">:</span> <span class="pl-c1">0</span>,
+               top<span class="pl-k">:</span> <span class="pl-c1">0</span>,
+               right<span class="pl-k">:</span> <span class="pl-c1">0</span>,
+               bottom<span class="pl-k">:</span> <span class="pl-c1">0</span>,
+               transform<span class="pl-k">:</span> { xx<span class="pl-k">:</span> <span class="pl-c1">1</span>, xy<span class="pl-k">:</span> <span class="pl-c1">0</span>, yx<span class="pl-k">:</span> <span class="pl-c1">0</span>, yy<span class="pl-k">:</span> <span class="pl-c1">1</span>, tx<span class="pl-k">:</span> <span class="pl-c1">456</span>, ty<span class="pl-k">:</span> <span class="pl-c1">459</span> } },
+            image<span class="pl-k">:</span> {} } ] } ],
+    <span class="pl-c1">document</span><span class="pl-k">:</span> 
+       { width<span class="pl-k">:</span> <span class="pl-c1">900</span>,
+         height<span class="pl-k">:</span> <span class="pl-c1">600</span>,
+         resources<span class="pl-k">:</span> 
+          { layerComps<span class="pl-k">:</span> 
+             [ { id<span class="pl-k">:</span> <span class="pl-c1">692243163</span>, name<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>Version A<span class="pl-pds">'</span></span>, capturedInfo<span class="pl-k">:</span> <span class="pl-c1">1</span> },
+               { id<span class="pl-k">:</span> <span class="pl-c1">725235304</span>, name<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>Version B<span class="pl-pds">'</span></span>, capturedInfo<span class="pl-k">:</span> <span class="pl-c1">1</span> },
+               { id<span class="pl-k">:</span> <span class="pl-c1">730932877</span>, name<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>Version C<span class="pl-pds">'</span></span>, capturedInfo<span class="pl-k">:</span> <span class="pl-c1">1</span> } ],
+            guides<span class="pl-k">:</span> [],
+            slices<span class="pl-k">:</span> [] } } }</pre></div>
+
+<p>You can also export the PSD to a flattened image. Please note that, at this time, not all image modes + depths are supported.</p>
+
+<div class="highlight highlight-js"><pre>png <span class="pl-k">=</span> psd.image.toPng(); <span class="pl-c">// get PNG object</span>
+psd.image.saveAsPng(<span class="pl-s"><span class="pl-pds">'</span>path/to/output.png<span class="pl-pds">'</span></span>).then(<span class="pl-k">function</span> () {
+  <span class="pl-en">console</span><span class="pl-c1">.log</span>(<span class="pl-s"><span class="pl-pds">'</span>Exported!<span class="pl-pds">'</span></span>);
+});</pre></div>
+
+<p>This uses the full rasterized preview provided by Photoshop. If the file was not saved with Compatibility Mode enabled, this will return an empty image.</p>
       </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/meltingice">meltingice</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
     </div>
-    <footer>
-      <p>Project maintained by <a href="https://github.com/meltingice">meltingice</a></p>
-      <p>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></p>
-    </footer>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    <script src="javascripts/scale.fix.js"></script>
     
   </body>
 </html>
