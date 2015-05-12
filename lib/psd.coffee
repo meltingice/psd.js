@@ -1,14 +1,3 @@
-RSVP = require 'rsvp'
-{Module} = require 'coffeescript-module'
-
-File      = require './psd/file.coffee'
-LazyExecute = require './psd/lazy_execute.coffee'
-
-Header    = require './psd/header.coffee'
-Resources = require './psd/resources.coffee'
-LayerMask = require './psd/layer_mask.coffee'
-Image     = require './psd/image.coffee'
-
 # A general purpose parser for Photoshop files. PSDs are broken up in to 4 logical sections:
 # the header, resources, the layer mask (including layers), and the preview image. We parse
 # each of these sections in order.
@@ -27,6 +16,18 @@ Image     = require './psd/image.coffee'
 # psd.parse()
 # console.log psd.tree().export()
 # ```
+# 
+RSVP = require 'rsvp'
+{Module} = require 'coffeescript-module'
+
+File      = require './psd/file.coffee'
+LazyExecute = require './psd/lazy_execute.coffee'
+
+Header    = require './psd/header.coffee'
+Resources = require './psd/resources.coffee'
+LayerMask = require './psd/layer_mask.coffee'
+Image     = require './psd/image.coffee'
+
 module.exports = class PSD extends Module
   @Node:
     Root: require('./psd/nodes/root.coffee')
