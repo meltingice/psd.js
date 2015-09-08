@@ -18,7 +18,6 @@ describe "extracting info from a text layer", ->
   it "should generate line-height when .toCSS() is called", (done)->
     psdPath   = path.resolve(__dirname, "../", "examples/images/example-leading.psd")
     expected  = '''font-family: Helvetica, AdobeInvisFont, KozGoPr6N-Regular;
-font-size: 12px;
 line-height: 24px;
 color: rgba(0, 0, 0, 255);
 text-align: left;'''
