@@ -53,8 +53,12 @@ module.exports = class TextElements extends LayerInfo
     return [] unless @engineData?
     @engineData.ResourceDict.FontSet.map (f) -> f.Name
 
+  leadings: ->
+    return [] if not @engineData? or not @styles().Leading?
+    @styles().Leading
+
   sizes: ->
-    return [] if not @engineData? and not @styles().FontSize?
+    return [] if not @engineData? or not @styles().FontSize?
     @styles().FontSize
 
   alignment: ->
@@ -96,7 +100,8 @@ module.exports = class TextElements extends LayerInfo
   toCSS: ->
     definition =
       'font-family': @fonts().join(', ')
-      'font-size': "#{@sizes()[0]}pt"
+      'font-size': @sizes()[0] and "#{@sizes()[0]}px"
+      'line-height': @leadings()[0] and "#{@leadings()[0]}px"
       'color': "rgba(#{@colors()[0].join(', ')})"
       'text-align': @alignment()[0]
 
@@ -111,6 +116,7 @@ module.exports = class TextElements extends LayerInfo
     value: @textValue
     font:
       name: @fonts()[0]
+      leadings: @leadings()
       sizes: @sizes()
       colors: @colors()
       alignment: @alignment()
