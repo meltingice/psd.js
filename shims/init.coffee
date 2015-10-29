@@ -18,7 +18,10 @@ module.exports =
 
     @fromEvent = (e) ->
       new RSVP.Promise (resolve, reject) ->
-        file = e.dataTransfer.files[0]
+        if (e.type == "change")
+            file = e.target.files[0]
+        else
+            file = e.dataTransfer.files[0]
         reader = new FileReader()
         reader.onload = (e) ->
           psd = new PSD(new Uint8Array(e.target.result))

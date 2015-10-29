@@ -32,7 +32,8 @@
 </head>
 <body>
   <div id="dropzone">
-    <p>Drop here</p>
+    <p>Drop here or click here.</p>
+    <input type="file" style="display:none;">
   </div>
 
   <div id="image"></div>
@@ -41,9 +42,10 @@
   <script type="text/javascript">
   (function () {
     var PSD = require('psd');
-
-    document.getElementById('dropzone').addEventListener('dragover', onDragOver, true);
-    document.getElementById('dropzone').addEventListener('drop', onDrop, true);
+    document.querySelector('#dropzone').addEventListener('click', onClick, true);
+    document.querySelector('#dropzone').addEventListener('dragover', onDragOver, true);
+    document.querySelector('#dropzone').addEventListener('drop', onDrop, true);
+    document.querySelector('#dropzone input').addEventListener('change', onDrop, true);
 
     function onDragOver(e) {
       e.stopPropagation();
@@ -57,9 +59,15 @@
 
       PSD.fromEvent(e).then(function (psd) {
         var data = JSON.stringify(psd.tree().export(), undefined, 2);
-        document.getElementById('data').innerHTML = data;
-        document.getElementById('image').appendChild(psd.image.toPng());
+        document.querySelector('#data').innerHTML = data;
+        document.querySelector('#image').appendChild(psd.image.toPng());
+      }).catch(function (err) {
+        document.querySelector('#data').innerHTML = err;
       });
+    }
+
+    function onClick(e) {
+        document.querySelector('#dropzone input').click();
     }
   }());
   </script>
