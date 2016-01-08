@@ -18,7 +18,7 @@ module.exports =
     canvas.toDataURL 'image/png'
   
   toImageData: ->
-    imageData = new ImageData @width, @height
+    imageData = new ImageData @width(), @height()
     pixelData = imageData.data
     pixelData[i] = pixel for pixel, i in @pixelData
     imageData
