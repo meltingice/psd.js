@@ -16,6 +16,12 @@ module.exports =
     context.putImageData(imageData, 0, 0)
 
     canvas.toDataURL 'image/png'
+  
+  toImageData: ->
+    imageData = new ImageData @width, @height
+    pixelData = imageData.data
+    pixelData[i] = pixel for pixel, i in @pixelData
+    imageData
 
   toPng: ->
     dataUrl = @toBase64()
