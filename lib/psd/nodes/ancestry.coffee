@@ -2,7 +2,7 @@ _ = require 'lodash'
 
 module.exports =
   root: ->
-    return @ if isRoot()
+    return @ if @isRoot()
     return @parent.root()
 
   isRoot: -> @depth() is 0
