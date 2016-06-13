@@ -3,11 +3,11 @@ Util = require '../util.coffee'
 
 # This is an incredibly important object because the majority of the layer information
 # is contained in layer info blocks. The keys of this object define how the layer info
-# can be accessed. Each layer info block contains different data, so accessing the data 
+# can be accessed. Each layer info block contains different data, so accessing the data
 # within each differs from type to type.
-# 
+#
 # Here's an example of how to access some of this data:
-# 
+#
 # ``` coffeescript
 # node = psd.tree().childrenAtPath('path/to/layer')[0]
 # node.get('locked').allLocked
@@ -15,6 +15,7 @@ Util = require '../util.coffee'
 # node.get('typeTool').export()
 # ```
 LAYER_INFO = {
+  artboard:               require('../layer_info/artboard.coffee')
   blendClippingElements:  require('../layer_info/blend_clipping_elements.coffee')
   blendInteriorElements:  require('../layer_info/blend_interior_elements.coffee')
   fillOpacity:            require('../layer_info/fill_opacity.coffee')
