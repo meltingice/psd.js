@@ -97,7 +97,7 @@ module.exports = class TextElements extends LayerInfo
         leading = f.Leading
       else
         leading = 'auto'
-      return leadinga
+      return leading
 
   sizes: ->
     return [] if not @engineData? and not @styles().FontSize?
