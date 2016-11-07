@@ -64,9 +64,9 @@ module.exports = class TextElements extends LayerInfo
       r.StyleSheet.StyleSheetData
     data.map (f) ->
       if f.FauxItalic
-        style = 'italic';
+        style = 'italic'
       else
-        style = 'normal';
+        style = 'normal'
       return style
 
   fontWeights: ->
@@ -74,9 +74,9 @@ module.exports = class TextElements extends LayerInfo
       r.StyleSheet.StyleSheetData
     data.map (f) ->
       if f.FauxBold
-        weight = 'bold';
+        weight = 'bold'
       else
-        weight = 'normal';
+        weight = 'normal'
       return weight
 
   textDecoration: ->
@@ -84,10 +84,20 @@ module.exports = class TextElements extends LayerInfo
       r.StyleSheet.StyleSheetData
     data.map (f) ->
       if f.Underline
-        decoration = 'underline';
+        decoration = 'underline'
       else
-        decoration = 'none';
+        decoration = 'normal'
       return decoration
+
+  leading: ->
+    data = @engineData.EngineDict.StyleRun.RunArray.map (r) ->
+      r.StyleSheet.StyleSheetData
+    data.map (f) ->
+      if f.Leading
+        leading = f.Leading
+      else
+        leading = 'auto'
+      return leadinga
 
   sizes: ->
     return [] if not @engineData? and not @styles().FontSize?
@@ -154,6 +164,7 @@ module.exports = class TextElements extends LayerInfo
       colors: @colors()
       alignment: @alignment()
       textDecoration: @textDecoration()
+      leading: @leading()
     left: @coords.left
     top: @coords.top
     right: @coords.right
