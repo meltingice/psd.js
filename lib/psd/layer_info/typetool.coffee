@@ -86,7 +86,7 @@ module.exports = class TextElements extends LayerInfo
       if f.Underline
         decoration = 'underline'
       else
-        decoration = 'normal'
+        decoration = 'none'
       return decoration
 
   leading: ->
