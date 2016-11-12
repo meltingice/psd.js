@@ -29095,11 +29095,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	      this.right = this.file.readInt();
 	      this.width = this.right - this.left;
 	      this.height = this.bottom - this.top;
+	      this.flags = this.file.readByte();
 	      this.relative = (this.flags & 0x01) > 0;
 	      this.disabled = (this.flags & (0x01 << 1)) > 0;
 	      this.invert = (this.flags & (0x01 << 2)) > 0;
 	      this.defaultColor = this.file.readByte();
-	      this.flags = this.file.readByte();
 	      this.file.seek(maskEnd);
 	      return this;
 	    };
@@ -30778,7 +30778,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      this._height = this.layer.height;
 	      ChannelImage.__super__.constructor.call(this, file, header);
 	      this.channelsInfo = this.layer.channelsInfo;
-	      this.hasMask = _.any(this.channelsInfo, function(c) {
+	      this.hasMask = _.some(this.channelsInfo, function(c) {
 	        return c.id < -1;
 	      });
 	      this.opacity = this.layer.opacity / 255.0;
