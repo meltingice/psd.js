@@ -4,7 +4,7 @@ ImageFormat = require './image_format.coffee'
 
 # Represents an image for a single layer, which differs slightly in format from
 # the full size preview image.
-# 
+#
 # The full preview at the end of the PSD document has the same compression for all
 # channels, whereas layer images define the compression per color channel. The
 # dimensions can also differ per channel if we're parsing mask data (channel ID < -1).
@@ -22,7 +22,7 @@ module.exports = class ChannelImage extends Image
     super(file, header)
 
     @channelsInfo = @layer.channelsInfo
-    @hasMask = _.any @channelsInfo, (c) -> c.id < -1
+    @hasMask = _.some @channelsInfo, (c) -> c.id < -1
     @opacity = @layer.opacity / 255.0
     @maskData = []
 
