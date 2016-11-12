@@ -19,12 +19,12 @@ module.exports = class Mask
     @width = @right - @left
     @height = @bottom - @top
 
+    @flags = @file.readByte()
     @relative = (@flags & 0x01) > 0
     @disabled = (@flags & (0x01 << 1)) > 0
     @invert = (@flags & (0x01 << 2)) > 0
 
     @defaultColor = @file.readByte()
-    @flags = @file.readByte()
 
     @file.seek maskEnd
     return @
