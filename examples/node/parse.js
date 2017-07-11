@@ -6,4 +6,4 @@ var psd = new PSD(fs.readFileSync(file));
 psd.parse();
 
 console.log(psd.header.export());
-console.log(psd.resources.resource('layerComps'));
+console.log(psd.resources.resource('layerComps').export());

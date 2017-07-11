@@ -1,3 +1,5 @@
+import Descriptor from '../descriptor'
+
 export default class LayerComps {
   static id = 1065;
   static name = 'layerComps';
@@ -17,11 +19,26 @@ export default class LayerComps {
   constructor(resource) {
     this.resource = resource;
     this.file = this.resource.file;
+    this.data = null;
   }
 
   parse() {
     console.log('Parsing layer comps');
     this.file.seek(4, true);
+    this.data = (new Descriptor(this.file)).parse();
+  }
 
+  names() {
+    return this.data.list.map(comp => comp['Nm  ']);
+  }
+
+  export() {
+    return this.data.list.map((comp) => {
+      return {
+        id: comp.compID,
+        name: comp['Nm  '],
+        capturedInfo: comp.capturedInfo
+      }
+    })
   }
 }
