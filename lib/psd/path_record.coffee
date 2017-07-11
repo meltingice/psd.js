@@ -1,5 +1,7 @@
 _ = require 'lodash'
 
+# A path record describes a single point in a vector path. This is used
+# in a couple of different places, but most notably in vector shapes.
 module.exports = class PathRecord
   constructor: (@file) ->
     @recordType = null
