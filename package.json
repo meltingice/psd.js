@@ -1,8 +1,14 @@
 {
   "name": "psd",
   "description": "A general purpose Photoshop file parser.",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "main": "./index.js",
+  "files": [
+    "src",
+    "lib",
+    "dist",
+    "index*.js"
+  ],
   "keywords": [
     "psd",
     "parser",
@@ -15,27 +21,37 @@
     "url": "git@github.com:meltingice/psd.js.git"
   },
   "dependencies": {
-    "coffee-script": "~ 1.7.1",
-    "jspack": "~ 0.0.3",
-    "coffeescript-module": "~ 0.2.1",
-    "parse-engine-data": "~ 0.1",
-    "pngjs": "~ 0.4.0",
-    "rsvp": "~ 3.0.6",
-    "lodash": "~ 2.4",
-    "iconv-lite": "~ 0.4.4"
+    "coffee-script": "^1.7.1",
+    "coffeescript-module": "^0.2.1",
+    "iconv-lite": "^0.4.13",
+    "jspack": "0.0.4",
+    "lodash": "^2.4.2",
+    "parse-engine-data": "^0.1.2",
+    "pngjs": "^0.4.0",
+    "rsvp": "^3.0.21"
   },
   "scripts": {
-    "test": "mocha test",
-    "docs": "node_modules/docco-husky/bin/generate lib shims"
+    "docs": "docco-husky src",
+    "test": "npm run build && mocha test",
+    "build": "cross-env NODE_ENV=production node scripts/build.js",
+    "release": "./scripts/release.sh"
   },
   "devDependencies": {
-    "bluebird": "^2.9.25",
-    "browserify": "~ 10.1.3",
-    "coffeeify": "~ 1.1.0",
-    "docco-husky": "*",
-    "mocha": "~ 1.18.2",
-    "rimraf": "~ 2.2.8",
-    "should": "~ 3.3.1",
-    "uglify-js": "^2.4.21"
+    "bluebird": "^2.11.0",
+    "browserify": "^10.1.3",
+    "coffeeify": "^1.1.0",
+    "cross-env": "^3.1.3",
+    "docco-husky": "^0.3.3",
+    "glob": "^7.1.1",
+    "json-loader": "^0.5.4",
+    "mocha": "^1.18.2",
+    "rimraf": "^2.2.8",
+    "should": "^3.3.2",
+    "uglify-js": "^2.7.4",
+    "webpack": "^1.13.3"
+  },
+  "browser": {
+    "./lib/psd/init.js": "./lib/shims/init.js",
+    "./lib/psd/image_exports/png.js": "./lib/shims/png.js"
   }
 }
