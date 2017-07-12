@@ -1,8 +1,12 @@
+import LazyExecute from './lazy_execute'
+import ChannelImage from './channel_image'
+
 import parsePositionAndChannels from './layer/position_channels'
 import parseBlendModes from './layer/blend_modes'
 import parseMaskData from './layer/mask_data'
 import parseBlendingRanges from './layer/blending_ranges'
 import parseLegacyLayerName from './layer/legacy_name'
+import parseLayerInfo from './layer/info'
 
 export default class Layer {
   mask = {}
@@ -39,5 +43,14 @@ export default class Layer {
     parseMaskData(this);
     parseBlendingRanges(this);
     parseLegacyLayerName(this);
+    parseLayerInfo(this);
+  }
+
+  parseChannelImage() {
+    const image = new ChannelImage(this);
+    this.image = new LazyExecute(image, this.file)
+      .now('skip')
+      .later('parse')
+      .get();
   }
 }

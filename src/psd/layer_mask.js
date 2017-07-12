@@ -44,7 +44,7 @@ export default class LayerMask {
       }
 
       // Channel images come after all of the layer data
-      this.layers.forEach(layer => layer.parseChannelImage())
+      this.layers.forEach(layer => layer.parseChannelImage());
     }
   }
 }
