@@ -21,8 +21,10 @@
     "jspack": "~ 0.0.3",
     "lodash": "~ 2.4",
     "parse-engine-data": "~ 0.1",
-    "pngjs": "~ 0.4.0",
-    "rsvp": "~ 3.0.6"
+    "pngjs": "3.2.0",
+    "rsvp": "~ 3.0.6",
+    "lodash": "~ 2.4",
+    "iconv-lite": "~ 0.4.4"
   },
   "scripts": {
     "test": "mocha test",
