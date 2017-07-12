@@ -31,7 +31,7 @@ export default class File {
       code: '>q',
       length: 8
     }
-  }
+  };
 
   constructor(data) {
     this.data = data;

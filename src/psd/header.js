@@ -47,6 +47,8 @@ export default class Header {
     const { file } = this;
 
     this.sig = file.readString(4);
+    this._validateSignature();
+
     this.version = file.readUShort();
 
     file.seek(6, true);
@@ -75,5 +77,11 @@ export default class Header {
       depth: this.depth,
       mode: this.mode
     };
+  }
+
+  _validateSignature() {
+    if (this.sig != '8BPS') {
+      throw new Error(`Invalid file signature detected. Got ${this.sig}, expected 8BPS.`);
+    }
   }
 }
