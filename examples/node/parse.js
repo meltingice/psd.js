@@ -7,3 +7,4 @@ psd.parse();
 
 console.log(psd.header.export());
 console.log(psd.resources.resource('layerComps').export());
+console.log(psd.layerMask.top);
