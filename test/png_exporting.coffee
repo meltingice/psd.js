@@ -25,6 +25,6 @@ describe "exporting from a PSD", ->
       fs.statSync(filePath).size
       .should
       .eql(fs.statSync(expectedPath).size)
-    .then -> done()
-    .catch done
+    .then -> done
+    .catch done()
 
