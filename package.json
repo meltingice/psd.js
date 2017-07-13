@@ -1,7 +1,7 @@
 {
   "name": "psd",
   "description": "A general purpose Photoshop file parser.",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "main": "./index.js",
   "keywords": [
     "psd",
@@ -15,14 +15,15 @@
     "url": "git@github.com:meltingice/psd.js.git"
   },
   "dependencies": {
+    "acorn": "^5.1.1",
     "coffee-script": "~ 1.7.1",
-    "jspack": "~ 0.0.3",
     "coffeescript-module": "~ 0.2.1",
+    "iconv-lite": "~ 0.4.4",
+    "jspack": "~ 0.0.3",
+    "lodash": "~ 2.4",
     "parse-engine-data": "~ 0.1",
     "pngjs": "3.2.0",
-    "rsvp": "~ 3.0.6",
-    "lodash": "~ 2.4",
-    "iconv-lite": "~ 0.4.4"
+    "rsvp": "~ 3.0.6"
   },
   "scripts": {
     "test": "mocha test",
