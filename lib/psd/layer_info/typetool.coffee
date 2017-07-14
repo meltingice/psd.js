@@ -53,6 +53,52 @@ module.exports = class TextElements extends LayerInfo
     return [] unless @engineData?
     @engineData.ResourceDict.FontSet.map (f) -> f.Name
 
+  lengthArray: ->
+    arr = @engineData.EngineDict.StyleRun.RunLengthArray
+    sum = _.reduce(arr, (m, o) -> m + o)
+    arr[arr.length - 1] = arr[arr.length - 1] - 1 if sum - @textValue.length == 1
+    return arr
+
+  fontStyles: ->
+    data = @engineData.EngineDict.StyleRun.RunArray.map (r) ->
+      r.StyleSheet.StyleSheetData
+    data.map (f) ->
+      if f.FauxItalic
+        style = 'italic'
+      else
+        style = 'normal'
+      return style
+
+  fontWeights: ->
+    data = @engineData.EngineDict.StyleRun.RunArray.map (r) ->
+      r.StyleSheet.StyleSheetData
+    data.map (f) ->
+      if f.FauxBold
+        weight = 'bold'
+      else
+        weight = 'normal'
+      return weight
+
+  textDecoration: ->
+    data = @engineData.EngineDict.StyleRun.RunArray.map (r) ->
+      r.StyleSheet.StyleSheetData
+    data.map (f) ->
+      if f.Underline
+        decoration = 'underline'
+      else
+        decoration = 'none'
+      return decoration
+
+  leading: ->
+    data = @engineData.EngineDict.StyleRun.RunArray.map (r) ->
+      r.StyleSheet.StyleSheetData
+    data.map (f) ->
+      if f.Leading
+        leading = f.Leading
+      else
+        leading = 'auto'
+      return leading
+
   sizes: ->
     return [] if not @engineData? and not @styles().FontSize?
     @styles().FontSize
@@ -110,10 +156,15 @@ module.exports = class TextElements extends LayerInfo
   export: ->
     value: @textValue
     font:
-      name: @fonts()[0]
+      lengthArray: @lengthArray()
+      styles: @fontStyles()
+      weights: @fontWeights()
+      names: @fonts()
       sizes: @sizes()
       colors: @colors()
       alignment: @alignment()
+      textDecoration: @textDecoration()
+      leading: @leading()
     left: @coords.left
     top: @coords.top
     right: @coords.right
