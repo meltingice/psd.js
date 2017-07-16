@@ -56,6 +56,8 @@ module.exports = class Header extends Module
   # Parses the header data.
   parse: ->
     @sig = @file.readString(4)
+    if @sig != '8BPS'
+      throw new Error('Invalid file signature detected. Got: '+@sig+'. Expected 8BPS.')
     @version = @file.readUShort()
 
     @file.seek 6, true
