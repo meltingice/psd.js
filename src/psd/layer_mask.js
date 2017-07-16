@@ -22,6 +22,7 @@ export default class LayerMask {
     if (maskSize <= 0) return;
 
     this._parseLayers();
+    this._parseGlobalMask();
   }
 
   _parseLayers() {
@@ -46,5 +47,33 @@ export default class LayerMask {
       // Channel images come after all of the layer data
       this.layers.forEach(layer => layer.parseChannelImage());
     }
+  }
+
+  _parseGlobalMask() {
+    const { file } = this;
+    const length = file.readInt();
+    if (length <= 0) return;
+
+    const maskEnd = file.tell() + length;
+
+    const overlayColorSpace = file.readShort();
+    const colorComponents = [
+      file.readShort() >> 8,
+      file.readShort() >> 8,
+      file.readShort() >> 8,
+      file.readShort() >> 8
+    ];
+
+    const opacity = file.readShort() / 16.0;
+    const kind = file.readByte();
+
+    this.globalMask = {
+      overlayColorSpace,
+      colorComponents,
+      opacity,
+      kind
+    };
+
+    file.seek(maskEnd);
   }
 }
