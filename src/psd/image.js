@@ -20,6 +20,8 @@ export default class Image {
     this.file = file;
     this.header = header;
 
+    this.width = this.header.width;
+    this.height = this.header.height;
     this.numPixels = this.header.width * this.header.height;
     if (this.header.depth === 16) this.numPixels *= 2;
   }
