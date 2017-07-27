@@ -12,3 +12,5 @@ console.log(psd.layerMask.layers.length, 'Layers');
 psd.layerMask.layers.forEach(function (layer) {
   console.log(layer.name);
 })
+
+console.log(psd.image.pixelData.length);

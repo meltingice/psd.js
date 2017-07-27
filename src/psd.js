@@ -3,6 +3,7 @@ import LazyExecute from './psd/lazy_execute'
 import Header from './psd/header'
 import Resources from './psd/resources'
 import LayerMask from './psd/layer_mask'
+import Image from './psd/image'
 
 class PSD {
   constructor(data) {
@@ -17,6 +18,7 @@ class PSD {
     this._parseHeader();
     this._parseResources();
     this._parseLayerMask();
+    this._parseImage();
 
     this.parsed = true;
   }
@@ -39,6 +41,14 @@ class PSD {
     this.layerMask = new LazyExecute(layerMask, this.file)
       .now('skip')
       .later('parse')
+      .get();
+  }
+
+  _parseImage() {
+    const image = new Image(this.file, this.header);
+    this.image = new LazyExecute(image, this.file)
+      .later('parse')
+      .ignore('width', 'height')
       .get();
   }
 }
