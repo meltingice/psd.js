@@ -20,7 +20,7 @@ const sharedConfig = {
 const coreConfig = merge(sharedConfig, {
   entry: './src/psd.js',
   output: {
-    filename: "[name].js",
+    filename: "psd.js",
     path: path.resolve(__dirname, 'dist'),
     library: 'PSD',
     libraryTarget: 'umd'
