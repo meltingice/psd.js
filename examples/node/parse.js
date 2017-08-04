@@ -1,6 +1,6 @@
 var fs = require('fs');
 var PSD = require('../../dist/psd.js').default;
-var PNG = require('../../dist/psd-node.js').PNG;
+var PSDTools = require('../../dist/psd-node.js');
 var imageToPng = require('../../dist/psd.js').imageToPng;
 
 var file = process.argv[2] || './examples/images/example.psd';
@@ -15,6 +15,6 @@ psd.layerMask.layers.forEach(function (layer) {
   console.log(layer.name);
 })
 
-PNG.saveAsPng(psd.image, './output.png').then(function () {
+PSDTools.PNG.saveAsPng(psd.image, './output.png').then(function () {
   console.log("Image written to output.png!");
 });
