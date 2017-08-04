@@ -203,7 +203,7 @@ export default class Descriptor {
       case '#Pnt': unit = 'Points'; break;
     }
 
-    value = this.file.readDouble();
+    const value = this.file.readDouble();
     return { id: unitId, unit, value };
   }
 
@@ -221,7 +221,7 @@ export default class Descriptor {
       case '#Pnt': unit = 'Points'; break;
     }
 
-    value = this.file.readFloat();
+    const value = this.file.readFloat();
     return { id: unitId, unit, value };
   }
 }

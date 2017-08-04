@@ -17,6 +17,9 @@ psd.layerMask.layers.forEach(function (layer) {
   console.log("");
 })
 
+var typeTool = psd.layerMask.layers[3].adjustments.typeTool;
+console.log(typeTool.export());
+
 PSDTools.PNG.saveAsPng(psd.image, './output.png').then(function () {
   console.log("Image written to output.png!");
 });

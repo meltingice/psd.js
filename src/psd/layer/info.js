@@ -2,10 +2,12 @@ import { pad2 } from '../util'
 import LazyExecute from '../lazy_execute'
 
 import Artboard from './info/artboard'
+import TypeTool from './info/typetool'
 import UnicodeName from './info/unicode_name'
 
 const LAYER_INFO = [
   Artboard,
+  TypeTool,
   UnicodeName
 ];
 
