@@ -1,4 +1,5 @@
 import { setRgbChannels, combineRgbChannel } from './image/mode/rgb';
+import { setCmykChannels, combineCmykChannel } from './image/mode/cmyk';
 
 import { parseRaw } from './image/format/raw'
 import { parseRLE } from './image/format/rle'
