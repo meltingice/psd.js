@@ -23,7 +23,6 @@ export default class LayerComps {
   }
 
   parse() {
-    console.log('Parsing layer comps');
     this.file.seek(4, true);
     this.data = (new Descriptor(this.file)).parse();
   }

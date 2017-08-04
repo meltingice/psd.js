@@ -14,6 +14,11 @@ psd.layerMask.layers.forEach(function (layer) {
   console.log("Name:", layer.name);
   console.log("Available info:", layer.availableInfoKeys);
   console.log("Parsed info:", layer.parsedInfoKeys);
+
+  if (layer.adjustments.blendClippingElements) {
+    console.log("Blend clipping elements:", layer.adjustments.blendClippingElements.enabled);
+  }
+
   console.log("");
 })
 
