@@ -1,10 +1,11 @@
 import { pad2 } from '../util'
+import LazyExecute from '../lazy_execute'
+
+import UnicodeName from './info/unicode_name'
 
 const LAYER_INFO = [
-
+  UnicodeName
 ];
-
-const LAYER_INFO_LENGTH = LAYER_INFO.length;
 
 export default function parseLayerInfo(layer) {
   const { file } = layer;
@@ -20,7 +21,7 @@ export default function parseLayerInfo(layer) {
     pos = file.tell();
 
     keyParseable = false;
-    for (var i = 0; i < LAYER_INFO_LENGTH; i++) {
+    for (var i = 0; i < LAYER_INFO.length; i++) {
       infoClass = LAYER_INFO[i];
 
       if (!infoClass.shouldParse(key)) continue;

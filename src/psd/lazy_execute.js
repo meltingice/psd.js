@@ -65,7 +65,7 @@ export default class LazyExecute {
     return new Proxy(this.obj, {
       get: (target, name, receiver) => {
         if (!this.loaded && !this.passthru.includes(name)) {
-          console.log(`LazyExecute: getting ${name}. Loading!`);
+          console.log(`LazyExecute: requesting ${target.constructor.name}#${name}. Loading!`);
           this.load();
         }
 
@@ -73,7 +73,7 @@ export default class LazyExecute {
       },
       apply: (target, self, args) => {
         if (!this.loaded && !this.passthru.includes(name)) {
-          console.log(`LazyExecute: calling ${name}. Loading!`);
+          console.log(`LazyExecute: requesting ${target.constructor.name}#${name}(). Loading!`);
           this.load();
         }
 
