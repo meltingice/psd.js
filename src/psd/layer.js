@@ -16,7 +16,8 @@ export default class Layer {
   blendMode = {}
   groupLayer = null
 
-  infoKeys = []
+  availableInfoKeys = []
+  parsedInfoKeys = []
 
   constructor(file, header) {
     this.file = file;

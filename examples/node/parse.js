@@ -11,8 +11,10 @@ console.log(psd.resources.resource('layerComps').export());
 console.log(psd.layerMask.layers.length, 'Layers');
 
 psd.layerMask.layers.forEach(function (layer) {
-  console.log(layer.name);
-  console.log("Parsed info:", layer.infoKeys);
+  console.log("Name:", layer.name);
+  console.log("Available info:", layer.availableInfoKeys);
+  console.log("Parsed info:", layer.parsedInfoKeys);
+  console.log("");
 })
 
 PSDTools.PNG.saveAsPng(psd.image, './output.png').then(function () {

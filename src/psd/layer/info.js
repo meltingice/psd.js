@@ -19,6 +19,8 @@ export default function parseLayerInfo(layer) {
     file.seek(4, true);
 
     key = file.readString(4);
+    layer.availableInfoKeys.push(key);
+
     length = pad2(file.readInt());
     pos = file.tell();
 
@@ -34,7 +36,7 @@ export default function parseLayerInfo(layer) {
         .later('parse')
         .get();
 
-      layer.infoKeys.push(key);
+      layer.parsedInfoKeys.push(key);
       keyParseable = true;
 
       break;
