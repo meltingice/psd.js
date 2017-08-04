@@ -33,12 +33,10 @@ export default class LayerComps {
   }
 
   export() {
-    return this.data.list.map((comp) => {
-      return {
-        id: comp.compID,
-        name: comp['Nm  '],
-        capturedInfo: comp.capturedInfo
-      }
-    })
+    return this.data.list.map((comp) => ({
+      id: comp.compID,
+      name: comp['Nm  '],
+      capturedInfo: comp.capturedInfo
+    }))
   }
 }
