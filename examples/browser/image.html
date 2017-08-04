@@ -28,7 +28,8 @@
   }
   </style>
 
-  <script type="text/javascript" src="../../dist/psd.min.js"></script>
+  <script type="text/javascript" src="../../dist/psd.js"></script>
+  <script type="text/javascript" src="../../dist/psd-browser.js"></script>
 </head>
 <body>
   <div id="dropzone">
@@ -40,7 +41,7 @@
 
   <script type="text/javascript">
   (function () {
-    var PSD = require('psd');
+    // var PSD = require('psd');
 
     document.getElementById('dropzone').addEventListener('dragover', onDragOver, true);
     document.getElementById('dropzone').addEventListener('drop', onDrop, true);
@@ -55,11 +56,21 @@
       e.stopPropagation();
       e.preventDefault();
 
-      PSD.fromEvent(e).then(function (psd) {
-        var data = JSON.stringify(psd.tree().export(), undefined, 2);
-        document.getElementById('data').innerHTML = data;
-        document.getElementById('image').appendChild(psd.image.toPng());
-      });
+      var file = e.dataTransfer.files[0];
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        psd = new PSD.default(new Uint8Array(e.target.result));
+        psd.parse();
+
+        var img = PSDTools.PNG.toDOMImage(psd.image);
+        document.querySelector('#image').appendChild(img);
+      }
+
+      reader.onerror = function () {
+        console.log("Error!");
+      };
+
+      reader.readAsArrayBuffer(file);
     }
   }());
   </script>
