@@ -29,3 +29,7 @@ PSDTools.PNG.saveAsPng(psd.image, './output.png').then(function () {
 });
 
 console.log(psd.tree().children().length);
+
+const logoGlyph = psd.tree().childrenAtPath("Version D/Logo_Glyph")[0];
+console.log(logoGlyph.name);
+console.log(logoGlyph.path());

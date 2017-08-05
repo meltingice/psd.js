@@ -50,4 +50,8 @@ export default class Root extends Node {
   documentDimensions() {
     return [this.width, this.height];
   }
+
+  depth() { return 0; }
+  opacity() { return 0; }
+  fillOpacity() { return 255; }
 }

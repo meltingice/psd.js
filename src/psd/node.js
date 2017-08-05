@@ -1,3 +1,5 @@
+import _ from 'lodash'
+
 // The Node abstraction is one of the most important in PSD.js. It's the base for the
 // tree representation of the document structure. Every layer and group is a node in
 // the document tree. All common functionality is here, and both layers and groups extend
@@ -168,5 +170,30 @@ export default class Node {
   path(asArray = false) {
     const path = this.ancestors().map(n => n.name).concat([this.name]);
     return asArray ? path : path.join('/');
+  }
+
+  childrenAtPath(path, caseSensitive = true) {
+    if (!Array.isArray(path)) {
+      path = path.split('/').filter(p => p.length > 0);
+    }
+
+    let query = path.shift();
+    if (!caseSensitive) query = query.toLowerCase();
+
+    const matches = this.children().filter(c => {
+      if (caseSensitive) {
+        return c.name === query;
+      } else {
+        return c.name.toLowerCase() === query;
+      }
+    });
+
+    if (path.length === 0) {
+      return matches;
+    }
+
+    return _.flatten(
+      matches.map(m => m.childrenAtPath(path, caseSensitive))
+    );
   }
 }
