@@ -23,6 +23,10 @@ export default class LayerMask {
 
     this._parseLayers();
     this._parseGlobalMask();
+
+    this.layers.reverse();
+
+    this.file.seek(finish);
   }
 
   _parseLayers() {

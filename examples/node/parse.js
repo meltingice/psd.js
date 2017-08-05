@@ -12,6 +12,8 @@ console.log(psd.layerMask.layers.length, 'Layers');
 
 psd.layerMask.layers.forEach(function (layer) {
   console.log("Name:", layer.name);
+  console.log("Folder start:", layer.isFolder());
+  console.log("Folder end:", layer.isFolderEnd());
   console.log("Available info:", layer.availableInfoKeys);
   console.log("Parsed info:", layer.parsedInfoKeys);
 
@@ -22,9 +24,8 @@ psd.layerMask.layers.forEach(function (layer) {
   console.log("");
 })
 
-var typeTool = psd.layerMask.layers[3].adjustments.typeTool;
-console.log(typeTool.export());
-
 PSDTools.PNG.saveAsPng(psd.image, './output.png').then(function () {
   console.log("Image written to output.png!");
 });
+
+console.log(psd.tree().children().length);

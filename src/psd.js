@@ -5,6 +5,8 @@ import Resources from './psd/resources'
 import LayerMask from './psd/layer_mask'
 import Image from './psd/image'
 
+import Root from './psd/nodes/root'
+
 class PSD {
   constructor(data) {
     this.file = new File(data);
@@ -21,6 +23,10 @@ class PSD {
     this._parseImage();
 
     this.parsed = true;
+  }
+
+  tree() {
+    return new Root(this);
   }
 
   _parseHeader() {

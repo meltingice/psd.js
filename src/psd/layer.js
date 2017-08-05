@@ -54,4 +54,24 @@ export default class Layer {
       .later('parse')
       .get();
   }
+
+  isFolder() {
+    if (this.adjustments.sectionDivider) {
+      return this.adjustments.sectionDivider.isFolder;
+    } else if (this.adjustments.nestedSectionDivider) {
+      return this.adjustments.nestedSectionDivider.isFolder;
+    } else {
+      return this.name === "<Layer group>";
+    }
+  }
+
+  isFolderEnd() {
+    if (this.adjustments.sectionDivider) {
+      return this.adjustments.sectionDivider.isHidden;
+    } else if (this.adjustments.nestedSectionDivider) {
+      return this.adjustments.nestedSectionDivider.isHidden;
+    } else {
+      return this.name === "</Layer group>";
+    }
+  }
 }

@@ -4,6 +4,8 @@ import LazyExecute from '../lazy_execute'
 import Artboard from './info/artboard'
 import BlendClippingElements from './info/blend_clipping_elements'
 import BlendInteriorElements from './info/blend_interior_elements'
+import NestedSectionDivider from './info/nested_section_divider'
+import SectionDivider from './info/section_divider'
 import TypeTool from './info/typetool'
 import UnicodeName from './info/unicode_name'
 
@@ -11,6 +13,8 @@ const LAYER_INFO = [
   Artboard,
   BlendClippingElements,
   BlendInteriorElements,
+  NestedSectionDivider,
+  SectionDivider,
   TypeTool,
   UnicodeName
 ];
