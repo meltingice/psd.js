@@ -34,6 +34,7 @@ module.exports = class Image extends Module
 
     # The resulting array that stores the pixel data, formatted in RGBA format.
     @pixelData = []
+    @maskData = []
 
     # This temporarily holds the raw channel data after it's been parsed, but not
     # processed.
