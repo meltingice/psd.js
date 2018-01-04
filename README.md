@@ -1,6 +1,7 @@
 # PSD.js
 
 [![Build Status](https://travis-ci.org/meltingice/psd.js.svg?branch=master)](https://travis-ci.org/meltingice/psd.js)
+[![Help Contribute to Open Source](https://www.codetriage.com/meltingice/psd.js/badges/users.svg)](https://www.codetriage.com/meltingice/psd.js)
 
 A general purpose PSD parser written in Coffeescript. Based off of [PSD.rb](https://github.com/layervault/psd.rb). It allows you to work with a Photoshop document in a manageable tree structure and find out important data such as:
 
