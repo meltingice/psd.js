@@ -7,7 +7,7 @@ module.exports = class Root extends Node
   @layerForPsd: (psd) ->
     layer = {}
     layer[prop] = null for prop in Node.PROPERTIES
-    
+
     layer.top = 0
     layer.left = 0
     layer.right = psd.header.width
@@ -36,6 +36,7 @@ module.exports = class Root extends Node
       height: @height
       resources:
         layerComps: @psd.resources.resource('layerComps')?.export() or []
+        resolutionInfo: @psd.resources.resource('resolutionInfo')?.export() or []
         guides: []
         slices: []
 
