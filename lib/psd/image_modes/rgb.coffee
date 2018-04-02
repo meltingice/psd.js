@@ -27,3 +27,10 @@ module.exports =
           when 2 then  b = val
 
       @pixelData.push r, g, b, a
+      
+    if @hasMask
+      maskPixels = @layer.mask.width * @layer.mask.height
+      offset = @channelLength * rgbChannels.length
+      for i in [0...maskPixels]
+        val = @channelData[i + offset]
+        @maskData.push 0, 0, 0, val
