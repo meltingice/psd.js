@@ -25,5 +25,15 @@ module.exports =
           when 0 then  r = val
           when 1 then  g = val
           when 2 then  b = val
+      @pixelData.set([r, g, b, a], i*4)
 
-      @pixelData.push r, g, b, a
+    @readMaskData(rgbChannels)
+
+  readMaskData: (rgbChannels) ->
+      
+    if @hasMask
+      maskPixels = @layer.mask.width * @layer.mask.height
+      offset = @channelLength * rgbChannels.length
+      for i in [0...maskPixels]
+        val = @channelData[i + offset]
+        @maskData.set([0, 0, 0, val], i*4)

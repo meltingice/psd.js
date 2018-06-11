@@ -24,7 +24,6 @@ module.exports = class ChannelImage extends Image
     @channelsInfo = @layer.channelsInfo
     @hasMask = _.any @channelsInfo, (c) -> c.id < -1
     @opacity = @layer.opacity / 255.0
-    @maskData = []
 
   # Skip parsing this image by jumping to the end of the data.
   skip: ->

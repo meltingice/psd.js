@@ -11,4 +11,4 @@ module.exports =
       else
         255
 
-      @pixelData.push grey, grey, grey, alpha
+      @pixelData.set([grey, grey, grey, alpha], i*4)
