@@ -4,6 +4,8 @@ module.exports =
   # the ranges in both greyscale and for each color channel.
   parseBlendingRanges: ->
     length = @file.readInt()
+    if length == 0
+      return
 
     @blendingRanges.grey =
       source:

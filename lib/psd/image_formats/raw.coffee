@@ -1,3 +1,3 @@
 module.exports =
   parseRaw: ->
-    @channelData = @file.read(@length)
+    @channelData.set @file.read(@length)

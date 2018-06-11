@@ -33,11 +33,13 @@ module.exports = class Image extends Module
     @calculateLength()
 
     # The resulting array that stores the pixel data, formatted in RGBA format.
-    @pixelData = []
+    @pixelData = new Uint8Array(@length)
+    @maskData =  new Uint8Array(@maskLength * 4)
 
     # This temporarily holds the raw channel data after it's been parsed, but not
     # processed.
-    @channelData = []
+    @channelData = new Uint8Array(@length + @maskLength)
+
     @opacity = 1.0
     @hasMask = false
 
@@ -66,6 +68,11 @@ module.exports = class Image extends Module
 
     @channelLength = @length
     @length *= @channels()
+
+    if @layer and @layer.mask.size
+      @maskLength = @layer.mask.width * @layer.mask.height
+    else
+      @maskLength = 0
 
   # Parses the image and formats the image data.
   parse: ->

@@ -30,4 +30,7 @@ module.exports =
           when 3 then k = val
 
       [r, g, b] = Color.cmykToRgb(255 - c, 255 - m, 255 - y, 255 - k)
-      @pixelData.push r, g, b, a
+      @pixelData.set([r, g, b, a], i*4)
+
+    @readMaskData(cmykChannels)
+
