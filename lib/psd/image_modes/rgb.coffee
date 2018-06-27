@@ -25,10 +25,7 @@ module.exports =
           when 0 then  r = val
           when 1 then  g = val
           when 2 then  b = val
- 
-      switch @channels()
-        when 3 then  @pixelData.set([r, g, b], i * 3)
-        when 4 then  @pixelData.set([r, g, b, a], i * 4)
+        @pixelData.set([r, g, b, a], i * 4)
 
     @readMaskData(rgbChannels)
 
