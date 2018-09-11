@@ -28,7 +28,7 @@
   }
   </style>
 
-  <script type="text/javascript" src="../../dist/psd.min.js"></script>
+  <script type="text/javascript" src="../../dist/psd.browser.min.js"></script>
 </head>
 <body>
   <div id="dropzone">
@@ -40,8 +40,6 @@
 
   <script type="text/javascript">
   (function () {
-    var PSD = require('psd');
-
     document.getElementById('dropzone').addEventListener('dragover', onDragOver, true);
     document.getElementById('dropzone').addEventListener('drop', onDrop, true);
 
