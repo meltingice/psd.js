@@ -25,7 +25,7 @@ task 'compile', 'Compile with browserify for the web', ->
   .transform(coffeeify)
   .require('./shims/png.coffee', expose: './image_exports/png.coffee')
   .require('./shims/init.coffee', expose: './psd/init.coffee')
-  .add('./lib/psd.coffee')
+  .add('./lib/psd.coffee', expose: 'psd')
   .bundle (err, src, map) ->
     return console.log(err) if err?
     writeFile('./dist/psd.browser.js', src)

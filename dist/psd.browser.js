@@ -35,94 +35,7 @@ module.exports = {
 };
 
 
-},{"rsvp":97}],1:[function(require,module,exports){
-var File, Header, Image, LayerMask, LazyExecute, Module, PSD, RSVP, Resources,
-  extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  hasProp = {}.hasOwnProperty;
-
-RSVP = require('rsvp');
-
-Module = require('coffeescript-module').Module;
-
-File = require('./psd/file.coffee');
-
-LazyExecute = require('./psd/lazy_execute.coffee');
-
-Header = require('./psd/header.coffee');
-
-Resources = require('./psd/resources.coffee');
-
-LayerMask = require('./psd/layer_mask.coffee');
-
-Image = require('./psd/image.coffee');
-
-module.exports = PSD = (function(superClass) {
-  extend(PSD, superClass);
-
-  PSD.Node = {
-    Root: require('./psd/nodes/root.coffee')
-  };
-
-  PSD["extends"](require('./psd/init.coffee'));
-
-  function PSD(data) {
-    this.file = new File(data);
-    this.parsed = false;
-    this.header = null;
-    Object.defineProperty(this, 'layers', {
-      get: function() {
-        return this.layerMask.layers;
-      }
-    });
-    RSVP.on('error', function(reason) {
-      return console.error(reason);
-    });
-  }
-
-  PSD.prototype.parse = function() {
-    if (this.parsed) {
-      return;
-    }
-    this.parseHeader();
-    this.parseResources();
-    this.parseLayerMask();
-    this.parseImage();
-    return this.parsed = true;
-  };
-
-  PSD.prototype.parseHeader = function() {
-    this.header = new Header(this.file);
-    return this.header.parse();
-  };
-
-  PSD.prototype.parseResources = function() {
-    var resources;
-    resources = new Resources(this.file);
-    return this.resources = new LazyExecute(resources, this.file).now('skip').later('parse').get();
-  };
-
-  PSD.prototype.parseLayerMask = function() {
-    var layerMask;
-    layerMask = new LayerMask(this.file, this.header);
-    return this.layerMask = new LazyExecute(layerMask, this.file).now('skip').later('parse').get();
-  };
-
-  PSD.prototype.parseImage = function() {
-    var image;
-    image = new Image(this.file, this.header);
-    return this.image = new LazyExecute(image, this.file).later('parse').ignore('width', 'height').get();
-  };
-
-  PSD.prototype.tree = function() {
-    return new PSD.Node.Root(this);
-  };
-
-  return PSD;
-
-})(Module);
-
-
-},{"./psd/file.coffee":6,"./psd/header.coffee":7,"./psd/image.coffee":8,"./psd/init.coffee":"./psd/init.coffee","./psd/layer_mask.coffee":49,"./psd/lazy_execute.coffee":50,"./psd/nodes/root.coffee":57,"./psd/resources.coffee":62,"coffeescript-module":71,"rsvp":97}],"./psd/init.coffee":[function(require,module,exports){
+},{"rsvp":96}],"./psd/init.coffee":[function(require,module,exports){
 var RSVP;
 
 RSVP = require('rsvp');
@@ -178,7 +91,7 @@ module.exports = {
 };
 
 
-},{"rsvp":97}],2:[function(require,module,exports){
+},{"rsvp":96}],1:[function(require,module,exports){
 var BlendMode, Module,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -255,7 +168,7 @@ module.exports = BlendMode = (function(superClass) {
 })(Module);
 
 
-},{"coffeescript-module":71}],3:[function(require,module,exports){
+},{"coffeescript-module":70}],2:[function(require,module,exports){
 var ChannelImage, Image, ImageFormat, _,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -359,7 +272,7 @@ module.exports = ChannelImage = (function(superClass) {
 })(Image);
 
 
-},{"./image.coffee":8,"./image_format.coffee":10,"lodash":94}],4:[function(require,module,exports){
+},{"./image.coffee":7,"./image_format.coffee":9,"lodash":93}],3:[function(require,module,exports){
 var Util;
 
 Util = require('./util.coffee');
@@ -375,7 +288,7 @@ module.exports = {
 };
 
 
-},{"./util.coffee":66}],5:[function(require,module,exports){
+},{"./util.coffee":65}],4:[function(require,module,exports){
 var Descriptor;
 
 module.exports = Descriptor = (function() {
@@ -652,7 +565,7 @@ module.exports = Descriptor = (function() {
 })();
 
 
-},{}],6:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 (function (Buffer){
 var Color, File, Util, iconv, jspack,
   hasProp = {}.hasOwnProperty;
@@ -796,7 +709,7 @@ module.exports = File = (function() {
 
 
 }).call(this,require("buffer").Buffer)
-},{"./color.coffee":4,"./util.coffee":66,"buffer":69,"iconv-lite":91,"jspack":93}],7:[function(require,module,exports){
+},{"./color.coffee":3,"./util.coffee":65,"buffer":68,"iconv-lite":90,"jspack":92}],6:[function(require,module,exports){
 var Header, Module,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -869,7 +782,7 @@ module.exports = Header = (function(superClass) {
 })(Module);
 
 
-},{"coffeescript-module":71}],8:[function(require,module,exports){
+},{"coffeescript-module":70}],7:[function(require,module,exports){
 var Export, Image, ImageFormat, ImageMode, Module,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1012,13 +925,13 @@ module.exports = Image = (function(superClass) {
 })(Module);
 
 
-},{"./image_export.coffee":9,"./image_format.coffee":10,"./image_mode.coffee":15,"coffeescript-module":71}],9:[function(require,module,exports){
+},{"./image_export.coffee":8,"./image_format.coffee":9,"./image_mode.coffee":14,"coffeescript-module":70}],8:[function(require,module,exports){
 module.exports = {
   PNG: require('./image_exports/png.coffee')
 };
 
 
-},{"./image_exports/png.coffee":"./image_exports/png.coffee"}],10:[function(require,module,exports){
+},{"./image_exports/png.coffee":"./image_exports/png.coffee"}],9:[function(require,module,exports){
 module.exports = {
   RAW: require('./image_formats/raw.coffee'),
   RLE: require('./image_formats/rle.coffee'),
@@ -1027,7 +940,7 @@ module.exports = {
 };
 
 
-},{"./image_formats/layer_raw.coffee":11,"./image_formats/layer_rle.coffee":12,"./image_formats/raw.coffee":13,"./image_formats/rle.coffee":14}],11:[function(require,module,exports){
+},{"./image_formats/layer_raw.coffee":10,"./image_formats/layer_rle.coffee":11,"./image_formats/raw.coffee":12,"./image_formats/rle.coffee":13}],10:[function(require,module,exports){
 module.exports = {
   parseRaw: function() {
     var i, j, ref, ref1;
@@ -1039,7 +952,7 @@ module.exports = {
 };
 
 
-},{}],12:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 module.exports = {
   parseByteCounts: function() {
     var i, j, ref, results;
@@ -1056,7 +969,7 @@ module.exports = {
 };
 
 
-},{}],13:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 module.exports = {
   parseRaw: function() {
     return this.channelData.set(this.file.read(this.length));
@@ -1064,7 +977,7 @@ module.exports = {
 };
 
 
-},{}],14:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 module.exports = {
   parseRLE: function() {
     this.byteCounts = this.parseByteCounts();
@@ -1123,7 +1036,7 @@ module.exports = {
 };
 
 
-},{}],15:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 module.exports = {
   Greyscale: require('./image_modes/greyscale.coffee'),
   RGB: require('./image_modes/rgb.coffee'),
@@ -1131,7 +1044,7 @@ module.exports = {
 };
 
 
-},{"./image_modes/cmyk.coffee":16,"./image_modes/greyscale.coffee":17,"./image_modes/rgb.coffee":18}],16:[function(require,module,exports){
+},{"./image_modes/cmyk.coffee":15,"./image_modes/greyscale.coffee":16,"./image_modes/rgb.coffee":17}],15:[function(require,module,exports){
 var Color;
 
 Color = require('../color.coffee');
@@ -1193,7 +1106,7 @@ module.exports = {
 };
 
 
-},{"../color.coffee":4}],17:[function(require,module,exports){
+},{"../color.coffee":3}],16:[function(require,module,exports){
 module.exports = {
   setGreyscaleChannels: function() {
     this.channelsInfo = [
@@ -1220,7 +1133,7 @@ module.exports = {
 };
 
 
-},{}],18:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 module.exports = {
   setRgbChannels: function() {
     this.channelsInfo = [
@@ -1285,7 +1198,7 @@ module.exports = {
 };
 
 
-},{}],19:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 var Layer, Module,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1367,7 +1280,7 @@ module.exports = Layer = (function(superClass) {
 })(Module);
 
 
-},{"./layer/blend_modes.coffee":20,"./layer/blending_ranges.coffee":21,"./layer/channel_image.coffee":22,"./layer/helpers.coffee":23,"./layer/info.coffee":24,"./layer/mask.coffee":25,"./layer/name.coffee":26,"./layer/position_channels.coffee":27,"coffeescript-module":71}],20:[function(require,module,exports){
+},{"./layer/blend_modes.coffee":19,"./layer/blending_ranges.coffee":20,"./layer/channel_image.coffee":21,"./layer/helpers.coffee":22,"./layer/info.coffee":23,"./layer/mask.coffee":24,"./layer/name.coffee":25,"./layer/position_channels.coffee":26,"coffeescript-module":70}],19:[function(require,module,exports){
 var BlendMode;
 
 BlendMode = require('../blend_mode.coffee');
@@ -1389,7 +1302,7 @@ module.exports = {
 };
 
 
-},{"../blend_mode.coffee":2}],21:[function(require,module,exports){
+},{"../blend_mode.coffee":1}],20:[function(require,module,exports){
 module.exports = {
   parseBlendingRanges: function() {
     var i, j, length, numChannels, ref, results;
@@ -1427,7 +1340,7 @@ module.exports = {
 };
 
 
-},{}],22:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 var ChannelImage, LazyExecute;
 
 ChannelImage = require('../channel_image.coffee');
@@ -1443,7 +1356,7 @@ module.exports = {
 };
 
 
-},{"../channel_image.coffee":3,"../lazy_execute.coffee":50}],23:[function(require,module,exports){
+},{"../channel_image.coffee":2,"../lazy_execute.coffee":49}],22:[function(require,module,exports){
 module.exports = {
   isFolder: function() {
     if (this.adjustments['sectionDivider'] != null) {
@@ -1466,7 +1379,7 @@ module.exports = {
 };
 
 
-},{}],24:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 var LAYER_INFO, LazyExecute, Util,
   hasProp = {}.hasOwnProperty;
 
@@ -1539,7 +1452,7 @@ module.exports = {
 };
 
 
-},{"../layer_info/artboard.coffee":29,"../layer_info/blend_clipping_elements.coffee":30,"../layer_info/blend_interior_elements.coffee":31,"../layer_info/fill_opacity.coffee":32,"../layer_info/gradient_fill.coffee":33,"../layer_info/layer_id.coffee":34,"../layer_info/layer_name_source.coffee":35,"../layer_info/legacy_typetool.coffee":36,"../layer_info/locked.coffee":37,"../layer_info/metadata.coffee":38,"../layer_info/nested_section_divider.coffee":39,"../layer_info/object_effects.coffee":40,"../layer_info/section_divider.coffee":41,"../layer_info/solid_color.coffee":42,"../layer_info/typetool.coffee":43,"../layer_info/unicode_name.coffee":44,"../layer_info/vector_mask.coffee":45,"../layer_info/vector_origination.coffee":46,"../layer_info/vector_stroke.coffee":47,"../layer_info/vector_stroke_content.coffee":48,"../lazy_execute.coffee":50,"../util.coffee":66}],25:[function(require,module,exports){
+},{"../layer_info/artboard.coffee":28,"../layer_info/blend_clipping_elements.coffee":29,"../layer_info/blend_interior_elements.coffee":30,"../layer_info/fill_opacity.coffee":31,"../layer_info/gradient_fill.coffee":32,"../layer_info/layer_id.coffee":33,"../layer_info/layer_name_source.coffee":34,"../layer_info/legacy_typetool.coffee":35,"../layer_info/locked.coffee":36,"../layer_info/metadata.coffee":37,"../layer_info/nested_section_divider.coffee":38,"../layer_info/object_effects.coffee":39,"../layer_info/section_divider.coffee":40,"../layer_info/solid_color.coffee":41,"../layer_info/typetool.coffee":42,"../layer_info/unicode_name.coffee":43,"../layer_info/vector_mask.coffee":44,"../layer_info/vector_origination.coffee":45,"../layer_info/vector_stroke.coffee":46,"../layer_info/vector_stroke_content.coffee":47,"../lazy_execute.coffee":49,"../util.coffee":65}],24:[function(require,module,exports){
 var Mask;
 
 Mask = require('../mask.coffee');
@@ -1551,7 +1464,7 @@ module.exports = {
 };
 
 
-},{"../mask.coffee":51}],26:[function(require,module,exports){
+},{"../mask.coffee":50}],25:[function(require,module,exports){
 var Util;
 
 Util = require('../util.coffee');
@@ -1565,7 +1478,7 @@ module.exports = {
 };
 
 
-},{"../util.coffee":66}],27:[function(require,module,exports){
+},{"../util.coffee":65}],26:[function(require,module,exports){
 module.exports = {
   parsePositionAndChannels: function() {
     var i, id, j, length, ref, results;
@@ -1590,7 +1503,7 @@ module.exports = {
 };
 
 
-},{}],28:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 var LayerInfo;
 
 module.exports = LayerInfo = (function() {
@@ -1615,7 +1528,7 @@ module.exports = LayerInfo = (function() {
 })();
 
 
-},{}],29:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 var Artboard, Descriptor, LayerInfo,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1656,7 +1569,7 @@ module.exports = Artboard = (function(superClass) {
 })(LayerInfo);
 
 
-},{"../descriptor.coffee":5,"../layer_info.coffee":28}],30:[function(require,module,exports){
+},{"../descriptor.coffee":4,"../layer_info.coffee":27}],29:[function(require,module,exports){
 var BlendClippingElements, LayerInfo,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1684,7 +1597,7 @@ module.exports = BlendClippingElements = (function(superClass) {
 })(LayerInfo);
 
 
-},{"../layer_info.coffee":28}],31:[function(require,module,exports){
+},{"../layer_info.coffee":27}],30:[function(require,module,exports){
 var BlendInteriorElements, LayerInfo,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1712,7 +1625,7 @@ module.exports = BlendInteriorElements = (function(superClass) {
 })(LayerInfo);
 
 
-},{"../layer_info.coffee":28}],32:[function(require,module,exports){
+},{"../layer_info.coffee":27}],31:[function(require,module,exports){
 var FillOpacity, LayerInfo,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1739,7 +1652,7 @@ module.exports = FillOpacity = (function(superClass) {
 })(LayerInfo);
 
 
-},{"../layer_info.coffee":28}],33:[function(require,module,exports){
+},{"../layer_info.coffee":27}],32:[function(require,module,exports){
 var Descriptor, GradientFill, LayerInfo,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1769,7 +1682,7 @@ module.exports = GradientFill = (function(superClass) {
 })(LayerInfo);
 
 
-},{"../descriptor.coffee":5,"../layer_info.coffee":28}],34:[function(require,module,exports){
+},{"../descriptor.coffee":4,"../layer_info.coffee":27}],33:[function(require,module,exports){
 var LayerId, LayerInfo,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1796,7 +1709,7 @@ module.exports = LayerId = (function(superClass) {
 })(LayerInfo);
 
 
-},{"../layer_info.coffee":28}],35:[function(require,module,exports){
+},{"../layer_info.coffee":27}],34:[function(require,module,exports){
 var LayerInfo, LayerNameSource,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1823,7 +1736,7 @@ module.exports = LayerNameSource = (function(superClass) {
 })(LayerInfo);
 
 
-},{"../layer_info.coffee":28}],36:[function(require,module,exports){
+},{"../layer_info.coffee":27}],35:[function(require,module,exports){
 var LegacyTypeTool, TypeTool, _,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1925,7 +1838,7 @@ module.exports = LegacyTypeTool = (function(superClass) {
 })(TypeTool);
 
 
-},{"./typetool.coffee":43,"lodash":94}],37:[function(require,module,exports){
+},{"./typetool.coffee":42,"lodash":93}],36:[function(require,module,exports){
 var LayerInfo, Locked,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1961,7 +1874,7 @@ module.exports = Locked = (function(superClass) {
 })(LayerInfo);
 
 
-},{"../layer_info.coffee":28}],38:[function(require,module,exports){
+},{"../layer_info.coffee":27}],37:[function(require,module,exports){
 var Descriptor, LayerInfo, Metadata,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2010,7 +1923,7 @@ module.exports = Metadata = (function(superClass) {
 })(LayerInfo);
 
 
-},{"../descriptor.coffee":5,"../layer_info.coffee":28}],39:[function(require,module,exports){
+},{"../descriptor.coffee":4,"../layer_info.coffee":27}],38:[function(require,module,exports){
 var LayerInfo, NestedSectionDivider,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2047,7 +1960,7 @@ module.exports = NestedSectionDivider = (function(superClass) {
 })(LayerInfo);
 
 
-},{"../layer_info.coffee":28}],40:[function(require,module,exports){
+},{"../layer_info.coffee":27}],39:[function(require,module,exports){
 var Descriptor, LayerInfo, ObjectEffects,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2077,7 +1990,7 @@ module.exports = ObjectEffects = (function(superClass) {
 })(LayerInfo);
 
 
-},{"../descriptor.coffee":5,"../layer_info.coffee":28}],41:[function(require,module,exports){
+},{"../descriptor.coffee":4,"../layer_info.coffee":27}],40:[function(require,module,exports){
 var LayerInfo, NestedSectionDivider,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2132,7 +2045,7 @@ module.exports = NestedSectionDivider = (function(superClass) {
 })(LayerInfo);
 
 
-},{"../layer_info.coffee":28}],42:[function(require,module,exports){
+},{"../layer_info.coffee":27}],41:[function(require,module,exports){
 var Descriptor, LayerInfo, SolidColor,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2174,7 +2087,7 @@ module.exports = SolidColor = (function(superClass) {
 })(LayerInfo);
 
 
-},{"../descriptor.coffee":5,"../layer_info.coffee":28}],43:[function(require,module,exports){
+},{"../descriptor.coffee":4,"../layer_info.coffee":27}],42:[function(require,module,exports){
 var Descriptor, LayerInfo, TextElements, _, parseEngineData,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2431,7 +2344,7 @@ module.exports = TextElements = (function(superClass) {
 })(LayerInfo);
 
 
-},{"../descriptor.coffee":5,"../layer_info.coffee":28,"lodash":94,"parse-engine-data":95}],44:[function(require,module,exports){
+},{"../descriptor.coffee":4,"../layer_info.coffee":27,"lodash":93,"parse-engine-data":94}],43:[function(require,module,exports){
 var LayerInfo, UnicodeName,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2462,7 +2375,7 @@ module.exports = UnicodeName = (function(superClass) {
 })(LayerInfo);
 
 
-},{"../layer_info.coffee":28}],45:[function(require,module,exports){
+},{"../layer_info.coffee":27}],44:[function(require,module,exports){
 var LayerInfo, PathRecord, VectorMask,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2519,7 +2432,7 @@ module.exports = VectorMask = (function(superClass) {
 })(LayerInfo);
 
 
-},{"../layer_info.coffee":28,"../path_record.coffee":59}],46:[function(require,module,exports){
+},{"../layer_info.coffee":27,"../path_record.coffee":58}],45:[function(require,module,exports){
 var Descriptor, LayerInfo, VectorOrigination,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2549,7 +2462,7 @@ module.exports = VectorOrigination = (function(superClass) {
 })(LayerInfo);
 
 
-},{"../descriptor.coffee":5,"../layer_info.coffee":28}],47:[function(require,module,exports){
+},{"../descriptor.coffee":4,"../layer_info.coffee":27}],46:[function(require,module,exports){
 var Descriptor, LayerInfo, VectorStroke,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2579,7 +2492,7 @@ module.exports = VectorStroke = (function(superClass) {
 })(LayerInfo);
 
 
-},{"../descriptor.coffee":5,"../layer_info.coffee":28}],48:[function(require,module,exports){
+},{"../descriptor.coffee":4,"../layer_info.coffee":27}],47:[function(require,module,exports){
 var Descriptor, LayerInfo, VectorStrokeContent,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2609,7 +2522,7 @@ module.exports = VectorStrokeContent = (function(superClass) {
 })(LayerInfo);
 
 
-},{"../descriptor.coffee":5,"../layer_info.coffee":28}],49:[function(require,module,exports){
+},{"../descriptor.coffee":4,"../layer_info.coffee":27}],48:[function(require,module,exports){
 var Layer, LayerMask, Util, _;
 
 _ = require('lodash');
@@ -2689,7 +2602,7 @@ module.exports = LayerMask = (function() {
 })();
 
 
-},{"./layer.coffee":19,"./util.coffee":66,"lodash":94}],50:[function(require,module,exports){
+},{"./layer.coffee":18,"./util.coffee":65,"lodash":93}],49:[function(require,module,exports){
 var LazyExecute,
   slice = [].slice,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
@@ -2766,7 +2679,7 @@ module.exports = LazyExecute = (function() {
 })();
 
 
-},{}],51:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 var Mask;
 
 module.exports = Mask = (function() {
@@ -2823,7 +2736,7 @@ module.exports = Mask = (function() {
 })();
 
 
-},{}],52:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 var Module, Node, _,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -3014,7 +2927,7 @@ module.exports = Node = (function(superClass) {
 })(Module);
 
 
-},{"./nodes/ancestry.coffee":53,"./nodes/build_preview.coffee":54,"./nodes/search.coffee":58,"coffeescript-module":71,"lodash":94}],53:[function(require,module,exports){
+},{"./nodes/ancestry.coffee":52,"./nodes/build_preview.coffee":53,"./nodes/search.coffee":57,"coffeescript-module":70,"lodash":93}],52:[function(require,module,exports){
 var _;
 
 _ = require('lodash');
@@ -3100,7 +3013,7 @@ module.exports = {
 };
 
 
-},{"lodash":94}],54:[function(require,module,exports){
+},{"lodash":93}],53:[function(require,module,exports){
 module.exports = {
   toPng: function() {
     return this.layer.image.toPng();
@@ -3111,7 +3024,7 @@ module.exports = {
 };
 
 
-},{}],55:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
 var Group, Node, _,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -3163,7 +3076,7 @@ module.exports = Group = (function(superClass) {
 })(Node);
 
 
-},{"../node.coffee":52,"lodash":94}],56:[function(require,module,exports){
+},{"../node.coffee":51,"lodash":93}],55:[function(require,module,exports){
 var Layer, Node, _,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -3200,7 +3113,7 @@ module.exports = Layer = (function(superClass) {
 })(Node);
 
 
-},{"../node.coffee":52,"lodash":94}],57:[function(require,module,exports){
+},{"../node.coffee":51,"lodash":93}],56:[function(require,module,exports){
 var Group, Layer, Node, Root, _,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -3300,7 +3213,7 @@ module.exports = Root = (function(superClass) {
 })(Node);
 
 
-},{"../node.coffee":52,"./group.coffee":55,"./layer.coffee":56,"lodash":94}],58:[function(require,module,exports){
+},{"../node.coffee":51,"./group.coffee":54,"./layer.coffee":55,"lodash":93}],57:[function(require,module,exports){
 var _;
 
 _ = require('lodash');
@@ -3336,7 +3249,7 @@ module.exports = {
 };
 
 
-},{"lodash":94}],59:[function(require,module,exports){
+},{"lodash":93}],58:[function(require,module,exports){
 var PathRecord, _;
 
 _ = require('lodash');
@@ -3458,7 +3371,7 @@ module.exports = PathRecord = (function() {
 })();
 
 
-},{"lodash":94}],60:[function(require,module,exports){
+},{"lodash":93}],59:[function(require,module,exports){
 var Resource, Util;
 
 Util = require('./util.coffee');
@@ -3487,7 +3400,7 @@ module.exports = Resource = (function() {
 })();
 
 
-},{"./resource_section.coffee":61,"./util.coffee":66}],61:[function(require,module,exports){
+},{"./resource_section.coffee":60,"./util.coffee":65}],60:[function(require,module,exports){
 var ResourceSection, _;
 
 _ = require('lodash');
@@ -3518,7 +3431,7 @@ module.exports = ResourceSection = (function() {
 })();
 
 
-},{"./resources/layer_comps.coffee":63,"./resources/layer_links.coffee":64,"./resources/resolution_info.coffee":65,"lodash":94}],62:[function(require,module,exports){
+},{"./resources/layer_comps.coffee":62,"./resources/layer_links.coffee":63,"./resources/resolution_info.coffee":64,"lodash":93}],61:[function(require,module,exports){
 var Resource, Resources;
 
 Resource = require('./resource.coffee');
@@ -3575,7 +3488,7 @@ module.exports = Resources = (function() {
 })();
 
 
-},{"./resource.coffee":60}],63:[function(require,module,exports){
+},{"./resource.coffee":59}],62:[function(require,module,exports){
 var Descriptor, LayerComps;
 
 Descriptor = require('../descriptor.coffee');
@@ -3628,7 +3541,7 @@ module.exports = LayerComps = (function() {
 })();
 
 
-},{"../descriptor.coffee":5}],64:[function(require,module,exports){
+},{"../descriptor.coffee":4}],63:[function(require,module,exports){
 var LinkLayers;
 
 module.exports = LinkLayers = (function() {
@@ -3656,7 +3569,7 @@ module.exports = LinkLayers = (function() {
 })();
 
 
-},{}],65:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 var ResolutionInfo;
 
 module.exports = ResolutionInfo = (function() {
@@ -3695,7 +3608,7 @@ module.exports = ResolutionInfo = (function() {
 })();
 
 
-},{}],66:[function(require,module,exports){
+},{}],65:[function(require,module,exports){
 module.exports = {
   pad2: function(i) {
     return (i + 1) & ~0x01;
@@ -3720,7 +3633,7 @@ module.exports = {
 };
 
 
-},{}],67:[function(require,module,exports){
+},{}],66:[function(require,module,exports){
 var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 ;(function (exports) {
@@ -3846,9 +3759,9 @@ var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 	exports.fromByteArray = uint8ToBase64
 }(typeof exports === 'undefined' ? (this.base64js = {}) : exports))
 
-},{}],68:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
 
-},{}],69:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 (function (global){
 /*!
  * The buffer module from node.js, for the browser.
@@ -5400,16 +5313,16 @@ function blitBuffer (src, dst, offset, length) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"base64-js":67,"ieee754":92,"isarray":70}],70:[function(require,module,exports){
+},{"base64-js":66,"ieee754":91,"isarray":69}],69:[function(require,module,exports){
 var toString = {}.toString;
 
 module.exports = Array.isArray || function (arr) {
   return toString.call(arr) == '[object Array]';
 };
 
-},{}],71:[function(require,module,exports){
+},{}],70:[function(require,module,exports){
 module.exports = require('./module');
-},{"./module":72}],72:[function(require,module,exports){
+},{"./module":71}],71:[function(require,module,exports){
 // Generated by CoffeeScript 1.7.1
 var Module, moduleKeywords,
   __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
@@ -5489,7 +5402,7 @@ exports.Module = Module = (function() {
 
 })();
 
-},{}],73:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 "use strict";
 var Buffer = require("safer-buffer").Buffer;
 
@@ -6046,7 +5959,7 @@ function findIdx(table, val) {
 }
 
 
-},{"safer-buffer":98}],74:[function(require,module,exports){
+},{"safer-buffer":97}],73:[function(require,module,exports){
 "use strict";
 
 // Description of supported double byte encodings and aliases.
@@ -6224,7 +6137,7 @@ module.exports = {
     'xxbig5': 'big5hkscs',
 };
 
-},{"./tables/big5-added.json":80,"./tables/cp936.json":81,"./tables/cp949.json":82,"./tables/cp950.json":83,"./tables/eucjp.json":84,"./tables/gb18030-ranges.json":85,"./tables/gbk-added.json":86,"./tables/shiftjis.json":87}],75:[function(require,module,exports){
+},{"./tables/big5-added.json":79,"./tables/cp936.json":80,"./tables/cp949.json":81,"./tables/cp950.json":82,"./tables/eucjp.json":83,"./tables/gb18030-ranges.json":84,"./tables/gbk-added.json":85,"./tables/shiftjis.json":86}],74:[function(require,module,exports){
 "use strict";
 
 // Update this array if you add/rename/remove files in this directory.
@@ -6248,7 +6161,7 @@ for (var i = 0; i < modules.length; i++) {
             exports[enc] = module[enc];
 }
 
-},{"./dbcs-codec":73,"./dbcs-data":74,"./internal":76,"./sbcs-codec":77,"./sbcs-data":79,"./sbcs-data-generated":78,"./utf16":88,"./utf7":89}],76:[function(require,module,exports){
+},{"./dbcs-codec":72,"./dbcs-data":73,"./internal":75,"./sbcs-codec":76,"./sbcs-data":78,"./sbcs-data-generated":77,"./utf16":87,"./utf7":88}],75:[function(require,module,exports){
 "use strict";
 var Buffer = require("safer-buffer").Buffer;
 
@@ -6438,7 +6351,7 @@ InternalDecoderCesu8.prototype.end = function() {
     return res;
 }
 
-},{"safer-buffer":98,"string_decoder":99}],77:[function(require,module,exports){
+},{"safer-buffer":97,"string_decoder":98}],76:[function(require,module,exports){
 "use strict";
 var Buffer = require("safer-buffer").Buffer;
 
@@ -6512,7 +6425,7 @@ SBCSDecoder.prototype.write = function(buf) {
 SBCSDecoder.prototype.end = function() {
 }
 
-},{"safer-buffer":98}],78:[function(require,module,exports){
+},{"safer-buffer":97}],77:[function(require,module,exports){
 "use strict";
 
 // Generated data for sbcs codec. Don't edit manually. Regenerate using generation/gen-sbcs.js script.
@@ -6964,7 +6877,7 @@ module.exports = {
     "chars": "���������������������������������กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรฤลฦวศษสหฬอฮฯะัาำิีึืฺุู����฿เแโใไๅๆ็่้๊๋์ํ๎๏๐๑๒๓๔๕๖๗๘๙๚๛����"
   }
 }
-},{}],79:[function(require,module,exports){
+},{}],78:[function(require,module,exports){
 "use strict";
 
 // Manually added data to be used by sbcs codec in addition to generated one.
@@ -7140,7 +7053,7 @@ module.exports = {
 };
 
 
-},{}],80:[function(require,module,exports){
+},{}],79:[function(require,module,exports){
 module.exports=[
 ["8740","䏰䰲䘃䖦䕸𧉧䵷䖳𧲱䳢𧳅㮕䜶䝄䱇䱀𤊿𣘗𧍒𦺋𧃒䱗𪍑䝏䗚䲅𧱬䴇䪤䚡𦬣爥𥩔𡩣𣸆𣽡晍囻"],
 ["8767","綕夝𨮹㷴霴𧯯寛𡵞媤㘥𩺰嫑宷峼杮薓𩥅瑡璝㡵𡵓𣚞𦀡㻬"],
@@ -7264,7 +7177,7 @@ module.exports=[
 ["fea1","𤅟𤩹𨮏孆𨰃𡢞瓈𡦈甎瓩甞𨻙𡩋寗𨺬鎅畍畊畧畮𤾂㼄𤴓疎瑝疞疴瘂瘬癑癏癯癶𦏵皐臯㟸𦤑𦤎皡皥皷盌𦾟葢𥂝𥅽𡸜眞眦着撯𥈠睘𣊬瞯𨥤𨥨𡛁矴砉𡍶𤨒棊碯磇磓隥礮𥗠磗礴碱𧘌辸袄𨬫𦂃𢘜禆褀椂禀𥡗禝𧬹礼禩渪𧄦㺨秆𩄍秔"]
 ]
 
-},{}],81:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 module.exports=[
 ["0","\u0000",127,"€"],
 ["8140","丂丄丅丆丏丒丗丟丠両丣並丩丮丯丱丳丵丷丼乀乁乂乄乆乊乑乕乗乚乛乢乣乤乥乧乨乪",5,"乲乴",9,"乿",6,"亇亊"],
@@ -7530,7 +7443,7 @@ module.exports=[
 ["fe40","兀嗀﨎﨏﨑﨓﨔礼﨟蘒﨡﨣﨤﨧﨨﨩"]
 ]
 
-},{}],82:[function(require,module,exports){
+},{}],81:[function(require,module,exports){
 module.exports=[
 ["0","\u0000",127],
 ["8141","갂갃갅갆갋",4,"갘갞갟갡갢갣갥",6,"갮갲갳갴"],
@@ -7805,7 +7718,7 @@ module.exports=[
 ["fda1","爻肴酵驍侯候厚后吼喉嗅帿後朽煦珝逅勛勳塤壎焄熏燻薰訓暈薨喧暄煊萱卉喙毁彙徽揮暉煇諱輝麾休携烋畦虧恤譎鷸兇凶匈洶胸黑昕欣炘痕吃屹紇訖欠欽歆吸恰洽翕興僖凞喜噫囍姬嬉希憙憘戱晞曦熙熹熺犧禧稀羲詰"]
 ]
 
-},{}],83:[function(require,module,exports){
+},{}],82:[function(require,module,exports){
 module.exports=[
 ["0","\u0000",127],
 ["a140","　，、。．‧；：？！︰…‥﹐﹑﹒·﹔﹕﹖﹗｜–︱—︳╴︴﹏（）︵︶｛｝︷︸〔〕︹︺【】︻︼《》︽︾〈〉︿﹀「」﹁﹂『』﹃﹄﹙﹚"],
@@ -7984,7 +7897,7 @@ module.exports=[
 ["f9a1","龤灨灥糷虪蠾蠽蠿讞貜躩軉靋顳顴飌饡馫驤驦驧鬤鸕鸗齈戇欞爧虌躨钂钀钁驩驨鬮鸙爩虋讟钃鱹麷癵驫鱺鸝灩灪麤齾齉龘碁銹裏墻恒粧嫺╔╦╗╠╬╣╚╩╝╒╤╕╞╪╡╘╧╛╓╥╖╟╫╢╙╨╜║═╭╮╰╯▓"]
 ]
 
-},{}],84:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 module.exports=[
 ["0","\u0000",127],
 ["8ea1","｡",62],
@@ -8168,9 +8081,9 @@ module.exports=[
 ["8feda1","黸黿鼂鼃鼉鼏鼐鼑鼒鼔鼖鼗鼙鼚鼛鼟鼢鼦鼪鼫鼯鼱鼲鼴鼷鼹鼺鼼鼽鼿齁齃",4,"齓齕齖齗齘齚齝齞齨齩齭",4,"齳齵齺齽龏龐龑龒龔龖龗龞龡龢龣龥"]
 ]
 
-},{}],85:[function(require,module,exports){
+},{}],84:[function(require,module,exports){
 module.exports={"uChars":[128,165,169,178,184,216,226,235,238,244,248,251,253,258,276,284,300,325,329,334,364,463,465,467,469,471,473,475,477,506,594,610,712,716,730,930,938,962,970,1026,1104,1106,8209,8215,8218,8222,8231,8241,8244,8246,8252,8365,8452,8454,8458,8471,8482,8556,8570,8596,8602,8713,8720,8722,8726,8731,8737,8740,8742,8748,8751,8760,8766,8777,8781,8787,8802,8808,8816,8854,8858,8870,8896,8979,9322,9372,9548,9588,9616,9622,9634,9652,9662,9672,9676,9680,9702,9735,9738,9793,9795,11906,11909,11913,11917,11928,11944,11947,11951,11956,11960,11964,11979,12284,12292,12312,12319,12330,12351,12436,12447,12535,12543,12586,12842,12850,12964,13200,13215,13218,13253,13263,13267,13270,13384,13428,13727,13839,13851,14617,14703,14801,14816,14964,15183,15471,15585,16471,16736,17208,17325,17330,17374,17623,17997,18018,18212,18218,18301,18318,18760,18811,18814,18820,18823,18844,18848,18872,19576,19620,19738,19887,40870,59244,59336,59367,59413,59417,59423,59431,59437,59443,59452,59460,59478,59493,63789,63866,63894,63976,63986,64016,64018,64021,64025,64034,64037,64042,65074,65093,65107,65112,65127,65132,65375,65510,65536],"gbChars":[0,36,38,45,50,81,89,95,96,100,103,104,105,109,126,133,148,172,175,179,208,306,307,308,309,310,311,312,313,341,428,443,544,545,558,741,742,749,750,805,819,820,7922,7924,7925,7927,7934,7943,7944,7945,7950,8062,8148,8149,8152,8164,8174,8236,8240,8262,8264,8374,8380,8381,8384,8388,8390,8392,8393,8394,8396,8401,8406,8416,8419,8424,8437,8439,8445,8482,8485,8496,8521,8603,8936,8946,9046,9050,9063,9066,9076,9092,9100,9108,9111,9113,9131,9162,9164,9218,9219,11329,11331,11334,11336,11346,11361,11363,11366,11370,11372,11375,11389,11682,11686,11687,11692,11694,11714,11716,11723,11725,11730,11736,11982,11989,12102,12336,12348,12350,12384,12393,12395,12397,12510,12553,12851,12962,12973,13738,13823,13919,13933,14080,14298,14585,14698,15583,15847,16318,16434,16438,16481,16729,17102,17122,17315,17320,17402,17418,17859,17909,17911,17915,17916,17936,17939,17961,18664,18703,18814,18962,19043,33469,33470,33471,33484,33485,33490,33497,33501,33505,33513,33520,33536,33550,37845,37921,37948,38029,38038,38064,38065,38066,38069,38075,38076,38078,39108,39109,39113,39114,39115,39116,39265,39394,189000]}
-},{}],86:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
 module.exports=[
 ["a140","",62],
 ["a180","",32],
@@ -8227,7 +8140,7 @@ module.exports=[
 ["fe80","䜣䜩䝼䞍⻊䥇䥺䥽䦂䦃䦅䦆䦟䦛䦷䦶䲣䲟䲠䲡䱷䲢䴓",6,"䶮",93]
 ]
 
-},{}],87:[function(require,module,exports){
+},{}],86:[function(require,module,exports){
 module.exports=[
 ["0","\u0000",128],
 ["a1","｡",62],
@@ -8354,7 +8267,7 @@ module.exports=[
 ["fc40","髜魵魲鮏鮱鮻鰀鵰鵫鶴鸙黑"]
 ]
 
-},{}],88:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 "use strict";
 var Buffer = require("safer-buffer").Buffer;
 
@@ -8533,7 +8446,7 @@ function detectEncoding(buf, defaultEncoding) {
 
 
 
-},{"safer-buffer":98}],89:[function(require,module,exports){
+},{"safer-buffer":97}],88:[function(require,module,exports){
 "use strict";
 var Buffer = require("safer-buffer").Buffer;
 
@@ -8825,7 +8738,7 @@ Utf7IMAPDecoder.prototype.end = function() {
 
 
 
-},{"safer-buffer":98}],90:[function(require,module,exports){
+},{"safer-buffer":97}],89:[function(require,module,exports){
 "use strict";
 
 var BOMChar = '\uFEFF';
@@ -8879,7 +8792,7 @@ StripBOMWrapper.prototype.end = function() {
 }
 
 
-},{}],91:[function(require,module,exports){
+},{}],90:[function(require,module,exports){
 (function (process){
 "use strict";
 
@@ -9036,7 +8949,7 @@ if ("Ā" != "\u0100") {
 }
 
 }).call(this,require('_process'))
-},{"../encodings":75,"./bom-handling":90,"./extend-node":68,"./streams":68,"_process":96,"safer-buffer":98}],92:[function(require,module,exports){
+},{"../encodings":74,"./bom-handling":89,"./extend-node":67,"./streams":67,"_process":95,"safer-buffer":97}],91:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = (nBytes * 8) - mLen - 1
@@ -9122,7 +9035,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],93:[function(require,module,exports){
+},{}],92:[function(require,module,exports){
 /*!
  *  Copyright © 2008 Fair Oaks Labs, Inc.
  *  All rights reserved.
@@ -9394,7 +9307,7 @@ function JSPack()
 
 exports.jspack = new JSPack();
 
-},{}],94:[function(require,module,exports){
+},{}],93:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -16184,7 +16097,7 @@ exports.jspack = new JSPack();
 }.call(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],95:[function(require,module,exports){
+},{}],94:[function(require,module,exports){
 (function (Buffer){
 var iconv = require('iconv-lite')
 // engineData is an array form descriptor.coffee
@@ -16391,7 +16304,7 @@ function pushKeyValue(key,value){
 
 module.exports = paresr;
 }).call(this,require("buffer").Buffer)
-},{"buffer":69,"iconv-lite":91}],96:[function(require,module,exports){
+},{"buffer":68,"iconv-lite":90}],95:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -16577,7 +16490,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],97:[function(require,module,exports){
+},{}],96:[function(require,module,exports){
 (function (process,global){
 /*!
  * @overview RSVP - a tiny implementation of Promises/A+.
@@ -18178,7 +18091,7 @@ process.umask = function() { return 0; };
 
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"_process":96}],98:[function(require,module,exports){
+},{"_process":95}],97:[function(require,module,exports){
 (function (process){
 /* eslint-disable node/no-deprecated-api */
 
@@ -18259,7 +18172,7 @@ if (!safer.constants) {
 module.exports = safer
 
 }).call(this,require('_process'))
-},{"_process":96,"buffer":69}],99:[function(require,module,exports){
+},{"_process":95,"buffer":68}],98:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -18482,5 +18395,92 @@ function base64DetectIncompleteChar(buffer) {
   this.charLength = this.charReceived ? 3 : 0;
 }
 
-},{"buffer":69}]},{},[1])("./psd/init.coffee")
+},{"buffer":68}],"psd":[function(require,module,exports){
+var File, Header, Image, LayerMask, LazyExecute, Module, PSD, RSVP, Resources,
+  extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  hasProp = {}.hasOwnProperty;
+
+RSVP = require('rsvp');
+
+Module = require('coffeescript-module').Module;
+
+File = require('./psd/file.coffee');
+
+LazyExecute = require('./psd/lazy_execute.coffee');
+
+Header = require('./psd/header.coffee');
+
+Resources = require('./psd/resources.coffee');
+
+LayerMask = require('./psd/layer_mask.coffee');
+
+Image = require('./psd/image.coffee');
+
+module.exports = PSD = (function(superClass) {
+  extend(PSD, superClass);
+
+  PSD.Node = {
+    Root: require('./psd/nodes/root.coffee')
+  };
+
+  PSD["extends"](require('./psd/init.coffee'));
+
+  function PSD(data) {
+    this.file = new File(data);
+    this.parsed = false;
+    this.header = null;
+    Object.defineProperty(this, 'layers', {
+      get: function() {
+        return this.layerMask.layers;
+      }
+    });
+    RSVP.on('error', function(reason) {
+      return console.error(reason);
+    });
+  }
+
+  PSD.prototype.parse = function() {
+    if (this.parsed) {
+      return;
+    }
+    this.parseHeader();
+    this.parseResources();
+    this.parseLayerMask();
+    this.parseImage();
+    return this.parsed = true;
+  };
+
+  PSD.prototype.parseHeader = function() {
+    this.header = new Header(this.file);
+    return this.header.parse();
+  };
+
+  PSD.prototype.parseResources = function() {
+    var resources;
+    resources = new Resources(this.file);
+    return this.resources = new LazyExecute(resources, this.file).now('skip').later('parse').get();
+  };
+
+  PSD.prototype.parseLayerMask = function() {
+    var layerMask;
+    layerMask = new LayerMask(this.file, this.header);
+    return this.layerMask = new LazyExecute(layerMask, this.file).now('skip').later('parse').get();
+  };
+
+  PSD.prototype.parseImage = function() {
+    var image;
+    image = new Image(this.file, this.header);
+    return this.image = new LazyExecute(image, this.file).later('parse').ignore('width', 'height').get();
+  };
+
+  PSD.prototype.tree = function() {
+    return new PSD.Node.Root(this);
+  };
+
+  return PSD;
+
+})(Module);
+
+
+},{"./psd/file.coffee":5,"./psd/header.coffee":6,"./psd/image.coffee":7,"./psd/init.coffee":"./psd/init.coffee","./psd/layer_mask.coffee":48,"./psd/lazy_execute.coffee":49,"./psd/nodes/root.coffee":56,"./psd/resources.coffee":61,"coffeescript-module":70,"rsvp":96}]},{},["psd"])("psd")
 });
