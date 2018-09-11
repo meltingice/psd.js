@@ -2,3 +2,5 @@
 node_modules
 index.html
 output.png
+.idea/
+package-lock.json

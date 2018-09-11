@@ -2,7 +2,9 @@
   "name": "psd",
   "description": "A general purpose Photoshop file parser.",
   "version": "3.2.0",
-  "main": "./index.js",
+  "main": "./dist/psd.node.js",
+  "browser": "./dist/psd.browser.js",
+  "cdn": "./dist/psd.browser.min.js",
   "keywords": [
     "psd",
     "parser",
@@ -15,7 +17,6 @@
     "url": "git@github.com:meltingice/psd.js.git"
   },
   "dependencies": {
-    "coffee-script": "~ 1.7.1",
     "coffeescript-module": "~ 0.2.1",
     "iconv-lite": "~ 0.4.4",
     "jspack": "~ 0.0.3",
@@ -29,6 +30,7 @@
     "docs": "node_modules/docco-husky/bin/generate lib shims"
   },
   "devDependencies": {
+    "coffee-script": "~ 1.7.1",
     "acorn": "^5.1.1",
     "bluebird": "^2.9.25",
     "browserify": "~ 10.1.3",
