@@ -2002,7 +2002,7 @@ module.exports = ObjectEffects = (function(superClass) {
   }
 
   ObjectEffects.shouldParse = function(key) {
-    return key === 'lfx2';
+    return key === 'lfx2' || key === 'lmfx';
   };
 
   ObjectEffects.prototype.parse = function() {

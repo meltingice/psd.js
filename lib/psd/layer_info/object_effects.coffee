@@ -2,7 +2,7 @@ LayerInfo = require '../layer_info.coffee'
 Descriptor = require '../descriptor.coffee'
 
 module.exports = class ObjectEffects extends LayerInfo
-  @shouldParse: (key) -> key is 'lfx2' or 'lmfx'
+  @shouldParse: (key) -> key is 'lfx2' || key is 'lmfx'
 
   parse: ->
     @file.seek 8, true
