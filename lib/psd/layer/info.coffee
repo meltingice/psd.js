@@ -28,6 +28,7 @@ LAYER_INFO = {
   name:                   require('../layer_info/unicode_name.coffee')
   nestedSectionDivider:   require('../layer_info/nested_section_divider.coffee')
   objectEffects:          require('../layer_info/object_effects.coffee')
+  multipleObjectEffects:  require('../layer_info/multiple_object_effects.coffee')
   sectionDivider:         require('../layer_info/section_divider.coffee')
   solidColor:             require('../layer_info/solid_color.coffee')
   typeTool:               require('../layer_info/typetool.coffee')
@@ -39,8 +40,8 @@ LAYER_INFO = {
 
 module.exports =
   parseLayerInfo: ->
-    # Layer info blocks are the last section in the layer, so we can continue until our
-    # file cursor reaches the end of the layer.
+  # Layer info blocks are the last section in the layer, so we can continue until our
+  # file cursor reaches the end of the layer.
     while @file.tell() < @layerEnd
       @file.seek 4, true # sig
 
