@@ -5,6 +5,7 @@ module.exports = class ResourceSection
     require('./resources/layer_comps.coffee')
     require('./resources/layer_links.coffee')
     require('./resources/resolution_info.coffee')
+    require('./resources/angle.coffee')
   ]
 
   @factory: (resource) ->
