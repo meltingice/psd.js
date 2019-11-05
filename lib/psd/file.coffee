@@ -64,6 +64,9 @@ module.exports = class File
   # Helper that reads a single byte.
   readByte: -> @read(1)[0]
 
+  # Helper that reads a single signed byte.
+  readChar: -> new Int8Array(@read(1))[0]
+
   # Helper that reads a single byte and interprets it as a boolean.
   readBoolean: -> @readByte() isnt 0
 
@@ -77,7 +80,7 @@ module.exports = class File
   # Adobe's lovely signed 32-bit fixed-point number with 8bits.24bits
   #   http://www.adobe.com/devnet-apps/photoshop/fileformatashtml/PhotoshopFileFormats.htm#50577409_17587
   readPathNumber: ->
-    a = @readByte()
+    a = @readChar()
     
     arr = @read(3)
     b1 = arr[0] << 16
