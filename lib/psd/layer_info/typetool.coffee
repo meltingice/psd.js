@@ -2,6 +2,7 @@ _ = require 'lodash'
 parseEngineData = require 'parse-engine-data'
 LayerInfo = require '../layer_info.coffee'
 Descriptor = require '../descriptor.coffee'
+Color = require '../color.coffee'
 
 module.exports = class TextElements extends LayerInfo
   @shouldParse: (key) -> key is 'TySh'
@@ -118,6 +119,8 @@ module.exports = class TextElements extends LayerInfo
     @styles().FillColor.map (s) ->
       values = s.Values.map (v) -> Math.round(v * 255)
       values.push values.shift() # Change ARGB -> RGBA for consistency
+      if s.Type == 2
+        values = Color.cmykToRgb(values[0], values[1], values[2], values[3]).concat(values[4])
       values
 
   styles: ->
