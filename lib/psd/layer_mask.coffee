@@ -5,11 +5,11 @@ Layer = require './layer.coffee'
 # The layer mask is the overarching data structure that describes both
 # the layers/groups in the PSD document, and the global mask.
 # This part of the document is ordered as such:
-#
+# 
 # * Layers
 # * Layer images
 # * Global Mask
-#
+# 
 # The file does not need to have a global mask. If there is none, then
 # its length will be zero.
 module.exports = class LayerMask
@@ -37,10 +37,6 @@ module.exports = class LayerMask
 
   parseLayers: ->
     layerInfoSize = Util.pad2 @file.readInt()
-
-    if layerInfoSize is 0 and (@header.depth is 16 or @header.depth is 32)
-      @file.pos = @file.pos + 12
-      layerInfoSize = Util.pad2 @file.readInt()
 
     if layerInfoSize > 0
       layerCount = @file.readShort()
