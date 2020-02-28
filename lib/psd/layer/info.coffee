@@ -30,6 +30,7 @@ LAYER_INFO = {
   objectEffects:          require('../layer_info/object_effects.coffee')
   sectionDivider:         require('../layer_info/section_divider.coffee')
   solidColor:             require('../layer_info/solid_color.coffee')
+  gradientMap:            require('../layer_info/gradient_map.coffee')
   typeTool:               require('../layer_info/typetool.coffee')
   vectorMask:             require('../layer_info/vector_mask.coffee')
   vectorOrigination:      require('../layer_info/vector_origination.coffee')
