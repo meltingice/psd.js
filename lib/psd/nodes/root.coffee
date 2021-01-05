@@ -37,7 +37,7 @@ module.exports = class Root extends Node
       resources:
         layerComps: @psd.resources.resource('layerComps')?.export() or []
         resolutionInfo: @psd.resources.resource('resolutionInfo')?.export() or []
-        guides: []
+        guides: @psd.resources.resource('guides')?.export()
         slices: []
 
 
