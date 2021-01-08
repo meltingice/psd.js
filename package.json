@@ -19,7 +19,7 @@
     "coffeescript-module": "~ 0.2.1",
     "iconv-lite": "~ 0.4.4",
     "jspack": "~ 0.0.3",
-    "lodash": "~ 2.4",
+    "lodash": "~ 4.17",
     "parse-engine-data": "~ 0.1",
     "pngjs": "3.2.0",
     "rsvp": "~ 3.0.6"
