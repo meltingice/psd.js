@@ -26,6 +26,7 @@
   },
   "scripts": {
     "test": "mocha test",
+    "dist": "cake compile",
     "docs": "node_modules/docco-husky/bin/generate lib shims"
   },
   "devDependencies": {
