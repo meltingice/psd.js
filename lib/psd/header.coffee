@@ -59,6 +59,8 @@ module.exports = class Header extends Module
     if @sig != '8BPS'
       throw new Error('Invalid file signature detected. Got: '+@sig+'. Expected 8BPS.')
     @version = @file.readUShort()
+    if @version != 1
+      throw new Error('Invalid file version. Got: '+@version+'. Expected 1.')
 
     @file.seek 6, true
 
