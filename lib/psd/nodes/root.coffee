@@ -51,9 +51,11 @@ module.exports = class Root extends Node
         currentGroup = new Group(layer, _.last(parseStack))
       else if layer.isFolderEnd()
         parent = parseStack.pop()
-        parent.children().push currentGroup
+        if parent
+          parent.children().push currentGroup
         currentGroup = parent
       else
-        currentGroup.children().push new Layer(layer, currentGroup)
+        if currentGroup
+          currentGroup.children().push new Layer(layer, currentGroup)
 
     @updateDimensions()
