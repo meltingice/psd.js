@@ -22,7 +22,7 @@ Runs in both NodeJS and the browser (using browserify). There are still some pie
 
 ## Installation
 
-PSD.js has no native dependencies. Simply add `psd` to your package.json or run `npm install psd`.
+PSD.js has no native dependencies. Simply add `psd.js` to your package.json or run `npm install psd.js`.
 
 ## Documentation
 
