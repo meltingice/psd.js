@@ -22,7 +22,7 @@ module.exports = class ChannelImage extends Image
     super(file, header)
 
     @channelsInfo = @layer.channelsInfo
-    @hasMask = _.any @channelsInfo, (c) -> c.id < -1
+    @hasMask = _.some @channelsInfo, (c) -> c.id < -1
     @opacity = @layer.opacity / 255.0
 
   # Skip parsing this image by jumping to the end of the data.
