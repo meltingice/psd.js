@@ -1,7 +1,7 @@
 {
   "name": "psd",
   "description": "A general purpose Photoshop file parser.",
-  "version": "3.2.0",
+  "version": "3.2.1",
   "main": "./index.js",
   "keywords": [
     "psd",
