@@ -13,9 +13,8 @@ writeFile = (dest, src) ->
         console.log "Wrote #{dest} - #{Math.round(stats.size / 1024)}KB"
         resolve()
 
-task 'compile', 'Compile with browserify for the web', ->
+task 'compile-browser', 'Compile with browserify for the web', ->
   browserify
-    standalone: 'psd',
     noParse: [
       'fs'
     ]
@@ -35,6 +34,31 @@ task 'compile', 'Compile with browserify for the web', ->
         minSrc
       .then (minSrc) ->
         writeFile './dist/psd.js.map', minSrc.map
+      .then ->
+        console.log 'Finished!'
+
+task 'compile-standalone', 'Compile with browserify as a module', ->
+  browserify
+    standalone: 'psd',
+    noParse: [
+      'fs'
+    ]
+  .transform('coffeeify')
+  .require('./shims/png.coffee', expose: './image_exports/png.coffee')
+  .require('./shims/init.coffee', expose: './psd/init.coffee')
+  .require('./lib/psd.coffee', expose: 'psd')
+  .bundle (err, src, map) ->
+    return console.log(err) if err?
+    writeFile('./dist/psd-standalone.js', src)
+      .then ->
+        minSrc = UglifyJS.minify './dist/psd.js',
+          outSourceMap: 'psd.js.map'
+          sourceRoot: '/'
+
+        writeFile './dist/psd-standalone.min.js', minSrc.code
+        minSrc
+      .then (minSrc) ->
+        writeFile './dist/psd-standalone.js.map', minSrc.map
       .then ->
         console.log 'Finished!'
 
