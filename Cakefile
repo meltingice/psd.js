@@ -15,9 +15,9 @@ writeFile = (dest, src) ->
 
 task 'compile', 'Compile with browserify for the web', ->
   browserify
+    standalone: 'psd',
     noParse: [
-      'fs',
-      'standalone'
+      'fs'
     ]
   .transform('coffeeify')
   .require('./shims/png.coffee', expose: './image_exports/png.coffee')
