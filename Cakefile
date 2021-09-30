@@ -15,6 +15,7 @@ writeFile = (dest, src) ->
 
 task 'compile', 'Compile with browserify for the web', ->
   browserify
+    standalone: 'psd',
     noParse: [
       'fs'
     ]
