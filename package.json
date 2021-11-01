@@ -2,7 +2,7 @@
   "name": "psd",
   "description": "A general purpose Photoshop file parser.",
   "version": "3.3.0",
-  "main": "dist/psd-standalone.js",
+  "main": "./index.js",
   "keywords": [
     "psd",
     "parser",
@@ -27,7 +27,7 @@
   "scripts": {
     "test": "mocha test",
     "docs": "node_modules/docco-husky/bin/generate lib shims",
-    "build": "cake compile-standalone && cake compile-browser",
+    "build": "cake compile-browser",
     "generate-docs": "cake docs:generate",
     "local-dev": "npm run build && rm -rf ./examples/browser/dist && cp -R ./dist ./examples/browser/dist && webpack serve"
   },
