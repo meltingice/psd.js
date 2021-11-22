@@ -8,11 +8,14 @@ module.exports =
         xhr.open "GET", url, true
         xhr.responseType = "arraybuffer"
         xhr.onload = ->
-          data = new Uint8Array(xhr.response or xhr.mozResponseArrayBuffer)
-          psd = new PSD(data)
-          psd.parse()
+          try
+            data = new Uint8Array(xhr.response or xhr.mozResponseArrayBuffer)
+            psd = new PSD(data)
+            psd.parse()
 
-          resolve(psd)
+            resolve(psd)
+          catch error
+            reject(error)
 
         xhr.send null
 
