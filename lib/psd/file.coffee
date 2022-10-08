@@ -85,4 +85,4 @@ module.exports = class File
     b3 = arr[2]
     b = b1 | b2 | b3
 
-    parseFloat(a, 10) + parseFloat(b / Math.pow(2, 24), 10)
+    a + (b / Math.pow(2, 24))
