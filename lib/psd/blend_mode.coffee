@@ -39,6 +39,7 @@ module.exports = class BlendMode extends Module
   }
 
   constructor: (@file) ->
+    super()
     # The 4 character key for the blending mode.
     @blendKey = null
 

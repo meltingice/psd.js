@@ -2,7 +2,7 @@
 # tree representation of the document structure. Every layer and group is a node in
 # the document tree. All common functionality is here, and both layers and groups extend
 # this class with specialized functionality.
-# 
+#
 # While you can access the layer data directly, the Node interface provides a somewhat
 # higher-level API that makes it easier and less verbose to access the wealth of
 # information that's stored in each PSD.
@@ -27,6 +27,7 @@ module.exports = class Node extends Module
   # Every node gets a reference to the layer/group and its parent, which allows us to
   # traverse the tree structure. It also builds references to all of its children.
   constructor: (@layer, @parent = null) ->
+    super()
     @layer.node = @
     @_children = []
 
@@ -75,18 +76,18 @@ module.exports = class Node extends Module
 
   # **All properties should be accessed through `get()`**. While many things can be
   # accessed without it, using `get()` provides 2 things:
-  # 
+  #
   # * Consistency
   # * Access to both data on the Node and the Layer through the same interface.
-  # 
+  #
   # This makes it much cleaner to access stuff like layer info blocks, since you just
   # give the name of the block you want to access. For example:
-  # 
+  #
   # ``` coffeescript
   # node.get('typeTool').export()
-  # 
+  #
   # # vs
-  # 
+  #
   # node.layer.typeTool().export()
   # ```
   get: (prop) ->
