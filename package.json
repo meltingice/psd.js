@@ -2,7 +2,11 @@
   "name": "psd",
   "description": "A general purpose Photoshop file parser.",
   "version": "3.3.0",
-  "main": "./index.js",
+  "main": "./dist/psd.js",
+  "files": [
+    "dist/psd.js",
+    "dist/psd.js.map"
+  ],
   "keywords": [
     "psd",
     "parser",
