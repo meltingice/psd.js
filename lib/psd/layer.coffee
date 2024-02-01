@@ -15,6 +15,7 @@ module.exports = class Layer extends Module
   @includes require('./layer/channel_image.coffee')
 
   constructor: (@file, @header) ->
+    super()
     @mask = {}
     @blendingRanges = {}
     @adjustments = {}
@@ -24,7 +25,7 @@ module.exports = class Layer extends Module
 
     @infoKeys = []
 
-    # The layer's name can come from one of two places, depending on 
+    # The layer's name can come from one of two places, depending on
     # what version of Photoshop was used to create the PSD.
     Object.defineProperty @, 'name',
       get: ->

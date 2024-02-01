@@ -52,6 +52,7 @@ module.exports = class Header extends Module
   # Creates a new Header.
   # @param [File] file The PSD file.
   constructor: (@file) ->
+    super()
 
   # Parses the header data.
   parse: ->

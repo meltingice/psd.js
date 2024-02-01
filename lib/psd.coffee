@@ -1,22 +1,22 @@
 # A general purpose parser for Photoshop files. PSDs are broken up in to 4 logical sections:
 # the header, resources, the layer mask (including layers), and the preview image. We parse
 # each of these sections in order.
-# 
+#
 # ## NodeJS Examples
-# 
+#
 # ** Parsing asynchronously **
 # ``` coffeescript
 # PSD.open('path/to/file.psd').then (psd) ->
 #   console.log psd.tree().export()
 # ```
-#     
+#
 # ** Parsing synchronously **
 # ``` coffeescript
 # psd = PSD.fromFile('path/to/file.psd')
 # psd.parse()
 # console.log psd.tree().export()
 # ```
-# 
+#
 RSVP = require 'rsvp'
 {Module} = require 'coffeescript-module'
 
@@ -38,6 +38,7 @@ module.exports = class PSD extends Module
   # the PSD object. However, if you already have the PSD data stored as a Uint8Array,
   # you can instantiate the PSD object directly.
   constructor: (data) ->
+    super()
     @file = new File(data)
     @parsed = false
     @header = null

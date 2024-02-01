@@ -16,8 +16,9 @@ module.exports = class Root extends Node
 
   type: 'root'
 
-  constructor: (@psd) ->
-    super Root.layerForPsd(@psd)
+  constructor: (psd) ->
+    super Root.layerForPsd(psd)
+    @psd = psd
     @buildHeirarchy()
 
   documentDimensions: -> [
