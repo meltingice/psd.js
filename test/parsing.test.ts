@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import { BLEND_MODES, PSD } from '../src/index.ts';
@@ -149,5 +150,51 @@ describe('vector masks', () => {
     const knot = mask.paths[3]!;
     assert.ok(knot.recordType === 2 && knot.closed && !knot.linked);
     assert.ok(knot.anchor.vert > 0 && knot.anchor.vert < 1);
+  });
+});
+
+describe('linked files', () => {
+  it('reads embedded files and opens embedded documents (#102)', () => {
+    const psd = open('slices.psd');
+    assert.equal(psd.linkedFiles.length, 1);
+    const file = psd.linkedFiles[0]!;
+    assert.deepEqual(
+      { id: file.id, name: file.name, type: file.type, fileType: file.fileType, creator: file.creator, size: file.data?.length },
+      { id: '844291a5-849d-1176-a2e8-8582ed9e0fef', name: 'Status bar black', type: 'embedded', fileType: '8BPB', creator: '8BIM', size: 1048576 },
+    );
+    const node = psd.tree.descendants().find((n) => n.name === 'status-bar')!;
+    assert.ok(node.type === 'layer');
+    assert.equal(node.linkedFile, file);
+
+    const inner = new PSD(file.data!);
+    assert.deepEqual([inner.header.version, inner.width, inner.height], [2, 616, 27]);
+    assert.deepEqual(inner.tree.childrenAtPath('Status bar black/Battery')[0]!.children.map((n) => n.name), ['+', 'Charge', 'battery', '100%']);
+  });
+
+  it('matches smart object layers in PSB files', () => {
+    const psd = open('example.psb');
+    const layers = psd.tree.descendants().filter((n) => n.type === 'layer' && n.info.placedLayer);
+    assert.deepEqual(layers.map((n) => n.type === 'layer' && n.linkedFile?.name), ['1431870.jpg', 'Screen Shot 2015-09-08 at 11.39.28.jpg']);
+    for (const file of psd.linkedFiles) assert.deepEqual([...file.data!.subarray(0, 3)], [0xff, 0xd8, 0xff]); // JPEG
+  });
+
+  it('reads external files and the 8-byte lnkE length in PSB files', () => {
+    const files = open('placedLayer.psb').linkedFiles;
+    assert.deepEqual(files.map((f) => [f.type, f.name, f.fileType]), [
+      ['embedded', 'linked-layer.png', 'png '],
+      ['external', 'linked-layer.png', 'png '],
+      ['external', '1layer.psd', '8BPS'],
+    ]);
+    // The embedded copy is byte-identical to psd-tools' tests/psd_files/linked-layer.png.
+    const data = files[0]!.data!;
+    const blobSha = createHash('sha1').update(`blob ${data.length}\0`).update(data).digest('hex');
+    assert.equal(blobSha, 'edace7a43ceabf53447d107c67672b349b7dbb73');
+    assert.equal(files[1]!.data, undefined);
+    assert.equal(files[2]!.location!.relPath, '1layer.psd');
+  });
+
+  it('is empty without linked files', () => {
+    assert.deepEqual(open('example.psd').linkedFiles, []);
+    assert.deepEqual(open('indexed.psd').linkedFiles, []);
   });
 });

@@ -177,6 +177,26 @@ The composite is only present if the file was saved with "Maximize Compatibility
 
 `encodePng({ width, height, data })` encodes any grayscale or RGBA pixels.
 
+### Smart object files
+
+`psd.linkedFiles` lists the files placed as smart objects, and `node.linkedFile` is a smart object layer's file:
+
+```ts
+for (const file of psd.linkedFiles) {
+  file.id;          // matches node.info.placedLayer.Idnt
+  file.name;        // 'photo.jpg', the original file name
+  file.type;        // 'embedded', 'external' or 'alias'
+  file.fileType;    // a type code: '8BPB' for PSD and PSB, 'png ', or empty
+  file.data;        // the file contents as a Uint8Array, for embedded files
+  file.location;    // for external files, a descriptor with fullPath, relPath...
+}
+
+const file = node.type === 'layer' ? node.linkedFile : undefined;
+if (file?.data && file.fileType === '8BPB') {
+  const inner = new PSD(file.data); // the layers inside an embedded smart object
+}
+```
+
 ### Resources
 
 ```ts

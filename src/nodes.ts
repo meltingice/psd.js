@@ -1,6 +1,7 @@
 import type { LayerImage } from './image.ts';
 import type { BlendMode, Layer } from './layer.ts';
 import type { LayerInfo } from './layer-info.ts';
+import type { LinkedFile } from './linked-files.ts';
 import type { PSD } from './psd.ts';
 import type { LayerComp } from './resources.ts';
 
@@ -315,6 +316,12 @@ export class LayerNode extends LayerBackedNode {
 
   get image(): LayerImage {
     return this.layer.image;
+  }
+
+  /** For smart object layers, the placed file from `psd.linkedFiles`. */
+  get linkedFile(): LinkedFile | undefined {
+    const id = this.layer.info.placedLayer?.Idnt;
+    return id === undefined ? undefined : this.root.psd.linkedFiles.find((f) => f.id === id);
   }
 
   get isEmpty(): boolean {
