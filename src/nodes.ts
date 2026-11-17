@@ -1,0 +1,385 @@
+import type { LayerImage } from './image.ts';
+import type { BlendMode, Layer } from './layer.ts';
+import type { LayerInfo } from './layer-info.ts';
+import type { PSD } from './psd.ts';
+import type { LayerComp } from './resources.ts';
+
+export type Node = RootNode | GroupNode | LayerNode;
+export type ChildNode = GroupNode | LayerNode;
+
+export type LayerJSON = ReturnType<LayerNode['toJSON']>;
+export interface GroupJSON extends ReturnType<LayerBackedNode['toJSON']> {
+  open: boolean;
+  children: Array<GroupJSON | LayerJSON>;
+}
+
+/** A layer comp, or its name or ID. */
+export type CompRef = LayerComp | string | number;
+
+interface Box {
+  top: number;
+  left: number;
+  bottom: number;
+  right: number;
+}
+
+abstract class BaseNode {
+  abstract readonly type: 'root' | 'group' | 'layer';
+  abstract readonly name: string;
+  readonly children: ChildNode[] = [];
+  /** Position offset applied by a layer comp. */
+  leftOffset = 0;
+  topOffset = 0;
+  protected box: Box = { top: 0, left: 0, bottom: 0, right: 0 };
+
+  abstract get parent(): RootNode | GroupNode | null;
+
+  get top(): number {
+    return this.box.top + this.topOffset;
+  }
+
+  get bottom(): number {
+    return this.box.bottom + this.topOffset;
+  }
+
+  get left(): number {
+    return this.box.left + this.leftOffset;
+  }
+
+  get right(): number {
+    return this.box.right + this.leftOffset;
+  }
+
+  get width(): number {
+    return this.right - this.left;
+  }
+
+  get height(): number {
+    return this.bottom - this.top;
+  }
+
+  get root(): RootNode {
+    return this.parent ? this.parent.root : (this as unknown as RootNode);
+  }
+
+  /** Ancestors from the top of the tree down, excluding the root. */
+  ancestors(): GroupNode[] {
+    const parent = this.parent;
+    return parent && parent.type !== 'root' ? [...parent.ancestors(), parent] : [];
+  }
+
+  /** Every child of this node's parent, including this node. */
+  get siblings(): ChildNode[] {
+    return this.parent?.children ?? [];
+  }
+
+  get nextSibling(): ChildNode | undefined {
+    const siblings = this.siblings;
+    return siblings[siblings.indexOf(this as unknown as ChildNode) + 1];
+  }
+
+  get prevSibling(): ChildNode | undefined {
+    const siblings = this.siblings;
+    const index = siblings.indexOf(this as unknown as ChildNode);
+    return index > 0 ? siblings[index - 1] : undefined;
+  }
+
+  /** All nodes below this one, depth first. */
+  descendants(): ChildNode[] {
+    return this.children.flatMap((c) => [c, ...c.descendants()]);
+  }
+
+  /** This node followed by its descendants. */
+  subtree(): Node[] {
+    return [this as unknown as Node, ...this.descendants()];
+  }
+
+  /** 0 for the root. */
+  get depth(): number {
+    return this.parent ? this.parent.depth + 1 : 0;
+  }
+
+  /** Slash-separated names from the top of the tree, e.g. `Version A/Matte`. */
+  get path(): string {
+    return [...this.ancestors().map((n) => n.name), this.name].join('/');
+  }
+
+  /**
+   * Finds descendants by a path of names, relative to this node. Layer names don't have to be
+   * unique, so this always returns an array.
+   */
+  childrenAtPath(path: string | string[], { caseSensitive = false } = {}): ChildNode[] {
+    const [query, ...rest] = Array.isArray(path) ? path : path.split('/').filter(Boolean);
+    if (query === undefined) return [];
+    const normalize = (s: string) => (caseSensitive ? s : s.toLowerCase());
+    const matches = this.children.filter((c) => normalize(c.name) === normalize(query));
+    return rest.length === 0 ? matches : matches.flatMap((m) => m.childrenAtPath(rest, { caseSensitive }));
+  }
+
+  findById(id: number): ChildNode | undefined {
+    return this.descendants().find((n) => n.id === id);
+  }
+
+  /** Recomputes group bounds from their non-empty children. */
+  protected updateDimensions(): void {
+    for (const child of this.children) (child as BaseNode).updateDimensions();
+    if (this.type !== 'group') return;
+    const nonEmpty = this.children.filter((c) => !c.isEmpty);
+    if (nonEmpty.length === 0) return;
+    this.box = {
+      top: Math.min(...nonEmpty.map((c) => c.top)),
+      left: Math.min(...nonEmpty.map((c) => c.left)),
+      bottom: Math.max(...nonEmpty.map((c) => c.bottom)),
+      right: Math.max(...nonEmpty.map((c) => c.right)),
+    };
+  }
+}
+
+/** Shared behavior of groups and layers, which are both backed by a layer record. */
+abstract class LayerBackedNode extends BaseNode {
+  abstract override readonly type: 'group' | 'layer';
+  readonly layer: Layer;
+  readonly #parent: RootNode | GroupNode;
+  /** Visibility override set by a layer comp. */
+  forceVisible: boolean | undefined;
+
+  constructor(layer: Layer, parent: RootNode | GroupNode) {
+    super();
+    this.layer = layer;
+    this.#parent = parent;
+    this.box = { top: layer.top, left: layer.left, bottom: layer.bottom, right: layer.right };
+  }
+
+  get parent(): RootNode | GroupNode {
+    return this.#parent;
+  }
+
+  get name(): string {
+    return this.layer.name;
+  }
+
+  get id(): number | undefined {
+    return this.layer.id;
+  }
+
+  get info(): LayerInfo {
+    return this.layer.info;
+  }
+
+  /** Visible, accounting for clipping masks and layer comp overrides. */
+  get visible(): boolean {
+    if (this.layer.clipped && this.clippingMask?.visible === false) return false;
+    return this.forceVisible ?? this.layer.visible;
+  }
+
+  /** 0 to 1. */
+  get opacity(): number {
+    return this.layer.opacity / 255;
+  }
+
+  /** 0 to 1. */
+  get fillOpacity(): number {
+    return this.layer.fillOpacity / 255;
+  }
+
+  get blendMode(): BlendMode | undefined {
+    return this.layer.blendMode;
+  }
+
+  /** The node this one is clipped to: the first unclipped sibling below it. */
+  get clippingMask(): ChildNode | undefined {
+    if (!this.layer.clipped) return undefined;
+    let node = this.nextSibling;
+    while (node?.layer.clipped) node = node.nextSibling;
+    return node;
+  }
+
+  // Locks are inherited from ancestors, but Photoshop only stores them on the locked node.
+  #locked(key: 'all' | 'position' | 'composite' | 'transparency'): boolean {
+    if (this.layer.info.locked?.[key]) return true;
+    return this.parent.type === 'group' && this.parent.#locked(key);
+  }
+
+  get allLocked(): boolean {
+    return this.#locked('all');
+  }
+
+  get positionLocked(): boolean {
+    return this.#locked('position');
+  }
+
+  get compositeLocked(): boolean {
+    return this.#locked('composite');
+  }
+
+  get transparencyLocked(): boolean {
+    return this.#locked('transparency');
+  }
+
+  /** The color label, inherited from the nearest labeled ancestor. */
+  get colorLabel(): string {
+    const color = this.layer.info.sheetColor ?? 'none';
+    return color === 'none' && this.parent.type === 'group' ? this.parent.colorLabel : color;
+  }
+
+  /** Whether this node is visible in the given layer comp. */
+  visibleInComp(comp: CompRef): boolean {
+    const id = this.root.findComp(comp).id;
+    let visible = true;
+    for (const setting of this.#compSettings()) {
+      if (setting.enab !== undefined) visible = setting.enab;
+      if (setting.compList.includes(id)) return visible;
+    }
+    return false;
+  }
+
+  /** This node's bounds in the given layer comp. */
+  positionInComp(comp: CompRef): Box {
+    const id = this.root.findComp(comp).id;
+    let x = 0;
+    let y = 0;
+    for (const setting of this.#compSettings()) {
+      if (setting.Ofst) ({ Hrzn: x, Vrtc: y } = setting.Ofst);
+      if (setting.compList.includes(id)) break;
+    }
+    return { top: this.top + y, left: this.left + x, bottom: this.bottom + y, right: this.right + x };
+  }
+
+  #compSettings(): Array<{ enab?: boolean; Ofst?: { Hrzn: number; Vrtc: number }; compList: number[] }> {
+    return this.layer.info.metadata?.layerComp?.layerSettings ?? [];
+  }
+
+  toJSON() {
+    return {
+      type: this.type,
+      id: this.id,
+      name: this.name,
+      visible: this.visible,
+      opacity: this.opacity,
+      blendMode: this.blendMode,
+      top: this.top,
+      left: this.left,
+      bottom: this.bottom,
+      right: this.right,
+      width: this.width,
+      height: this.height,
+    };
+  }
+}
+
+export class GroupNode extends LayerBackedNode {
+  readonly type = 'group';
+
+  /** Whether the group is expanded in the layers panel. */
+  get open(): boolean {
+    return this.layer.info.sectionDivider?.type === 'open folder';
+  }
+
+  get isEmpty(): boolean {
+    return this.children.every((c) => c.isEmpty);
+  }
+
+  override toJSON(): GroupJSON {
+    return { ...super.toJSON(), open: this.open, children: this.children.map((c) => c.toJSON()) };
+  }
+}
+
+export class LayerNode extends LayerBackedNode {
+  readonly type = 'layer';
+
+  get image(): LayerImage {
+    return this.layer.image;
+  }
+
+  get isEmpty(): boolean {
+    return this.width === 0 || this.height === 0;
+  }
+
+  override toJSON() {
+    return {
+      ...super.toJSON(),
+      mask: this.layer.mask,
+      text: this.layer.info.typeTool?.toJSON(),
+      image: { width: this.layer.width, height: this.layer.height },
+    };
+  }
+}
+
+export class RootNode extends BaseNode {
+  readonly type = 'root';
+  readonly name = '';
+  readonly psd: PSD;
+
+  constructor(psd: PSD) {
+    super();
+    this.psd = psd;
+    this.box = { top: 0, left: 0, bottom: psd.height, right: psd.width };
+
+    let current: RootNode | GroupNode = this;
+    const stack: Array<RootNode | GroupNode> = [];
+    for (const layer of psd.layers) {
+      if (layer.isFolder) {
+        stack.push(current);
+        current = new GroupNode(layer, current);
+      } else if (layer.isFolderEnd) {
+        const parent = stack.pop();
+        if (!parent || current.type !== 'group') throw new Error('Unbalanced group markers in layer list');
+        parent.children.push(current);
+        current = parent;
+      } else {
+        current.children.push(new LayerNode(layer, current));
+      }
+    }
+    this.updateDimensions();
+  }
+
+  get parent(): null {
+    return null;
+  }
+
+  get visible(): true {
+    return true;
+  }
+
+  /** Looks up a layer comp by name or ID. Throws if it doesn't exist. */
+  findComp(comp: CompRef): LayerComp {
+    if (typeof comp === 'object') return comp;
+    const found = this.psd.resources.layerComps.find((c) => (typeof comp === 'string' ? c.name === comp : c.id === comp));
+    if (!found) throw new Error(`Layer comp not found: ${comp}`);
+    return found;
+  }
+
+  /** A new tree with the visibility and positions captured by a layer comp applied. */
+  filterByComp(comp: CompRef): RootNode {
+    const found = this.findComp(comp);
+    const root = new RootNode(this.psd);
+    for (const node of root.descendants()) {
+      if (found.capturedInfo & 0b001) node.forceVisible = node.visibleInComp(found);
+      if (found.capturedInfo & 0b010) {
+        const { left, top } = node.positionInComp(found);
+        node.leftOffset = left - node.left;
+        node.topOffset = top - node.top;
+      }
+    }
+    return root;
+  }
+
+  toJSON() {
+    const { header, resources } = this.psd;
+    return {
+      children: this.children.map((c) => c.toJSON()),
+      document: {
+        width: this.width,
+        height: this.height,
+        depth: header.depth,
+        mode: header.modeName,
+        resources: {
+          layerComps: resources.layerComps,
+          guides: resources.guides,
+          slices: resources.slices?.slices ?? [],
+          resolutionInfo: resources.resolutionInfo,
+        },
+      },
+    };
+  }
+}
