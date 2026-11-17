@@ -6,7 +6,11 @@ Most of these files come from [PSD.rb](https://github.com/layervault/psd.rb)'s s
 
 `cantGetTextSizes.psd` was made by [@Ser-Gen](https://github.com/Ser-Gen) to demonstrate [#37](https://github.com/meltingice/psd.js/issues/37), and is from [their repository](https://github.com/Ser-Gen/ser-gen.github.com/blob/master/sandbox/psdjs/cantGetTextSizes.psd).
 
-`drop-shadow-groups.psd` and `effect-stroke-gradient.psd` are from [psd-tools](https://github.com/psd-tools/psd-tools) (`tests/psd_files/effects/drop-shadow-groups.psd` and `tests/psd_files/effect-stroke-gradient.psd`), used under its MIT license:
+These files are from [psd-tools](https://github.com/psd-tools/psd-tools), used under its MIT license below:
+
+* `drop-shadow-groups.psd`: `tests/psd_files/effects/drop-shadow-groups.psd`
+* `effect-stroke-gradient.psd`: `tests/psd_files/effect-stroke-gradient.psd`
+* `placedLayer.psd`: `tests/psd_files/placedLayer.psd`
 
 ```
 Copyright (c) 2019 Kota Yamaguchi
