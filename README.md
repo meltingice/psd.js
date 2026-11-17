@@ -6,7 +6,7 @@ It gives you a Photoshop document as a tree of groups and layers, along with:
 
 * Document size, color mode and bit depth
 * Layer and group names, bounds, visibility, opacity, blend modes and locks
-* Text contents, fonts, sizes, colors and alignment
+* Text contents, fonts, sizes, colors, alignment and character styles like tracking and caps
 * Vector masks, layer styles, adjustment layers, smart objects and the rest of nearly 50 layer info blocks
 * Layer comps, guides, slices, resolution info and XMP metadata
 * The flattened composite image and individual layer images, as RGBA pixels or PNG
@@ -116,13 +116,17 @@ if (type) {
   type.pointSizes(psd.resources.resolutionInfo.vRes); // the point sizes Photoshop shows
   type.colors;                       // [[19, 120, 98, 255]]
   type.alignment;                    // ['center']
-  type.runs;                         // per-run font, size, color, bold, italic...
+  type.runs;                         // per-run font, size, color, bold, italic, tracking, caps...
   type.transform;                    // { xx, xy, yx, yy, tx, ty }
   type.left; type.top; type.right; type.bottom; // the text frame or paragraph box, relative to tx/ty
   type.boundingBox;                  // { left, top, right, bottom } of the glyphs, relative to tx/ty
   type.toCSS();
 }
+```
 
+Each run in `type.runs` has its character styles: `font`, `size`, `color`, `leading`, `fauxBold`, `fauxItalic`, `underline`, `strikethrough`, `tracking` and `kerning` (in 1/1000 em; `kerning` is `'auto'` for the font's own kerning), `baselineShift` (in pixels like `sizes`; positive raises the text), `caps` (`'normal'`, `'small-caps'` or `'all-caps'`; `text` keeps the case it was typed in) and `baseline` (`'normal'`, `'superscript'` or `'subscript'`).
+
+```ts
 node.info.vectorMask?.paths;         // path records
 node.info.solidColor;                // { r, g, b }
 node.info.placedLayer;               // smart object descriptor
