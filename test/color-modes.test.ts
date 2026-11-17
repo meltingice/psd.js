@@ -34,6 +34,8 @@ describe('indexed color', () => {
     const colors = [[255, 0, 0, 255], [0, 255, 0, 255], [0, 0, 255, 255]];
     const expected = Array.from({ length: 30 }, (_, i) => colors[((i % 10) + Math.floor(i / 10)) % 3]!).flat();
     assert.deepEqual(await pixels(psd), expected);
+    // The file's one layer covers the canvas, so it decodes to the same pixels through the same color table.
+    assert.deepEqual([...(await psd.layers[0]!.image.decode()).data], expected);
   });
 });
 

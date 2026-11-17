@@ -109,7 +109,7 @@ export class PSD {
   }
 
   get #layers(): LayerSection {
-    return (this.#layerSection ??= readLayerSection(this.#reader.at(this.#layersOffset), this.header));
+    return (this.#layerSection ??= readLayerSection(this.#reader.at(this.#layersOffset), this.header, () => this.resources));
   }
 
   /** Every layer record from top to bottom, including group dividers. Use `tree` for the hierarchy. */

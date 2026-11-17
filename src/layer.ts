@@ -2,6 +2,7 @@ import { LayerImage } from './image.ts';
 import { createLayerInfo, type LayerInfo } from './layer-info.ts';
 import type { Header } from './psd.ts';
 import { pad2, type Reader } from './reader.ts';
+import type { Resources } from './resources.ts';
 
 export const BLEND_MODES = {
   norm: 'normal',
@@ -119,11 +120,13 @@ export class Layer {
   /** Parsed additional layer information, keyed by name. Each block is parsed on first access. */
   readonly info: LayerInfo;
   readonly #reader: Reader;
+  readonly #resources: () => Resources;
   #image: LayerImage | undefined;
 
-  constructor(r: Reader, header: Header) {
+  constructor(r: Reader, header: Header, resources: () => Resources) {
     this.header = header;
     this.#reader = r;
+    this.#resources = resources;
     this.top = r.int32();
     this.left = r.int32();
     this.bottom = r.int32();
@@ -207,7 +210,7 @@ export class Layer {
 
   /** The layer's pixels. Decoding happens on demand. */
   get image(): LayerImage {
-    return (this.#image ??= new LayerImage(this, this.#reader));
+    return (this.#image ??= new LayerImage(this, this.#reader, this.#resources));
   }
 }
 
@@ -256,8 +259,11 @@ export interface LayerSection {
   mergedAlpha: boolean;
 }
 
-/** Parses the layer and mask information section. `r` is positioned at its length field. */
-export function readLayerSection(r: Reader, header: Header): LayerSection {
+/**
+ * Parses the layer and mask information section. `r` is positioned at its length field.
+ * `resources` is only read when decoding indexed color layers, which need the color table.
+ */
+export function readLayerSection(r: Reader, header: Header, resources: () => Resources): LayerSection {
   const section: LayerSection = { layers: [], globalMask: undefined, mergedAlpha: false };
   const length = header.isBig ? r.int64() : r.uint32();
   const end = r.pos + length;
@@ -268,7 +274,7 @@ export function readLayerSection(r: Reader, header: Header): LayerSection {
     if (infoLength > 0) {
       const count = r.int16();
       if (count < 0) section.mergedAlpha = true;
-      const layers = Array.from({ length: Math.abs(count) }, () => new Layer(r, header));
+      const layers = Array.from({ length: Math.abs(count) }, () => new Layer(r, header, resources));
 
       // Channel image data follows the records, in layer order then channel order.
       let offset = r.pos;

@@ -18,14 +18,6 @@ export interface GrayImage {
   data: Uint8Array;
 }
 
-/** Indexed color details needed to turn indexes into colors. */
-interface Palette {
-  /** 256 reds, then 256 greens, then 256 blues. */
-  colors: Uint8Array;
-  count: number;
-  transparentIndex: number | undefined;
-}
-
 /** Writes pixel `i` as RGB at `out[o]`. It may also clear the alpha at `out[o + 3]`. */
 type PixelWriter = (i: number, out: Uint8ClampedArray, o: number) => void;
 
@@ -37,8 +29,8 @@ interface ColorModel {
   writer(plane: (id: number, fill?: number) => Uint8Array): PixelWriter;
 }
 
-/** The color model for a document. Throws for formats this library can't decode. */
-function colorModel(header: Header, palette: Palette | undefined): ColorModel {
+/** The color model for a document. Throws for formats this library can't decode. Resources are only read for indexed images. */
+function colorModel(header: Header, resources: () => Resources): ColorModel {
   const { mode, depth, channels, modeName } = header;
   if ((mode === 0) !== (depth === 1)) throw new Error(`Decoding ${depth}-bit ${modeName} images is not supported`);
   switch (mode) {
@@ -56,8 +48,10 @@ function colorModel(header: Header, palette: Palette | undefined): ColorModel {
       };
     case 2: {
       if (depth !== 8) throw new Error(`Unexpected ${depth}-bit indexed image`);
-      if (!palette) throw new Error('Indexed image has no color table');
-      const { colors, count, transparentIndex } = palette;
+      // The color mode data is the color table: 256 reds, then 256 greens, then 256 blues.
+      const colors = header.colorModeData;
+      if (colors.length < 768) throw new Error(`Indexed image color table is ${colors.length} bytes, expected 768`);
+      const { indexedColorCount: count = 256, transparencyIndex: transparentIndex } = resources();
       return {
         colorCount: 1,
         writer: (plane) => {
@@ -279,7 +273,7 @@ export class CompositeImage {
   async #decode(): Promise<RGBAImage> {
     const header = this.#header;
     const { width, height, channels: count } = header;
-    const model = colorModel(header, header.mode === 2 ? this.#palette() : undefined);
+    const model = colorModel(header, this.#resources);
     const r = this.#reader.at(this.#reader.pos);
     const planes = await readPlanes(r, r.bytes.length, count, width, height, header);
 
@@ -287,11 +281,6 @@ export class CompositeImage {
     // A single extra channel is transparency; more than that are saved selections and spot colors.
     if (count === model.colorCount + 1) channels.set(-1, planes[model.colorCount]!);
     return { width, height, data: toRgba(model, channels, width * height) };
-  }
-
-  #palette(): Palette {
-    const resources = this.#resources();
-    return { colors: this.#header.colorModeData, count: resources.indexedColorCount ?? 256, transparentIndex: resources.transparencyIndex };
   }
 
   async toPng(): Promise<Uint8Array> {
@@ -303,11 +292,13 @@ export class CompositeImage {
 export class LayerImage {
   readonly #layer: Layer;
   readonly #reader: Reader;
+  readonly #resources: () => Resources;
   #decoded: Promise<RGBAImage> | undefined;
 
-  constructor(layer: Layer, reader: Reader) {
+  constructor(layer: Layer, reader: Reader, resources: () => Resources) {
     this.#layer = layer;
     this.#reader = reader;
+    this.#resources = resources;
   }
 
   get width(): number {
@@ -330,7 +321,7 @@ export class LayerImage {
 
   async #decode(): Promise<RGBAImage> {
     const { header, width, height } = this.#layer;
-    const model = colorModel(header, undefined);
+    const model = colorModel(header, this.#resources);
     const planes = new Map<number, Uint8Array>();
     for (const channel of this.#layer.channels) {
       if (channel.id < -1) continue;
