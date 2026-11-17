@@ -30,9 +30,11 @@ abstract class BaseNode {
   /** Position offset applied by a layer comp. */
   leftOffset = 0;
   topOffset = 0;
-  protected box: Box = { top: 0, left: 0, bottom: 0, right: 0 };
 
   abstract get parent(): RootNode | GroupNode | null;
+  abstract get root(): RootNode;
+  /** Bounds before any layer comp offset. */
+  protected abstract get box(): Box;
 
   get top(): number {
     return this.box.top + this.topOffset;
@@ -58,10 +60,6 @@ abstract class BaseNode {
     return this.bottom - this.top;
   }
 
-  get root(): RootNode {
-    return this.parent ? this.parent.root : (this as unknown as RootNode);
-  }
-
   /** Ancestors from the top of the tree down, excluding the root. */
   ancestors(): GroupNode[] {
     const parent = this.parent;
@@ -75,12 +73,12 @@ abstract class BaseNode {
 
   get nextSibling(): ChildNode | undefined {
     const siblings = this.siblings;
-    return siblings[siblings.indexOf(this as unknown as ChildNode) + 1];
+    return siblings[siblings.findIndex((s: BaseNode) => s === this) + 1];
   }
 
   get prevSibling(): ChildNode | undefined {
     const siblings = this.siblings;
-    const index = siblings.indexOf(this as unknown as ChildNode);
+    const index = siblings.findIndex((s: BaseNode) => s === this);
     return index > 0 ? siblings[index - 1] : undefined;
   }
 
@@ -90,8 +88,8 @@ abstract class BaseNode {
   }
 
   /** This node followed by its descendants. */
-  subtree(): Node[] {
-    return [this as unknown as Node, ...this.descendants()];
+  subtree(this: Node): Node[] {
+    return [this, ...this.descendants()];
   }
 
   /** 0 for the root. */
@@ -120,17 +118,15 @@ abstract class BaseNode {
     return this.descendants().find((n) => n.id === id);
   }
 
-  /** Recomputes group bounds from their non-empty children. */
-  protected updateDimensions(): void {
-    for (const child of this.children) (child as BaseNode).updateDimensions();
-    if (this.type !== 'group') return;
-    const nonEmpty = this.children.filter((c) => !c.isEmpty);
-    if (nonEmpty.length === 0) return;
-    this.box = {
-      top: Math.min(...nonEmpty.map((c) => c.top)),
-      left: Math.min(...nonEmpty.map((c) => c.left)),
-      bottom: Math.max(...nonEmpty.map((c) => c.bottom)),
-      right: Math.max(...nonEmpty.map((c) => c.right)),
+  /** The union of the non-empty children's bounds, before layer comp offsets. */
+  protected childBounds(): Box | undefined {
+    const boxes = this.children.filter((c) => !c.isEmpty).map((c: BaseNode) => c.box);
+    if (boxes.length === 0) return undefined;
+    return {
+      top: Math.min(...boxes.map((b) => b.top)),
+      left: Math.min(...boxes.map((b) => b.left)),
+      bottom: Math.max(...boxes.map((b) => b.bottom)),
+      right: Math.max(...boxes.map((b) => b.right)),
     };
   }
 }
@@ -147,11 +143,19 @@ abstract class LayerBackedNode extends BaseNode {
     super();
     this.layer = layer;
     this.#parent = parent;
-    this.box = { top: layer.top, left: layer.left, bottom: layer.bottom, right: layer.right };
   }
 
   get parent(): RootNode | GroupNode {
     return this.#parent;
+  }
+
+  get root(): RootNode {
+    return this.#parent.root;
+  }
+
+  protected get box(): Box {
+    const { top, left, bottom, right } = this.layer;
+    return { top, left, bottom, right };
   }
 
   get name(): string {
@@ -269,6 +273,12 @@ abstract class LayerBackedNode extends BaseNode {
 
 export class GroupNode extends LayerBackedNode {
   readonly type = 'group';
+  #box: Box | undefined;
+
+  /** The bounds of the non-empty children, or the group's own bounds if they're all empty. */
+  protected override get box(): Box {
+    return (this.#box ??= this.childBounds() ?? super.box);
+  }
 
   /** Whether the group is expanded in the layers panel. */
   get open(): boolean {
@@ -313,7 +323,6 @@ export class RootNode extends BaseNode {
   constructor(psd: PSD) {
     super();
     this.psd = psd;
-    this.box = { top: 0, left: 0, bottom: psd.height, right: psd.width };
 
     let current: RootNode | GroupNode = this;
     const stack: Array<RootNode | GroupNode> = [];
@@ -330,11 +339,18 @@ export class RootNode extends BaseNode {
         current.children.push(new LayerNode(layer, current));
       }
     }
-    this.updateDimensions();
   }
 
   get parent(): null {
     return null;
+  }
+
+  get root(): RootNode {
+    return this;
+  }
+
+  protected get box(): Box {
+    return { top: 0, left: 0, bottom: this.psd.height, right: this.psd.width };
   }
 
   get visible(): true {
