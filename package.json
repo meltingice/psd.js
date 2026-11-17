@@ -3,6 +3,7 @@
   "description": "A general purpose Photoshop file parser for Node and the browser.",
   "version": "4.0.0",
   "license": "MIT",
+  "author": "Ryan LeFevre (https://github.com/meltingice)",
   "type": "module",
   "keywords": [
     "psd",
