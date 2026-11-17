@@ -54,11 +54,29 @@ function chunk(type: string, data: Uint8Array[]): Uint8Array[] {
   return [head, ...data, crc];
 }
 
-/** Encodes 8-bit grayscale or RGBA pixels as a PNG file. */
-export async function encodePng({ width, height, data }: Pixels): Promise<Uint8Array> {
+export interface PngOptions {
+  /**
+   * An ICC profile to embed, such as `psd.resources.iccProfile`. Its color space must match the
+   * pixels: RGB for RGBA pixels and grayscale for grayscale pixels.
+   */
+  iccProfile?: Uint8Array;
+}
+
+/** The color space signature of an ICC profile, such as `'RGB '`, `'GRAY'` or `'CMYK'`. */
+export const iccColorSpace = (profile: Uint8Array) => String.fromCharCode(...profile.subarray(16, 20));
+
+/** The iCCP chunk's profile name, its NUL terminator and compression method 0 (zlib). */
+const ICCP_NAME = new TextEncoder().encode('ICC profile\0\0');
+
+/** Encodes 8-bit grayscale or RGBA pixels as a PNG file, optionally with an ICC profile. */
+export async function encodePng({ width, height, data }: Pixels, { iccProfile }: PngOptions = {}): Promise<Uint8Array> {
   if (width === 0 || height === 0) throw new Error('Cannot encode an empty image as PNG');
   const channels = data.length / (width * height);
   if (channels !== 1 && channels !== 4) throw new Error(`Expected 1 or 4 bytes per pixel, got ${channels}`);
+  const space = iccProfile && iccColorSpace(iccProfile);
+  if (space !== undefined && space !== (channels === 4 ? 'RGB ' : 'GRAY')) {
+    throw new Error(`Cannot embed a '${space}' ICC profile in a ${channels === 4 ? 'RGBA' : 'grayscale'} PNG`);
+  }
 
   const header = new Uint8Array(13);
   const view = new DataView(header.buffer);
@@ -86,6 +104,7 @@ export async function encodePng({ width, height, data }: Pixels): Promise<Uint8A
   return concat([
     new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
     ...chunk('IHDR', [header]),
+    ...(iccProfile ? chunk('iCCP', [ICCP_NAME, ...(await transform([iccProfile], new CompressionStream('deflate')))]) : []),
     ...chunk('IDAT', await transform(rows(), new CompressionStream('deflate'))),
     ...chunk('IEND', []),
   ]);
