@@ -1,0 +1,39 @@
+<!doctype html>
+<!--
+  Drop a PSD onto the page to see its composite image and layer tree.
+  Run `npm run build`, then serve the repository root, e.g. `npx serve .`,
+  and open /examples/browser.html.
+-->
+<meta charset="utf-8" />
+<title>psd.js</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 2rem; }
+  #drop { border: 2px dashed #999; border-radius: 8px; padding: 2rem; text-align: center; }
+  canvas { max-width: 100%; margin-top: 1rem; }
+  pre { background: #f4f4f4; padding: 1rem; overflow: auto; }
+</style>
+<div id="drop">Drop a PSD file here</div>
+<canvas id="canvas"></canvas>
+<pre id="tree"></pre>
+<script type="module">
+  import { PSD } from '../dist/index.js';
+
+  const drop = document.getElementById('drop');
+  drop.addEventListener('dragover', (e) => e.preventDefault());
+  drop.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    try {
+      const psd = new PSD(await file.arrayBuffer());
+      const { width, height, data } = await psd.image.decode();
+      const canvas = document.getElementById('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').putImageData(new ImageData(data, width, height), 0, 0);
+      document.getElementById('tree').textContent = JSON.stringify(psd.tree, null, 2);
+    } catch (err) {
+      document.getElementById('tree').textContent = String(err);
+    }
+  });
+</script>
