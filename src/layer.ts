@@ -257,6 +257,8 @@ export interface LayerSection {
   globalMask: GlobalMask | undefined;
   /** The first alpha channel of the composite image holds the merged transparency. */
   mergedAlpha: boolean;
+  /** Document-wide tagged blocks after the global mask, such as linked files and patterns. */
+  infoBlocks: InfoBlock[];
 }
 
 /**
@@ -264,7 +266,7 @@ export interface LayerSection {
  * `resources` is only read when decoding indexed color layers, which need the color table.
  */
 export function readLayerSection(r: Reader, header: Header, resources: () => Resources): LayerSection {
-  const section: LayerSection = { layers: [], globalMask: undefined, mergedAlpha: false };
+  const section: LayerSection = { layers: [], globalMask: undefined, mergedAlpha: false, infoBlocks: [] };
   const length = header.isBig ? r.int64() : r.uint32();
   const end = r.pos + length;
   if (length === 0) return section;
@@ -305,6 +307,7 @@ export function readLayerSection(r: Reader, header: Header, resources: () => Res
     const key = r.ascii(4);
     const blockLength = pad2(readBlockLength(r, header, key));
     const blockEnd = r.pos + blockLength;
+    section.infoBlocks.push({ key, offset: r.pos, length: blockLength });
     if (key === `Lr${header.depth}`) {
       section.layers = [];
       readLayers(blockLength);

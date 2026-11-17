@@ -115,6 +115,40 @@ describe('layer images', () => {
   });
 });
 
+describe('patterns', () => {
+  it('reads patterns and matches the fill layers drawn with them', async () => {
+    const psd = open('fixtures/pattern-fill.psb');
+    assert.deepEqual(
+      psd.patterns.map((p) => [p.id, p.name, p.width, p.height, p.mode]),
+      [['cf324614-b915-11d7-b003-ad2608ed939e', 'Metallic Flecks', 128, 128, 3]],
+    );
+    const node = psd.tree.children[0]!;
+    assert.ok(node.type === 'layer');
+    const pattern = psd.patterns.find((p) => p.id === node.info.patternFill!.Ptrn.Idnt)!;
+
+    // Photoshop drew the 32x32 layer from the top left of the 128x128 pattern.
+    const [tile, layer] = [await pattern.decode(), await node.image.decode()];
+    assert.deepEqual([node.left, node.top, layer.width, layer.height], [0, 0, 32, 32]);
+    for (let y = 0; y < 32; y++) {
+      assert.deepEqual(tile.data.subarray(y * 128 * 4, (y * 128 + 32) * 4), layer.data.subarray(y * 32 * 4, (y + 1) * 32 * 4));
+    }
+  });
+
+  it('reads the transparency from the last channel slot', async () => {
+    const [pattern] = open('fixtures/multichannel-pattern-fill.psd').patterns;
+    assert.deepEqual([pattern!.name, pattern!.mode, pattern!.width, pattern!.height], ['Multichannel Inks', 7, 8, 8]);
+    const { data } = await pattern!.decode();
+    // Three inks over the top half and transparent below. Inks are approximated like multichannel documents.
+    assert.deepEqual([...data.subarray(0, 4)], [33, 129, 193, 255]);
+    for (let y = 0; y < 8; y++) assert.equal(data[(y * 8 + 5) * 4 + 3], y < 4 ? 255 : 0);
+  });
+
+  it('is empty without patterns', () => {
+    assert.deepEqual(open('fixtures/example.psd').patterns, []);
+    assert.deepEqual(open('fixtures/indexed.psd').patterns, []);
+  });
+});
+
 describe('ZIP prediction', () => {
   it('undoes 8-bit row deltas', () => {
     assert.deepEqual([...unpredict(new Uint8Array([10, 1, 255, 5, 5, 5]), 3, 2, 8)], [10, 11, 10, 5, 10, 15]);

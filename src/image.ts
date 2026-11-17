@@ -30,7 +30,7 @@ interface ColorModel {
 }
 
 /** The color model for a document. Throws for formats this library can't decode. Resources are only read for indexed images. */
-function colorModel(header: Header, resources: () => Resources): ColorModel {
+function colorModel(header: Header, resources: () => Pick<Resources, 'indexedColorCount' | 'transparencyIndex'>): ColorModel {
   const { mode, depth, channels, modeName } = header;
   if ((mode === 0) !== (depth === 1)) throw new Error(`Decoding ${depth}-bit ${modeName} images is not supported`);
   switch (mode) {
@@ -181,13 +181,12 @@ function to8Bit(data: Uint8Array, depth: number, width: number, height: number):
 }
 
 /**
- * Decodes `count` planes stored back to back after a single compression type, as 8-bit samples.
+ * Decodes `count` planes stored back to back with a single compression type, as 8-bit samples.
  * The composite image is stored this way, and so is each layer channel (with a count of 1).
  */
-async function readPlanes(r: Reader, end: number, count: number, width: number, height: number, header: Header): Promise<Uint8Array[]> {
+async function readPlanes(r: Reader, compression: number, end: number, count: number, width: number, height: number, header: Header): Promise<Uint8Array[]> {
   const { depth } = header;
   if (depth !== 1 && depth !== 8 && depth !== 16) throw new Error(`Decoding ${depth}-bit images is not supported`);
-  const compression = r.uint16();
   if (width === 0 || height === 0) return Array.from({ length: count }, () => new Uint8Array());
 
   const stride = rowBytes(width, depth);
@@ -217,8 +216,29 @@ async function readPlanes(r: Reader, end: number, count: number, width: number, 
 }
 
 /** Decodes a single layer channel. */
-const readLayerChannel = async (reader: Reader, channel: ChannelInfo, width: number, height: number, header: Header) =>
-  (await readPlanes(reader.at(channel.offset), channel.offset + channel.length, 1, width, height, header))[0]!;
+async function readLayerChannel(reader: Reader, channel: ChannelInfo, width: number, height: number, header: Header) {
+  const r = reader.at(channel.offset);
+  return (await readPlanes(r, r.uint16(), channel.offset + channel.length, 1, width, height, header))[0]!;
+}
+
+/** A separately compressed plane, such as a pattern channel. */
+export interface Plane {
+  /** 0, 1, 2... for colors, -1 for transparency. */
+  id: number;
+  compression: number;
+  /** Where the compressed data starts and ends. */
+  offset: number;
+  end: number;
+}
+
+/** Decodes planes to RGBA. `header` describes the planes, not the document; indexed colors come from its `colorModeData` with no transparent index. */
+export async function decodePlanes(reader: Reader, header: Header, planes: Plane[]): Promise<RGBAImage> {
+  const { width, height } = header;
+  const model = colorModel(header, () => ({ indexedColorCount: undefined, transparencyIndex: undefined }));
+  const decoded = new Map<number, Uint8Array>();
+  for (const p of planes) decoded.set(p.id, (await readPlanes(reader.at(p.offset), p.compression, p.end, 1, width, height, header))[0]!);
+  return { width, height, data: toRgba(model, decoded, width * height) };
+}
 
 /** Converts a cyan, magenta or yellow ink amount and the black amount to the matching RGB component. */
 const inkToRgb = (ink: number, k: number) => Math.min(Math.max((65535 - (ink * (255 - k) + (k << 8))) >> 8, 0), 255);
@@ -271,7 +291,7 @@ export class CompositeImage {
     const { width, height, channels: count } = header;
     const model = colorModel(header, this.#resources);
     const r = this.#reader.at(this.#reader.pos);
-    const planes = await readPlanes(r, r.bytes.length, count, width, height, header);
+    const planes = await readPlanes(r, r.uint16(), r.bytes.length, count, width, height, header);
 
     const channels = new Map(planes.slice(0, model.colorCount).entries());
     // A single extra channel is transparency; more than that are saved selections and spot colors.

@@ -30,6 +30,7 @@ export type {
 export { TypeTool, type RGBA, type TextAlignment, type TextRun, type Transform } from './type-tool.ts';
 export { CompositeImage, LayerImage, type GrayImage, type RGBAImage } from './image.ts';
 export { encodePng, type Pixels } from './png.ts';
+export { Pattern } from './patterns.ts';
 export { Resources } from './resources.ts';
 export type { Bounds, Guide, LayerComp, ResolutionInfo, ResourceBlock, SavedPath, Slice, Slices } from './resources.ts';
 export type { Descriptor, DescriptorClass, UnitValue } from './descriptor.ts';

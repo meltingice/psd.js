@@ -28,6 +28,7 @@ For the browser example, run `npm run build`, serve the repository root (e.g. `n
 * `src/layer.ts`: layer records and the layer and mask section
 * `src/layer-info.ts`: every additional layer info block. Add new blocks to `LAYER_INFO` and `layer.info` picks up their types.
 * `src/type-tool.ts`, `src/engine-data.ts`: text layers
+* `src/patterns.ts`: patterns from the global `Patt`/`Pat2`/`Pat3` blocks
 * `src/image.ts`, `src/png.ts`: pixel decoding and PNG encoding
 * `src/nodes.ts`: the document tree
 
