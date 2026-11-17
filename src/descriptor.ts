@@ -96,9 +96,13 @@ function readItem(r: Reader, type: string): unknown {
       const count = r.int32();
       return { id, unit: UNITS[id], values: Array.from({ length: count }, () => r.float64()) };
     }
+    case 'ObAr':
+      // An undocumented object array: an item count, then a descriptor whose values hold one
+      // entry per item, usually as `UnFl` lists (e.g. `{ Hrzn: { values }, Vrtc: { values } }`).
+      r.skip(4);
+      return readDescriptor(r);
     default:
-      // Includes 'ObAr' (object array), which is undocumented. Unknown types would desync the
-      // reader, so fail loudly instead of returning garbage.
+      // Unknown types would desync the reader, so fail loudly instead of returning garbage.
       throw new Error(`Unsupported descriptor item type '${type}' at offset ${r.pos - 4}`);
   }
 }

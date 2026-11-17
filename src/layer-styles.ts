@@ -36,6 +36,7 @@ export interface Shadow extends Effect {
   color: RGB | undefined;
   /** Degrees. */
   angle: number;
+  /** Use the document's `resources.globalAngle` instead of `angle`. */
   useGlobalLight: boolean;
   distance: number;
   /** "Spread" for drop shadows, "choke" for inner shadows, in pixels. */
@@ -78,6 +79,7 @@ export interface Bevel {
   soften: number;
   angle: number;
   altitude: number;
+  /** Use the document's `resources.globalAngle` and `globalAltitude` instead of `angle` and `altitude`. */
   useGlobalLight: boolean;
   highlight: { blendMode: BlendMode | string | undefined; color: RGB | undefined; opacity: number };
   shadow: { blendMode: BlendMode | string | undefined; color: RGB | undefined; opacity: number };

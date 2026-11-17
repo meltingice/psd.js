@@ -8,7 +8,13 @@ Most of these files come from [PSD.rb](https://github.com/layervault/psd.rb)'s s
 
 These files are from [psd-tools](https://github.com/psd-tools/psd-tools), used under its MIT license below:
 
+* `curves-with-vectormask.psd`: `tests/psd_files/layers/curves-with-vectormask.psd`
 * `drop-shadow-groups.psd`: `tests/psd_files/effects/drop-shadow-groups.psd`
+* `effect-stroke-gradient.psd`: `tests/psd_files/effect-stroke-gradient.psd`
+* `mask-parameters-no-real-channel.psd`: `tests/psd_files/mask-parameters-no-real-channel.psd`
+* `mask_parameters.psd`: `tests/psd_files/mask_parameters.psd`
+* `placedLayer.psd`: `tests/psd_files/placedLayer.psd`
+* `solid-color-fill.psd`: `tests/psd_files/layers-minimal/solid-color-fill.psd`
 * `stroke-width-points-300dpi.psd`: `tests/psd_files/effects/stroke-width-points-300dpi.psd`
 * `vector-mask2.psd`: `tests/psd_files/vector-mask2.psd`
 
