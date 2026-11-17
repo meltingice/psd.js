@@ -176,7 +176,8 @@ export class TypeTool {
     const { ParagraphSheetSet, TheNormalParagraphSheet } = this.engineData.ResourceDict;
     const defaults = ParagraphSheetSet[TheNormalParagraphSheet].Properties;
     return this.engineData.EngineDict.ParagraphRun.RunArray.map(
-      (p: EngineDict) => ALIGNMENTS[Math.min(p.ParagraphSheet.Properties.Justification ?? defaults.Justification, 3)]!,
+      // Photoshop leaves Justification out of the normal sheet when it's 0 (left).
+      (p: EngineDict) => ALIGNMENTS[Math.min(p.ParagraphSheet.Properties.Justification ?? defaults.Justification ?? 0, 3)]!,
     );
   }
 
