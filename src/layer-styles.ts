@@ -4,7 +4,7 @@ import type { BlendMode } from './layer.ts';
 
 export type RGB = [number, number, number];
 
-/** Layer styles (the `lfx2`/`lmfx` block). Photoshop CC allows several of some effects per layer. */
+/** Layer styles (the `lfx2`/`lmfx` block, or `lfxs` for groups). Photoshop CC allows several of some effects per layer. */
 export interface LayerStyles {
   /** The master "show effects" switch. */
   enabled: boolean;

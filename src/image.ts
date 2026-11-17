@@ -246,7 +246,6 @@ export class CompositeImage {
   readonly #reader: Reader;
   readonly #header: Header;
   readonly #resources: () => Resources;
-  #decoded: Promise<RGBAImage> | undefined;
 
   constructor(reader: Reader, header: Header, resources: () => Resources) {
     this.#reader = reader;
@@ -264,13 +263,10 @@ export class CompositeImage {
 
   /**
    * Decodes the pixels. Photoshop only stores a full composite when "Maximize Compatibility"
-   * is enabled; otherwise this is blank.
+   * is enabled; otherwise this is blank. Each call decodes again and returns new pixels, which
+   * aren't kept, so hold on to the result if you need it more than once.
    */
-  decode(): Promise<RGBAImage> {
-    return (this.#decoded ??= this.#decode());
-  }
-
-  async #decode(): Promise<RGBAImage> {
+  async decode(): Promise<RGBAImage> {
     const header = this.#header;
     const { width, height, channels: count } = header;
     const model = colorModel(header, this.#resources);
@@ -293,7 +289,6 @@ export class LayerImage {
   readonly #layer: Layer;
   readonly #reader: Reader;
   readonly #resources: () => Resources;
-  #decoded: Promise<RGBAImage> | undefined;
 
   constructor(layer: Layer, reader: Reader, resources: () => Resources) {
     this.#layer = layer;
@@ -314,12 +309,11 @@ export class LayerImage {
     return this.#layer.mask !== undefined && this.#layer.channels.some((c) => c.id === -2);
   }
 
-  /** Decodes the layer pixels. The mask is not applied; see `decodeMask()`. */
-  decode(): Promise<RGBAImage> {
-    return (this.#decoded ??= this.#decode());
-  }
-
-  async #decode(): Promise<RGBAImage> {
+  /**
+   * Decodes the layer pixels. The mask is not applied; see `decodeMask()`. Like the composite,
+   * each call decodes again and the pixels aren't kept.
+   */
+  async decode(): Promise<RGBAImage> {
     const { header, width, height } = this.#layer;
     const model = colorModel(header, this.#resources);
     const planes = new Map<number, Uint8Array>();

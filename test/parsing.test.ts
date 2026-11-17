@@ -104,6 +104,42 @@ describe('16-bit documents', () => {
   });
 });
 
+describe('layers in tagged blocks', () => {
+  const int = (n: number, size: number) => Array.from({ length: size }, (_, i) => (n >> ((size - 1 - i) * 8)) & 0xff);
+  const ascii = (s: string) => [...s].map((c) => c.charCodeAt(0));
+  // A layer record with no channels: bounds, channel count, blend mode, opacity, clipping, flags,
+  // filler, then the extra data (empty mask and blending ranges, and a padded name).
+  const record = (name: string) => {
+    const pascal = [name.length, ...ascii(name)];
+    while (pascal.length % 4) pascal.push(0);
+    const extra = [...int(0, 4), ...int(0, 4), ...pascal];
+    return [...int(0, 16), ...int(0, 2), ...ascii('8BIMnorm'), 255, 0, 0, 0, ...int(extra.length, 4), ...extra];
+  };
+  const layerInfo = (names: string[]) => (names.length ? [...int(names.length, 2), ...names.flatMap(record)] : []);
+  const block = (key: string, data: number[]) => [...ascii('8BIM' + key), ...int(data.length, 4), ...data];
+  /** A 1x1 RGB document whose layer section holds `main` layers, an empty global mask, then `extra` bytes. */
+  const psd = (depth: number, main: string[], extra: number[]) => {
+    const info = layerInfo(main);
+    const section = [...int(info.length, 4), ...info, ...int(0, 4), ...extra];
+    const header = [...ascii('8BPS'), ...int(1, 2), ...int(0, 6), ...int(3, 2), ...int(1, 4), ...int(1, 4), ...int(depth, 2), ...int(3, 2)];
+    return new PSD(new Uint8Array([...header, ...int(0, 4), ...int(0, 4), ...int(section.length, 4), ...section]));
+  };
+  const names = (p: PSD) => p.layers.map((l) => l.name);
+
+  it('replaces 8-bit compatibility layers with Lr16 layers', () => {
+    assert.deepEqual(names(psd(16, ['compat'], block('Lr16', layerInfo(['bottom', 'top'])))), ['top', 'bottom']);
+  });
+
+  it('skips zero padding before the block', () => {
+    assert.deepEqual(names(psd(16, [], [0, 0, ...block('Lr16', layerInfo(['a']))])), ['a']);
+  });
+
+  it('reads layers from a Layr block when the main section is empty', () => {
+    assert.deepEqual(names(psd(8, [], block('Layr', layerInfo(['a'])))), ['a']);
+    assert.deepEqual(names(psd(8, ['main'], block('Layr', layerInfo(['a'])))), ['main']);
+  });
+});
+
 describe('vector masks', () => {
   it('parses path records', () => {
     const mask = open('path.psd').layers.find((l) => l.name === 'Logo_Glyph')!.info.vectorMask!;

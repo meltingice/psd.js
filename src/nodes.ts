@@ -347,13 +347,14 @@ export class RootNode extends BaseNode {
     const stack: Array<RootNode | GroupNode> = [];
     for (const layer of psd.layers) {
       if (layer.isFolder) {
+        const group = new GroupNode(layer, current);
+        current.children.push(group);
         stack.push(current);
-        current = new GroupNode(layer, current);
+        current = group;
       } else if (layer.isFolderEnd) {
-        const parent = stack.pop();
-        if (!parent || current.type !== 'group') throw new Error('Unbalanced group markers in layer list');
-        parent.children.push(current);
-        current = parent;
+        // Files from some editors have unbalanced markers. Rather than fail, a stray end marker is
+        // ignored, and groups still open at the bottom of the list end there.
+        current = stack.pop() ?? current;
       } else {
         current.children.push(new LayerNode(layer, current));
       }

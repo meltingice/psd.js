@@ -16,7 +16,17 @@ describe('composite image', () => {
     assert.equal(image.width, 1);
     assert.equal(image.height, 1);
     assert.deepEqual([...image.data], [0, 100, 200, 255]);
-    assert.equal(psd.image.decode(), psd.image.decode()); // memoized
+  });
+
+  it('decodes fresh pixels on every call instead of keeping them alive', async () => {
+    // Keeping decoded pixels on the image ran exports of large documents out of memory (#193, #242).
+    const node = open('../examples/images/example.psd').tree.childrenAtPath('Version A/Logo_Glyph')[0]!;
+    assert.ok(node.type === 'layer');
+    for (const image of [open('fixtures/text.psd').image, node.image]) {
+      const [a, b] = [await image.decode(), await image.decode()];
+      assert.notEqual(a.data, b.data);
+      assert.deepEqual(a, b);
+    }
   });
 
   // SHA-256 prefixes of the RGBA output from psd.js 3.x, which this port must reproduce.

@@ -31,6 +31,21 @@ describe('layer styles', () => {
     assert.deepEqual(overlay.gradient!.opacityStops.map((s) => s.opacity), [1, 1]);
   });
 
+  it('reads group styles, which Photoshop stores in lfxs', () => {
+    const groups = open('fixtures/drop-shadow-groups.psd').tree.children.filter((n) => n.type === 'group');
+    assert.deepEqual(groups.map((g) => g.name), ['group-child-shadow', 'group-opacity50', 'group-passthrough', 'group-normal']);
+    for (const group of groups) {
+      assert.ok(group.layer.infoBlocks.some((b) => b.key === 'lfxs') && !group.layer.infoBlocks.some((b) => b.key === 'lfx2'));
+      const [shadow, ...others] = group.info.objectEffects!.dropShadows;
+      assert.equal(others.length, 0);
+      assert.deepEqual(
+        [shadow!.enabled, shadow!.blendMode, shadow!.opacity, shadow!.color, shadow!.angle, shadow!.distance, shadow!.size],
+        [true, 'normal', 0.75, [200, 0, 0], 120, 6, 8],
+        group.name,
+      );
+    }
+  });
+
   it('converts descriptor colors', () => {
     const color = (id: string, values: object) => descriptorColor({ class: { name: '', id }, ...values });
     assert.deepEqual(color('RGBC', { 'Rd  ': 10.4, 'Grn ': 20, 'Bl  ': 300 }), [10, 20, 255]);
