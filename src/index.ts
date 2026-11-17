@@ -28,6 +28,7 @@ export type {
   Shadow,
   Stroke,
 } from './layer-styles.ts';
+export type { ShapeContent, VectorFill, VectorOrigination, VectorShape, VectorStroke } from './shapes.ts';
 export {
   TypeTool,
   type RGBA,

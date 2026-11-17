@@ -57,6 +57,60 @@ describe('layer styles', () => {
   });
 });
 
+describe('shapes', () => {
+  const psd = open('fixtures/vector-mask2.psd');
+  const info = (name: string) => psd.layers.find((l) => l.name === name)!.info;
+  const shapes = (name: string) => info(name).vectorOrigination!.shapes.map(({ data, ...shape }) => shape);
+
+  it('reads live shape types and bounds', () => {
+    const rect = { invalidated: false, index: 0, radii: undefined, line: undefined };
+    assert.deepEqual(shapes('Rectangle 1'), [{ ...rect, type: 'rectangle', bounds: { top: 3, left: 3, bottom: 9, right: 9 } }]);
+    assert.deepEqual(shapes('Ellipse 1'), [{ ...rect, type: 'ellipse', bounds: { top: 13, left: 4, bottom: 18, right: 8 } }]);
+    // The layer's bounds include antialiasing; the shape's are what Photoshop shows.
+    const layer = psd.layers.find((l) => l.name === 'Rectangle 1')!;
+    assert.deepEqual([layer.top, layer.left, layer.bottom, layer.right], [2, 2, 10, 10]);
+  });
+
+  it('reads rounded rectangle radii and line endpoints', () => {
+    const [rounded] = shapes('Rounded Rectangle 1');
+    assert.equal(rounded!.type, 'roundedRectangle');
+    assert.deepEqual(rounded!.radii, { topLeft: 3, topRight: 3, bottomRight: 3, bottomLeft: 3 });
+    const [line] = shapes('Line 1');
+    assert.equal(line!.type, 'line');
+    assert.deepEqual(line!.line, { start: { x: 12, y: 18 }, end: { x: 19, y: 13 }, weight: 1 });
+  });
+
+  it('reads every shape in a layer, and shapes edited into paths', () => {
+    assert.deepEqual(shapes('Color Fill 1').map((s) => [s.type, s.index]), [['roundedRectangle', 0], ['roundedRectangle', 1]]);
+    assert.deepEqual(shapes('Polygon 1'), [
+      { type: undefined, invalidated: true, index: 0, bounds: undefined, radii: undefined, line: undefined },
+    ]);
+  });
+
+  it('reads strokes and fills, with the raw descriptor in data', () => {
+    const { vectorStroke: stroke, vectorStrokeContent: fill } = info('Rounded Rectangle 1');
+    assert.deepEqual(
+      [stroke!.enabled, stroke!.fillEnabled, stroke!.width, stroke!.alignment, stroke!.cap, stroke!.join, stroke!.dashes, stroke!.opacity, stroke!.blendMode, stroke!.color],
+      [true, true, 0.29, 'inside', 'butt', 'miter', [], 1, 'normal', [0, 0, 255]],
+    );
+    // The raw descriptors are only under data, like objectEffects.
+    assert.equal(stroke!.data.strokeStyleLineWidth.value, 0.29);
+    assert.ok(!('strokeStyleLineWidth' in stroke!));
+    assert.deepEqual(Object.keys(fill!), ['color', 'gradient', 'pattern', 'data']);
+    assert.ok(fill!.data['Clr ']);
+    assert.deepEqual(Object.keys(info('Rectangle 1').vectorOrigination!), ['shapes', 'data']);
+    assert.equal(info('Rectangle 1').vectorOrigination!.data.keyDescriptorList.length, 1);
+    assert.deepEqual(fill!.color, [0, 255, 255]);
+  });
+
+  it('converts stroke widths in points to pixels, and reads a disabled fill', () => {
+    const stroke = open('fixtures/stroke-width-points-300dpi.psd').layers.find((l) => l.name === 'Rectangle 1')!.info.vectorStroke!;
+    assert.equal(stroke.data.strokeStyleLineWidth.unit, 'Points');
+    assert.equal(stroke.width, 25); // 6pt at 300ppi
+    assert.deepEqual([stroke.fillEnabled, stroke.alignment, stroke.color], [false, 'center', [255, 0, 0]]);
+  });
+});
+
 describe('smart objects', () => {
   const placed = (name: string) => open('fixtures/placedLayer.psd').layers.find((l) => l.name === name)!.info.placedLayer!;
 

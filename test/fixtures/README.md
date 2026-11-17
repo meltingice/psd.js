@@ -15,6 +15,7 @@ These files are from [psd-tools](https://github.com/psd-tools/psd-tools), used u
 * `mask_parameters.psd`: `tests/psd_files/mask_parameters.psd`
 * `placedLayer.psd`: `tests/psd_files/placedLayer.psd`
 * `solid-color-fill.psd`: `tests/psd_files/layers-minimal/solid-color-fill.psd`
+* `stroke-width-points-300dpi.psd`: `tests/psd_files/effects/stroke-width-points-300dpi.psd`
 * `vector-mask2.psd`: `tests/psd_files/vector-mask2.psd`
 
 ```

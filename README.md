@@ -173,6 +173,34 @@ if (styles?.enabled) {
 
 Files from before Photoshop 6 store effects in `node.info.effectsLayer` instead.
 
+### Shapes
+
+Shape layers keep their outline in `node.info.vectorMask`, and their properties in other blocks, normalized like layer styles with the raw descriptor in `data`:
+
+```ts
+for (const shape of node.info.vectorOrigination?.shapes ?? []) {
+  shape.type;               // 'rectangle', 'roundedRectangle', 'line' or 'ellipse'
+  shape.bounds;             // { top, left, bottom, right } in pixels, as Photoshop shows them
+  shape.radii;              // rounded rectangle corners
+  shape.line;               // { start, end, weight }
+  shape.invalidated;        // edited with the path tools, so it's a plain path now
+  shape.data;               // the raw descriptor
+}
+
+const stroke = node.info.vectorStroke;
+stroke?.enabled; stroke?.fillEnabled;
+stroke?.width;              // pixels
+stroke?.alignment;          // 'inside', 'center' or 'outside'
+stroke?.cap; stroke?.join; stroke?.dashes; stroke?.opacity;
+stroke?.color;              // or gradient, or pattern
+stroke?.data;               // the raw descriptor
+
+node.info.vectorStrokeContent?.color; // the fill; older shapes use solidColor, gradientFill or patternFill
+node.info.vectorOrigination?.data;    // the raw descriptor
+```
+
+A shape's bounds can be fractional and exclude antialiasing and the stroke, so they're usually smaller than the layer's.
+
 ### Images
 
 Image decoding is asynchronous because ZIP-compressed data is inflated with the platform's `DecompressionStream`.
