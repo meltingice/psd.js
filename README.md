@@ -127,9 +127,14 @@ if (type) {
   type.transform;                    // { xx, xy, yx, yy, tx, ty }
   type.left; type.top; type.right; type.bottom; // the text frame or paragraph box, relative to tx/ty
   type.boundingBox;                  // { left, top, right, bottom } of the glyphs, relative to tx/ty
+  type.boxBounds;                    // { left, top, right, bottom } of the paragraph text box; undefined for point text
   type.toCSS();
 }
+```
 
+For paragraph text, `boxBounds` is the text box exactly as Photoshop draws it. The frame (`left`/`top`/`right`/`bottom`) usually matches it, but it can reach above or below the box to fit the first line, and files from older Photoshop versions don't store the frame. Like the frame and `boundingBox`, it's relative to `tx`/`ty` and before the rest of `transform`: a box resized with Free Transform keeps its stored size, and `transform` scales it in the document.
+
+```ts
 node.info.vectorMask?.paths;         // path records
 node.info.solidColor;                // { r, g, b }
 node.info.placedLayer;               // smart object descriptor
