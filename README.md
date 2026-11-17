@@ -122,7 +122,7 @@ if (type) {
 
 node.info.vectorMask?.paths;         // path records
 node.info.solidColor;                // { r, g, b }
-node.info.objectEffects;             // layer styles descriptor
+node.info.objectEffects;             // layer styles: dropShadows, strokes, gradientOverlays...
 node.info.placedLayer;               // smart object descriptor
 node.info.locked;                    // { all, position, composite, transparency }
 node.info.hueSaturation;             // adjustment layer settings
@@ -148,7 +148,7 @@ if (node.type === 'layer') {
 }
 ```
 
-The composite is only present if the file was saved with "Maximize Compatibility" enabled. Decoding supports RGB, CMYK, grayscale and duotone images at 8 or 16 bits per channel, with raw, RLE or ZIP compression.
+The composite is only present if the file was saved with "Maximize Compatibility" enabled. Decoding supports RGB, CMYK, grayscale, duotone, indexed, Lab and multichannel images at 8 or 16 bits per channel, and 1-bit bitmaps, with raw, RLE or ZIP compression. CMYK, Lab and multichannel colors are converted with simple formulas rather than color profiles, so they're close to Photoshop's but not exact. Multichannel images must have 3 or 4 channels, which are treated as CMY(K) inks.
 
 `encodePng({ width, height, data })` encodes any grayscale or RGBA pixels.
 
@@ -198,12 +198,12 @@ node.positionInComp(725235304);                  // by name or ID
 | `psd.resources.resource('layerComps').export()` | `psd.resources.layerComps` |
 | `psd.layers` | `psd.layers` (now also populated for 16-bit files) |
 
-New in 4.0: PSB support, 16-bit layers, ZIP-compressed image data, ~30 more layer info blocks, slices, paths, XMP, lock inheritance, layer comp filtering, and fixes for grayscale layer images.
+New in 4.0: PSB support, 16-bit layers, ZIP-compressed image data, bitmap/indexed/Lab/multichannel decoding, typed layer styles, ~30 more layer info blocks, slices, paths, XMP, lock inheritance, layer comp filtering, and fixes for grayscale layer images.
 
 ## Limitations
 
 * There's no renderer, so layers can't be composited, and a node can't be exported with its effects applied. The composite stored in the file is available as `psd.image`.
-* 32-bit, bitmap, indexed, Lab and multichannel images can be parsed but not decoded to pixels.
+* 32-bit images can be parsed but not decoded to pixels.
 * Descriptors containing object arrays (`ObAr`), which are undocumented, throw when parsed.
 
 ## License

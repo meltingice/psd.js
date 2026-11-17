@@ -12,6 +12,21 @@ export {
   type Mask,
 } from './layer.ts';
 export type { LayerInfo } from './layer-info.ts';
+export { descriptorColor } from './layer-styles.ts';
+export type {
+  Bevel,
+  ColorOverlay,
+  Glow,
+  Gradient,
+  GradientOverlay,
+  GradientStop,
+  LayerStyles,
+  PatternOverlay,
+  RGB,
+  Satin,
+  Shadow,
+  Stroke,
+} from './layer-styles.ts';
 export { TypeTool, type RGBA, type TextAlignment, type TextRun, type Transform } from './type-tool.ts';
 export { CompositeImage, LayerImage, type GrayImage, type RGBAImage } from './image.ts';
 export { encodePng, type Pixels } from './png.ts';

@@ -1,5 +1,6 @@
 import { readDescriptor, type Descriptor } from './descriptor.ts';
 import type { InfoBlock } from './layer.ts';
+import { readLayerStyles } from './layer-styles.ts';
 import { readPathRecords } from './path-record.ts';
 import type { Header } from './psd.ts';
 import type { Reader, SpaceColor } from './reader.ts';
@@ -27,6 +28,7 @@ const flag = (r: Reader) => r.bool();
 const SECTION_DIVIDER_TYPES = ['other', 'open folder', 'closed folder', 'bounding section divider'] as const;
 const SHEET_COLORS = ['none', 'red', 'orange', 'yellow', 'green', 'blue', 'violet', 'gray'] as const;
 const CHANNEL_LETTERS: Record<string, string[]> = { RGBColor: ['R', 'G', 'B'], CMYKColor: ['C', 'M', 'Y', 'K'] };
+/** Indexed from 1. */
 const BEVEL_STYLES = ['Outer Bevel', 'Inner Bevel', 'Emboss', 'Pillow Emboss', 'Stroke Emboss'];
 
 function readDivider(r: Reader, { length }: Ctx) {
@@ -52,7 +54,7 @@ function readDivider(r: Reader, { length }: Ctx) {
 const readCurvePoints = (r: Reader) =>
   Array.from({ length: r.int16() }, () => ({ output: r.int16(), input: r.int16() }));
 
-function readCurves(r: Reader, { end }: Ctx) {
+export function readCurves(r: Reader, { end }: Pick<Ctx, 'end'>) {
   r.skip(3); // padding + version
   const tag = r.int32();
   const curves: Array<{ channelIndex: number; points: Array<{ output: number; input: number }> }> = [];
@@ -60,12 +62,13 @@ function readCurves(r: Reader, { end }: Ctx) {
   for (let i = 0; i < 32; i++) {
     if (tag & (1 << i)) curves.push({ channelIndex: i, points: readCurvePoints(r) });
   }
-  // Photoshop CS adds an extended section.
+  // Photoshop CS repeats the curves in an extended section with explicit channel indexes,
+  // which replaces the legacy data.
   if (r.pos < end - 4) {
     if (r.ascii(4) !== 'Crv ') throw new Error('Malformed extended curves data');
     r.skip(2);
     const count = r.int32();
-    for (let i = 0; i < count; i++) curves.push({ channelIndex: r.int16(), points: readCurvePoints(r) });
+    return Array.from({ length: count }, () => ({ channelIndex: r.int16(), points: readCurvePoints(r) }));
   }
   return curves;
 }
@@ -269,7 +272,7 @@ function readEffectsLayer(r: Reader) {
       shadowBlendMode,
       highlightColor,
       shadowColor,
-      style: BEVEL_STYLES[styleId],
+      style: BEVEL_STYLES[styleId - 1],
       highlightOpacity: opacity(),
       shadowOpacity: opacity(),
       enabled: r.bool(),
@@ -464,6 +467,8 @@ const LAYER_INFO = {
   layerEffects: { keys: ['lfxs'], parse: descriptorAfter(8) },
   layerId: { keys: ['lyid'], parse: (r: Reader) => r.int32() },
   layerMaskAsGlobalMask: { keys: ['lmgm'], parse: flag },
+  /** Minimum Photoshop version needed to read the layer, times 10 (70 = 7.0). */
+  layerVersion: { keys: ['lyvr'], parse: (r: Reader) => r.int32() },
   layerNameSource: { keys: ['lnsr'], parse: (r: Reader) => r.ascii(4) },
   legacyTypeTool: { keys: ['tySh'], parse: readLegacyTypeTool },
   levels: { keys: ['levl'], parse: readLevels },
@@ -494,7 +499,7 @@ const LAYER_INFO = {
     },
   },
   /** Layer styles (drop shadow, stroke, etc.). */
-  objectEffects: { keys: ['lfx2', 'lmfx'], parse: descriptorAfter(8) },
+  objectEffects: { keys: ['lfx2', 'lmfx'], parse: (r: Reader) => readLayerStyles(descriptorAfter(8)(r)) },
   patternFill: { keys: ['PtFl'], parse: descriptorAfter(4) },
   photoFilter: { keys: ['phfl'], parse: readPhotoFilter },
   /** Smart object data. */
