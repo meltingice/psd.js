@@ -179,14 +179,14 @@ const BLEND_MODES: Record<string, BlendMode> = {
 
 /** Unit values (`{ value }`) and plain numbers as a number. */
 const num = (v: any): number => (typeof v === 'object' && v !== null ? v.value : (v ?? 0));
-const percent = (v: any) => num(v) / 100;
-const enumValue = (v: any): string | undefined => v?.value?.trim();
-const blendMode = (v: any) => {
+export const percent = (v: any) => num(v) / 100;
+export const enumValue = (v: any): string | undefined => v?.value?.trim();
+export const blendMode = (v: any) => {
   const value = enumValue(v);
   return value === undefined ? undefined : (BLEND_MODES[value] ?? value);
 };
 const contour = (v: any): string | undefined => v?.['Nm  '];
-const pattern = (v: any) => (v ? { name: v['Nm  '] as string, id: v.Idnt as string } : undefined);
+export const pattern = (v: any) => (v ? { name: v['Nm  '] as string, id: v.Idnt as string } : undefined);
 
 /** Converts a descriptor color to RGB. */
 export function descriptorColor(c: Descriptor | undefined): RGB | undefined {
@@ -220,7 +220,7 @@ export function descriptorColor(c: Descriptor | undefined): RGB | undefined {
   }
 }
 
-function gradient(g: Descriptor | undefined): Gradient | undefined {
+export function gradient(g: Descriptor | undefined): Gradient | undefined {
   if (!g) return undefined;
   const stop = (s: Descriptor) => ({ location: s.Lctn / 4096, midpoint: s.Mdpn / 100 });
   return {
