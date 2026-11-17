@@ -6,7 +6,7 @@ It gives you a Photoshop document as a tree of groups and layers, along with:
 
 * Document size, color mode and bit depth
 * Layer and group names, bounds, visibility, opacity, blend modes and locks
-* Text contents, fonts, sizes, colors and alignment
+* Text contents, fonts, sizes, colors, alignment and character styles like tracking and caps
 * Vector masks, layer styles, adjustment layers, smart objects and the rest of nearly 50 layer info blocks
 * Layer comps, guides, slices, resolution info and XMP metadata
 * The flattened composite image and individual layer images, as RGBA pixels or PNG
@@ -18,6 +18,13 @@ npm install psd
 ```
 
 Requires Node 20+ or a modern browser. The package is ESM only.
+
+To check the installed version at runtime, import its `package.json`:
+
+```ts
+import pkg from 'psd/package.json' with { type: 'json' };
+pkg.version; // '4.1.0'
+```
 
 ## Usage
 
@@ -88,6 +95,7 @@ Groups and layers share these properties:
 ```ts
 node.name;
 node.id;                      // the layer ID
+node.kind;                    // 'group', 'text', 'shape', 'smartObject', 'adjustment', 'fill' or 'pixel'
 node.top; node.left; node.bottom; node.right; node.width; node.height;
 node.visible;                 // accounts for clipping masks and layer comps
 node.opacity;                 // 0 to 1
@@ -103,6 +111,8 @@ node.toJSON();                // a plain object; JSON.stringify(psd.tree) also w
 
 Groups have `children` and `open`. Group bounds are calculated from their non-empty children. Layers have `image`. Both have `isEmpty`.
 
+`kind` is worked out from the layer's info blocks, in this order: groups (including artboards), text, smart objects, adjustment layers (even with a vector mask), shapes (fill content with a vector mask), fill layers, then pixel layers. A fill layer with a vector mask is a shape, since that's how Photoshop stores shapes. A pixel layer with a vector mask, even one drawn with a shape tool, is still a pixel layer. Video and 3D layers are `'pixel'`.
+
 ### Layer info
 
 Most layer data lives in "additional layer information" blocks. `node.info` (or `layer.info`) has a typed property for each block in the layer. Each block is parsed the first time you access it:
@@ -116,13 +126,20 @@ if (type) {
   type.pointSizes(psd.resources.resolutionInfo.vRes); // the point sizes Photoshop shows
   type.colors;                       // [[19, 120, 98, 255]]
   type.alignment;                    // ['center']
-  type.runs;                         // per-run font, size, color, bold, italic...
+  type.runs;                         // per-run font, size, color, bold, italic, tracking, caps...
   type.transform;                    // { xx, xy, yx, yy, tx, ty }
   type.left; type.top; type.right; type.bottom; // the text frame or paragraph box, relative to tx/ty
   type.boundingBox;                  // { left, top, right, bottom } of the glyphs, relative to tx/ty
+  type.boxBounds;                    // { left, top, right, bottom } of the paragraph text box; undefined for point text
   type.toCSS();
 }
+```
 
+Each run in `type.runs` has its character styles: `font`, `size`, `color`, `leading`, `fauxBold`, `fauxItalic`, `underline`, `strikethrough`, `tracking` and `kerning` (in 1/1000 em; `kerning` is `'auto'` for the font's own kerning), `baselineShift` (in pixels like `sizes`; positive raises the text), `caps` (`'normal'`, `'small-caps'` or `'all-caps'`; `text` keeps the case it was typed in) and `baseline` (`'normal'`, `'superscript'` or `'subscript'`).
+
+For paragraph text, `boxBounds` is the text box exactly as Photoshop draws it. The frame (`left`/`top`/`right`/`bottom`) usually matches it, but it can reach above or below the box to fit the first line, and files from older Photoshop versions don't store the frame. Like the frame and `boundingBox`, it's relative to `tx`/`ty` and before the rest of `transform`: a box resized with Free Transform keeps its stored size, and `transform` scales it in the document.
+
+```ts
 node.info.vectorMask?.paths;         // path records
 node.info.solidColor;                // { r, g, b }
 node.info.placedLayer;               // smart object descriptor
@@ -134,6 +151,28 @@ Object.keys(node.info);              // the blocks this layer has
 `node.layer.infoBlocks` lists every block in the layer, including ones this library doesn't parse.
 
 Some blocks are stored as Photoshop descriptors. Their contents vary between Photoshop versions, so they're typed loosely. `descriptorColor()` converts a descriptor color (RGB, HSB, CMYK, grayscale or Lab) to `[r, g, b]`.
+
+### Vector masks and paths
+
+Shape layers and vector masks keep their outline in `node.info.vectorMask.paths`, and `psd.resources.workPath` and `psd.resources.savedPaths` use the same path records. `pathToSvg()` converts them to SVG path data in document pixels, with one entry per shape component:
+
+```ts
+import { pathToSvg } from 'psd';
+
+const shapes = pathToSvg(node.info.vectorMask.paths, psd.width, psd.height);
+// [{ operation: 1, d: 'M8 4C8 4 4 4 4 4C4 4 4 8 4 8C4 8 8 8 8 8C8 8 8 4 8 4Z' }]
+const svg = `<svg viewBox="0 0 ${psd.width} ${psd.height}"><path fill-rule="evenodd" d="${shapes[0].d}"/></svg>`;
+```
+
+Fill each component with the even-odd rule. When there are several, Photoshop combines them in order by `operation`: 1 combine, 2 subtract, 3 intersect and 0 exclude, starting from a full canvas if the first one subtracts or intersects. On a canvas:
+
+```ts
+shapes.forEach(({ operation, d }, i) => {
+  if (i === 0 && operation >= 2) ctx.fillRect(0, 0, psd.width, psd.height);
+  ctx.globalCompositeOperation = ['xor', 'source-over', 'destination-out', 'destination-in'][operation];
+  ctx.fill(new Path2D(d), 'evenodd');
+});
+```
 
 ### Layer styles
 
@@ -156,6 +195,34 @@ if (styles?.enabled) {
 
 Files from before Photoshop 6 store effects in `node.info.effectsLayer` instead.
 
+### Shapes
+
+Shape layers keep their outline in `node.info.vectorMask`, and their properties in other blocks, normalized like layer styles with the raw descriptor in `data`:
+
+```ts
+for (const shape of node.info.vectorOrigination?.shapes ?? []) {
+  shape.type;               // 'rectangle', 'roundedRectangle', 'line' or 'ellipse'
+  shape.bounds;             // { top, left, bottom, right } in pixels, as Photoshop shows them
+  shape.radii;              // rounded rectangle corners
+  shape.line;               // { start, end, weight }
+  shape.invalidated;        // edited with the path tools, so it's a plain path now
+  shape.data;               // the raw descriptor
+}
+
+const stroke = node.info.vectorStroke;
+stroke?.enabled; stroke?.fillEnabled;
+stroke?.width;              // pixels
+stroke?.alignment;          // 'inside', 'center' or 'outside'
+stroke?.cap; stroke?.join; stroke?.dashes; stroke?.opacity;
+stroke?.color;              // or gradient, or pattern
+stroke?.data;               // the raw descriptor
+
+node.info.vectorStrokeContent?.color; // the fill; older shapes use solidColor, gradientFill or patternFill
+node.info.vectorOrigination?.data;    // the raw descriptor
+```
+
+A shape's bounds can be fractional and exclude antialiasing and the stroke, so they're usually smaller than the layer's.
+
 ### Images
 
 Image decoding is asynchronous because ZIP-compressed data is inflated with the platform's `DecompressionStream`.
@@ -171,11 +238,19 @@ if (node.type === 'layer') {
 }
 ```
 
+The mask's bounds and settings are in `node.layer.mask`, including the density (0 to 1) and feather (pixels) from the Properties panel: `density` and `feather` for the user mask, `vectorDensity` and `vectorFeather` for the vector mask. They aren't applied to the decoded mask.
+
 `decode()` and `toPng()` decode the pixels again on every call and don't keep them, so exporting every layer of a large document only holds one layer's pixels at a time. Keep the result if you need it more than once.
 
 The composite is only present if the file was saved with "Maximize Compatibility" enabled. Decoding supports RGB, CMYK, grayscale, duotone, indexed, Lab and multichannel images at 8 or 16 bits per channel, and 1-bit bitmaps, with raw, RLE or ZIP compression. CMYK, Lab and multichannel colors are converted with simple formulas rather than color profiles, so they're close to Photoshop's but not exact. Multichannel images must have 3 or 4 channels, which are treated as CMY(K) inks.
 
-`encodePng({ width, height, data })` encodes any grayscale or RGBA pixels.
+`encodePng({ width, height, data })` encodes any grayscale or RGBA pixels. Pass `{ iccProfile }` as the second argument to embed an ICC profile; it must be an RGB profile for RGBA pixels or a grayscale one for grayscale pixels.
+
+`toPng()` embeds the document's ICC profile (`psd.resources.iccProfile`) when it's an RGB profile. CMYK and Lab colors are converted to approximate sRGB and grayscale documents decode to RGBA, so their profiles don't describe the output and aren't embedded. Pass `{ embedProfile: false }` to leave the profile out, e.g. for smaller files when the document is sRGB anyway:
+
+```ts
+const png = await psd.image.toPng({ embedProfile: false });
+```
 
 ### Smart object files
 
@@ -205,6 +280,9 @@ psd.resources.guides;          // [{ location, direction }]
 psd.resources.slices;          // { version, name, bounds, slices }
 psd.resources.resolutionInfo;  // { hRes, vRes, ... }
 psd.resources.xmpMetadata;     // the XMP packet as a string
+psd.resources.iccProfile;      // the ICC color profile as a Uint8Array
+psd.resources.globalAngle;     // 120, the global light angle in degrees for styles with useGlobalLight
+psd.resources.globalAltitude;  // 30, the global light altitude in degrees
 psd.resources.workPath;        // path records
 psd.resources.savedPaths;      // [{ id, name, records }]
 psd.resources.bytes(1036);     // the raw bytes of any resource block
@@ -249,7 +327,6 @@ New in 4.0: PSB support, 16-bit layers, ZIP-compressed image data, bitmap/indexe
 
 * There's no renderer, so layers can't be composited, and a node can't be exported with its effects applied. The composite stored in the file is available as `psd.image`.
 * 32-bit images can be parsed but not decoded to pixels.
-* Descriptors containing object arrays (`ObAr`), which are undocumented, throw when parsed.
 
 ## License
 

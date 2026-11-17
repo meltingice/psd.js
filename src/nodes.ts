@@ -1,5 +1,5 @@
 import type { LayerImage } from './image.ts';
-import type { BlendMode, Layer } from './layer.ts';
+import type { BlendMode, Layer, LayerKind } from './layer.ts';
 import type { LayerInfo } from './layer-info.ts';
 import type { LinkedFile } from './linked-files.ts';
 import type { PSD } from './psd.ts';
@@ -181,6 +181,11 @@ abstract class LayerBackedNode extends BaseNode {
     return this.layer.info;
   }
 
+  /** `'group'`, `'text'`, `'shape'`, `'pixel'`... See `Layer.kind` for how it's decided. */
+  get kind(): LayerKind {
+    return this.layer.kind;
+  }
+
   /** Visible, accounting for clipping masks and the tree's layer comp. */
   get visible(): boolean {
     if (this.layer.clipped && this.clippingMask?.visible === false) return false;
@@ -273,6 +278,7 @@ abstract class LayerBackedNode extends BaseNode {
   toJSON() {
     return {
       type: this.type,
+      kind: this.kind,
       id: this.id,
       name: this.name,
       visible: this.visible,
