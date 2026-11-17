@@ -1,4 +1,4 @@
-import type { Layer } from './layer.ts';
+import type { ChannelInfo, Layer } from './layer.ts';
 import { encodePng, inflate } from './png.ts';
 import type { Header } from './psd.ts';
 import type { Reader } from './reader.ts';
@@ -26,38 +26,107 @@ interface Palette {
   transparentIndex: number | undefined;
 }
 
-/** Number of color channels in a mode. Any single extra channel is transparency. */
-function colorChannels(header: Header): number {
-  const { mode, depth, channels } = header;
-  if (mode === 0) {
-    if (depth !== 1) throw new Error(`Unexpected ${depth}-bit bitmap image`);
-    return 1;
-  }
-  if (depth !== 8 && depth !== 16) throw new Error(`Decoding ${depth}-bit images is not supported`);
+/** Writes pixel `i` as RGB at `out[o]`. It may also clear the alpha at `out[o + 3]`. */
+type PixelWriter = (i: number, out: Uint8ClampedArray, o: number) => void;
+
+/** How a color mode's channels become RGB. */
+interface ColorModel {
+  /** Number of color channels. Any single extra channel is transparency. */
+  colorCount: number;
+  /** Binds the color planes to a pixel writer. `plane(id, fill)` returns a missing plane filled with `fill`. */
+  writer(plane: (id: number, fill?: number) => Uint8Array): PixelWriter;
+}
+
+/** The color model for a document. Throws for formats this library can't decode. */
+function colorModel(header: Header, palette: Palette | undefined): ColorModel {
+  const { mode, depth, channels, modeName } = header;
+  if ((mode === 0) !== (depth === 1)) throw new Error(`Decoding ${depth}-bit ${modeName} images is not supported`);
   switch (mode) {
+    case 0: // Bitmap, expanded to grayscale
     case 1: // Grayscale
     case 8: // Duotone, stored as grayscale
-      return 1;
-    case 2: // Indexed
+      return {
+        colorCount: 1,
+        writer: (plane) => {
+          const g = plane(0);
+          return (i, out, o) => {
+            out[o] = out[o + 1] = out[o + 2] = g[i]!;
+          };
+        },
+      };
+    case 2: {
       if (depth !== 8) throw new Error(`Unexpected ${depth}-bit indexed image`);
-      return 1;
-    case 3: // RGB
-    case 9: // Lab
-      return 3;
-    case 4: // CMYK
-      return 4;
+      if (!palette) throw new Error('Indexed image has no color table');
+      const { colors, count, transparentIndex } = palette;
+      return {
+        colorCount: 1,
+        writer: (plane) => {
+          const p = plane(0);
+          return (i, out, o) => {
+            const index = p[i]!;
+            out[o] = colors[index]!;
+            out[o + 1] = colors[256 + index]!;
+            out[o + 2] = colors[512 + index]!;
+            if (index >= count || index === transparentIndex) out[o + 3] = 0;
+          };
+        },
+      };
+    }
+    case 3:
+      return {
+        colorCount: 3,
+        writer: (plane) => {
+          const [r, g, b] = [plane(0), plane(1), plane(2)];
+          return (i, out, o) => {
+            out[o] = r[i]!;
+            out[o + 1] = g[i]!;
+            out[o + 2] = b[i]!;
+          };
+        },
+      };
     case 7: // Multichannel, approximated as CMY(K) inks like Photoshop's default channel colors
       if (channels !== 3 && channels !== 4) throw new Error(`Decoding ${channels}-channel multichannel images is not supported`);
-      return channels;
+    // falls through
+    case 4:
+      return {
+        colorCount: mode === 7 ? channels : 4,
+        writer: (plane) => {
+          // Values are stored inverted, so 255 is "no ink" for a missing black channel.
+          const [c, m, y, k] = [plane(0), plane(1), plane(2), plane(3, 255)];
+          return (i, out, o) => {
+            const black = 255 - k[i]!;
+            out[o] = inkToRgb(255 - c[i]!, black);
+            out[o + 1] = inkToRgb(255 - m[i]!, black);
+            out[o + 2] = inkToRgb(255 - y[i]!, black);
+          };
+        },
+      };
+    case 9:
+      return {
+        colorCount: 3,
+        writer: (plane) => {
+          const [l, a, b] = [plane(0), plane(1), plane(2)];
+          return (i, out, o) => out.set(labToRgb(l[i]!, a[i]!, b[i]!), o);
+        },
+      };
     default:
-      throw new Error(`Decoding ${header.modeName} images is not supported`);
+      throw new Error(`Decoding ${modeName} images is not supported`);
   }
 }
 
-const rowBytes = (width: number, depth: number) => Math.ceil((width * depth) / 8);
+/** Combines 8-bit planes (keyed by channel ID, -1 for transparency) into RGBA. */
+function toRgba(model: ColorModel, planes: Map<number, Uint8Array>, pixels: number): Uint8ClampedArray {
+  const write = model.writer((id, fill = 0) => planes.get(id) ?? new Uint8Array(pixels).fill(fill));
+  const alpha = planes.get(-1);
+  const out = new Uint8ClampedArray(pixels * 4);
+  for (let i = 0, o = 0; i < pixels; i++, o += 4) {
+    out[o + 3] = alpha ? alpha[i]! : 255;
+    write(i, out, o);
+  }
+  return out;
+}
 
-const readCounts = (r: Reader, rows: number, isBig: boolean) =>
-  Array.from({ length: rows }, () => (isBig ? r.uint32() : r.uint16()));
+const rowBytes = (width: number, depth: number) => Math.ceil((width * depth) / 8);
 
 /** Decodes PackBits rows. */
 function unpackBits(r: Reader, counts: number[], rowLength: number): Uint8Array {
@@ -117,37 +186,48 @@ function to8Bit(data: Uint8Array, depth: number, width: number, height: number):
   return out;
 }
 
-/** Decodes the data of a single layer channel, which starts with its own compression type. */
-async function readLayerChannel(r: Reader, length: number, width: number, height: number, header: Header): Promise<Uint8Array> {
-  const end = r.pos + length;
-  const compression = r.uint16();
+/**
+ * Decodes `count` planes stored back to back after a single compression type, as 8-bit samples.
+ * The composite image is stored this way, and so is each layer channel (with a count of 1).
+ */
+async function readPlanes(r: Reader, end: number, count: number, width: number, height: number, header: Header): Promise<Uint8Array[]> {
   const { depth } = header;
-  if (width === 0 || height === 0) return new Uint8Array();
+  if (depth !== 1 && depth !== 8 && depth !== 16) throw new Error(`Decoding ${depth}-bit images is not supported`);
+  const compression = r.uint16();
+  if (width === 0 || height === 0) return Array.from({ length: count }, () => new Uint8Array());
 
-  let data: Uint8Array;
+  const stride = rowBytes(width, depth);
+  const planeBytes = stride * height;
+  let planes: Uint8Array[];
   switch (compression) {
     case 0:
-      data = r.bytesView(rowBytes(width, depth) * height);
+      planes = Array.from({ length: count }, () => r.bytesView(planeBytes));
       break;
-    case 1:
-      data = unpackBits(r, readCounts(r, height, header.isBig), rowBytes(width, depth));
+    case 1: {
+      // Every row's byte count comes first, for all planes.
+      const counts = Array.from({ length: count * height }, () => (header.isBig ? r.uint32() : r.uint16()));
+      planes = Array.from({ length: count }, (_, c) => unpackBits(r, counts.slice(c * height, (c + 1) * height), stride));
       break;
+    }
     case 2:
-    case 3:
-      data = await inflate(r.bytesView(end - r.pos));
-      if (compression === 3) unpredict(data, width, height, depth);
+    case 3: {
+      const data = await inflate(r.bytesView(end - r.pos));
+      planes = Array.from({ length: count }, (_, c) => data.subarray(c * planeBytes, (c + 1) * planeBytes));
+      if (compression === 3) for (const plane of planes) unpredict(plane, width, height, depth);
       break;
+    }
     default:
       throw new Error(`Unknown compression type ${compression}`);
   }
-  return to8Bit(data, depth, width, height);
+  return planes.map((plane) => to8Bit(plane, depth, width, height));
 }
 
-/** Converts in-file CMYK (stored inverted) to RGB. */
-function cmykToRgb(c: number, m: number, y: number, k: number): [number, number, number] {
-  const convert = (v: number) => Math.min(Math.max((65535 - (v * (255 - k) + (k << 8))) >> 8, 0), 255);
-  return [convert(c), convert(m), convert(y)];
-}
+/** Decodes a single layer channel. */
+const readLayerChannel = async (reader: Reader, channel: ChannelInfo, width: number, height: number, header: Header) =>
+  (await readPlanes(reader.at(channel.offset), channel.offset + channel.length, 1, width, height, header))[0]!;
+
+/** Converts a cyan, magenta or yellow ink amount and the black amount to the matching RGB component. */
+const inkToRgb = (ink: number, k: number) => Math.min(Math.max((65535 - (ink * (255 - k) + (k << 8))) >> 8, 0), 255);
 
 /** Converts 8-bit encoded Lab (L 0-255 for 0-100, a and b offset by 128) to sRGB, using a D65 white point. */
 export function labToRgb(l: number, a: number, b: number): [number, number, number] {
@@ -165,50 +245,6 @@ export function labToRgb(l: number, a: number, b: number): [number, number, numb
     gamma(-0.9689 * x + 1.8758 * y + 0.0415 * z),
     gamma(0.0557 * x - 0.204 * y + 1.057 * z),
   ];
-}
-
-/** Combines 8-bit channels (keyed by channel ID) into RGBA. Missing channels read as 0. */
-function combine(width: number, height: number, mode: number, channels: Map<number, Uint8Array>, palette?: Palette): Uint8ClampedArray {
-  const n = width * height;
-  const out = new Uint8ClampedArray(n * 4);
-  const empty = new Uint8Array(n);
-  const ch = (id: number) => channels.get(id) ?? empty;
-  const [c0, c1, c2] = [ch(0), ch(1), ch(2)];
-  // Multichannel files may have no fourth ink; 255 is "no ink" since values are stored inverted.
-  const c3 = channels.get(3) ?? new Uint8Array(n).fill(255);
-  const alpha = channels.get(-1);
-
-  for (let i = 0; i < n; i++) {
-    let rgb: [number, number, number];
-    let a = alpha ? alpha[i]! : 255;
-    switch (mode) {
-      case 3:
-        rgb = [c0[i]!, c1[i]!, c2[i]!];
-        break;
-      case 4:
-      case 7:
-        rgb = cmykToRgb(255 - c0[i]!, 255 - c1[i]!, 255 - c2[i]!, 255 - c3[i]!);
-        break;
-      case 9:
-        rgb = labToRgb(c0[i]!, c1[i]!, c2[i]!);
-        break;
-      case 2: {
-        if (!palette) throw new Error('Indexed image has no color table');
-        const index = c0[i]!;
-        const { colors, count, transparentIndex } = palette;
-        rgb = [colors[index]!, colors[256 + index]!, colors[512 + index]!];
-        if (index >= count || index === transparentIndex) a = 0;
-        break;
-      }
-      default: {
-        const g = c0[i]!;
-        rgb = [g, g, g];
-      }
-    }
-    out.set(rgb, i * 4);
-    out[i * 4 + 3] = a;
-  }
-  return out;
 }
 
 /** The flattened composite image stored at the end of the file. */
@@ -242,39 +278,20 @@ export class CompositeImage {
 
   async #decode(): Promise<RGBAImage> {
     const header = this.#header;
-    const colorCount = colorChannels(header);
-    const { width, height, depth, channels: count } = header;
+    const { width, height, channels: count } = header;
+    const model = colorModel(header, header.mode === 2 ? this.#palette() : undefined);
     const r = this.#reader.at(this.#reader.pos);
-    const compression = r.uint16();
-    const planeBytes = rowBytes(width, depth) * height;
+    const planes = await readPlanes(r, r.bytes.length, count, width, height, header);
 
-    let planes: Uint8Array[];
-    if (compression === 0) {
-      planes = Array.from({ length: count }, () => r.bytesView(planeBytes));
-    } else if (compression === 1) {
-      const counts = readCounts(r, count * height, header.isBig);
-      planes = Array.from({ length: count }, (_, c) => unpackBits(r, counts.slice(c * height, (c + 1) * height), rowBytes(width, depth)));
-    } else if (compression === 2 || compression === 3) {
-      const data = await inflate(r.bytesView(r.bytes.length - r.pos));
-      planes = Array.from({ length: count }, (_, c) => {
-        const plane = data.subarray(c * planeBytes, (c + 1) * planeBytes);
-        return compression === 3 ? unpredict(plane, width, height, depth) : plane;
-      });
-    } else {
-      throw new Error(`Unknown compression type ${compression}`);
-    }
-
-    const channels = new Map<number, Uint8Array>();
-    planes.slice(0, colorCount).forEach((p, i) => channels.set(i, to8Bit(p, depth, width, height)));
+    const channels = new Map(planes.slice(0, model.colorCount).entries());
     // A single extra channel is transparency; more than that are saved selections and spot colors.
-    if (count === colorCount + 1) channels.set(-1, to8Bit(planes[colorCount]!, depth, width, height));
+    if (count === model.colorCount + 1) channels.set(-1, planes[model.colorCount]!);
+    return { width, height, data: toRgba(model, channels, width * height) };
+  }
 
-    let palette: Palette | undefined;
-    if (header.mode === 2) {
-      const resources = this.#resources();
-      palette = { colors: header.colorModeData, count: resources.indexedColorCount ?? 256, transparentIndex: resources.transparencyIndex };
-    }
-    return { width, height, data: combine(width, height, header.mode, channels, palette) };
+  #palette(): Palette {
+    const resources = this.#resources();
+    return { colors: this.#header.colorModeData, count: resources.indexedColorCount ?? 256, transparentIndex: resources.transparencyIndex };
   }
 
   async toPng(): Promise<Uint8Array> {
@@ -312,14 +329,14 @@ export class LayerImage {
   }
 
   async #decode(): Promise<RGBAImage> {
-    const layer = this.#layer;
-    colorChannels(layer.header);
-    const channels = new Map<number, Uint8Array>();
-    for (const c of layer.channels) {
-      if (c.id < -1) continue;
-      channels.set(c.id, await readLayerChannel(this.#reader.at(c.offset), c.length, layer.width, layer.height, layer.header));
+    const { header, width, height } = this.#layer;
+    const model = colorModel(header, undefined);
+    const planes = new Map<number, Uint8Array>();
+    for (const channel of this.#layer.channels) {
+      if (channel.id < -1) continue;
+      planes.set(channel.id, await readLayerChannel(this.#reader, channel, width, height, header));
     }
-    return { width: layer.width, height: layer.height, data: combine(layer.width, layer.height, layer.header.mode, channels) };
+    return { width, height, data: toRgba(model, planes, width * height) };
   }
 
   /** Decodes the user mask as grayscale, positioned at `layer.mask`. */
@@ -327,9 +344,7 @@ export class LayerImage {
     const { mask, channels, header } = this.#layer;
     const channel = channels.find((c) => c.id === -2);
     if (!mask || !channel) return undefined;
-    colorChannels(header);
-    const data = await readLayerChannel(this.#reader.at(channel.offset), channel.length, mask.width, mask.height, header);
-    return { width: mask.width, height: mask.height, data };
+    return { width: mask.width, height: mask.height, data: await readLayerChannel(this.#reader, channel, mask.width, mask.height, header) };
   }
 
   async toPng(): Promise<Uint8Array> {
