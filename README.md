@@ -182,7 +182,13 @@ if (node.type === 'layer') {
 
 The composite is only present if the file was saved with "Maximize Compatibility" enabled. Decoding supports RGB, CMYK, grayscale, duotone, indexed, Lab and multichannel images at 8 or 16 bits per channel, and 1-bit bitmaps, with raw, RLE or ZIP compression. CMYK, Lab and multichannel colors are converted with simple formulas rather than color profiles, so they're close to Photoshop's but not exact. Multichannel images must have 3 or 4 channels, which are treated as CMY(K) inks.
 
-`encodePng({ width, height, data })` encodes any grayscale or RGBA pixels.
+`encodePng({ width, height, data })` encodes any grayscale or RGBA pixels. Pass `{ iccProfile }` as the second argument to embed an ICC profile; it must be an RGB profile for RGBA pixels or a grayscale one for grayscale pixels.
+
+`toPng()` embeds the document's ICC profile (`psd.resources.iccProfile`) when it's an RGB profile. CMYK and Lab colors are converted to approximate sRGB and grayscale documents decode to RGBA, so their profiles don't describe the output and aren't embedded. Pass `{ embedProfile: false }` to leave the profile out, e.g. for smaller files when the document is sRGB anyway:
+
+```ts
+const png = await psd.image.toPng({ embedProfile: false });
+```
 
 ### Resources
 
@@ -192,6 +198,7 @@ psd.resources.guides;          // [{ location, direction }]
 psd.resources.slices;          // { version, name, bounds, slices }
 psd.resources.resolutionInfo;  // { hRes, vRes, ... }
 psd.resources.xmpMetadata;     // the XMP packet as a string
+psd.resources.iccProfile;      // the ICC color profile as a Uint8Array
 psd.resources.globalAngle;     // 120, the global light angle in degrees for styles with useGlobalLight
 psd.resources.globalAltitude;  // 30, the global light altitude in degrees
 psd.resources.workPath;        // path records

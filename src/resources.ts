@@ -203,6 +203,16 @@ export class Resources {
     return this.#parse(1047, (r) => r.uint16());
   }
 
+  /** Resource 1039: the document's ICC color profile. */
+  get iccProfile(): Uint8Array | undefined {
+    return this.#parse(1039, (r, block) => {
+      // The block is padded to an even length; the profile header has the exact size.
+      const size = r.view.getUint32(r.pos);
+      if (size < 128 || size > block.size) throw new Error(`Invalid ICC profile size ${size} in a ${block.size} byte resource`);
+      return r.bytesView(size);
+    });
+  }
+
   /** Resource 1037: the global light angle in degrees, used by layer styles with `useGlobalLight`. */
   get globalAngle(): number | undefined {
     return this.#parse(1037, (r) => r.int32());
