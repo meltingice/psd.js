@@ -110,13 +110,16 @@ Most layer data lives in "additional layer information" blocks. `node.info` (or 
 ```ts
 const type = node.info.typeTool;     // undefined if this isn't a text layer
 if (type) {
-  type.text;                         // 'Make a change and save.'
+  type.text;                         // 'Make a change and save.'; paragraphs end in '\r', line breaks are '\u0003'
   type.fonts;                        // ['HelveticaNeue-Light', 'AdobeInvisFont', 'MyriadPro-Regular']
-  type.sizes;                        // [33]
+  type.sizes;                        // [33], in pixels before the transform
+  type.pointSizes(psd.resources.resolutionInfo.vRes); // the point sizes Photoshop shows
   type.colors;                       // [[19, 120, 98, 255]]
   type.alignment;                    // ['center']
   type.runs;                         // per-run font, size, color, bold, italic...
   type.transform;                    // { xx, xy, yx, yy, tx, ty }
+  type.left; type.top; type.right; type.bottom; // the text frame or paragraph box, relative to tx/ty
+  type.boundingBox;                  // { left, top, right, bottom } of the glyphs, relative to tx/ty
   type.toCSS();
 }
 

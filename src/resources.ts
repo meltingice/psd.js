@@ -24,7 +24,7 @@ export interface Guide {
 }
 
 export interface ResolutionInfo {
-  /** Horizontal resolution in pixels per `hResUnitName`. */
+  /** Horizontal resolution in pixels per inch. `hResUnitName` is only the unit Photoshop displays it in. */
   hRes: number;
   hResUnit: number;
   hResUnitName: string;

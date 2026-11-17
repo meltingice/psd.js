@@ -1,6 +1,7 @@
 import { readDescriptor, type Descriptor } from './descriptor.ts';
 import { parseEngineData, type EngineDict } from './engine-data.ts';
 import type { Reader } from './reader.ts';
+import type { Bounds } from './resources.ts';
 
 export interface Transform {
   xx: number;
@@ -54,10 +55,6 @@ export class TypeTool {
   readonly textData: Descriptor;
   /** The raw warp descriptor. */
   readonly warpData: Descriptor;
-  readonly left: number;
-  readonly top: number;
-  readonly right: number;
-  readonly bottom: number;
   #engineData: EngineDict | undefined;
 
   constructor(r: Reader) {
@@ -67,13 +64,41 @@ export class TypeTool {
     this.textData = readDescriptor(r);
     r.skip(6); // warp version + descriptor version
     this.warpData = readDescriptor(r);
-    this.left = r.int32();
-    this.top = r.int32();
-    this.right = r.int32();
-    this.bottom = r.int32();
+    // The block ends with left, top, right and bottom fields that Photoshop leaves as 0.
   }
 
-  /** The text content. Paragraphs are separated by `\r`. */
+  /**
+   * The left edge of the text's frame, in pixels relative to the transform origin (`tx`, `ty`) and
+   * before the transform. The frame spans the lines around the anchor point for point text, or the box
+   * for paragraph text (its top can reach above the box to fit the first line). Undefined in files
+   * from older Photoshop versions.
+   */
+  get left(): number | undefined {
+    return this.textData.bounds?.Left.value;
+  }
+  /** See `left`. */
+  get top(): number | undefined {
+    return this.textData.bounds?.['Top '].value;
+  }
+  /** See `left`. */
+  get right(): number | undefined {
+    return this.textData.bounds?.Rght.value;
+  }
+  /** See `left`. */
+  get bottom(): number | undefined {
+    return this.textData.bounds?.Btom.value;
+  }
+
+  /** The tight bounds of the glyphs, relative to the transform origin like `left`/`top`/`right`/`bottom`. */
+  get boundingBox(): Bounds | undefined {
+    const box = this.textData.boundingBox;
+    return box && { left: box.Left.value, top: box['Top '].value, right: box.Rght.value, bottom: box.Btom.value };
+  }
+
+  /**
+   * The text content. Paragraphs are separated by `\r`, and line breaks within a paragraph
+   * (Shift+Enter) are `\u0003`; neither displays as a new line in HTML or a terminal.
+   */
   get text(): string {
     return this.textData['Txt '];
   }
@@ -88,7 +113,10 @@ export class TypeTool {
     return this.engineData.ResourceDict.FontSet.map((f: EngineDict) => f.Name);
   }
 
-  /** The style of each run of characters, in order. */
+  /**
+   * The style of each run of characters, in order. Runs only store what they change from the
+   * document's normal style sheet, so the rest comes from that.
+   */
   get runs(): TextRun[] {
     const styleRun = this.engineData.EngineDict.StyleRun;
     const lengths: number[] = [...styleRun.RunLengthArray];
@@ -96,14 +124,14 @@ export class TypeTool {
     const total = lengths.reduce((sum, n) => sum + n, 0);
     if (total - this.text.length === 1) lengths[lengths.length - 1]! -= 1;
 
-    const fontSet = this.engineData.ResourceDict.FontSet;
+    const { FontSet, StyleSheetSet, TheNormalStyleSheet } = this.engineData.ResourceDict;
+    const defaults = StyleSheetSet[TheNormalStyleSheet].StyleSheetData;
     return styleRun.RunArray.map((run: EngineDict, i: number): TextRun => {
-      const s = run.StyleSheet.StyleSheetData;
+      const s = { ...defaults, ...run.StyleSheet.StyleSheetData };
       return {
         length: lengths[i] ?? 0,
-        font: s.Font === undefined ? undefined : fontSet[s.Font]?.Name,
+        font: s.Font === undefined ? undefined : FontSet[s.Font]?.Name,
         size: s.FontSize,
-        // Opaque black is sometimes omitted.
         color: s.FillColor ? toRGBA(s.FillColor.Values) : undefined,
         leading: s.AutoLeading === false && s.Leading !== undefined ? s.Leading : 'auto',
         fauxBold: s.FauxBold ?? false,
@@ -114,9 +142,23 @@ export class TypeTool {
     });
   }
 
-  /** Unique font sizes, in points. */
+  /** Unique font sizes as stored, in pixels before `transform` scales the text. See `pointSizes()`. */
   get sizes(): number[] {
     return uniq(this.runs.flatMap((r) => (r.size === undefined ? [] : [r.size])));
+  }
+
+  /** How much `transform` scales the text vertically, which is what Photoshop scales font sizes by. */
+  get #scale(): number {
+    return Math.hypot(this.transform.yx, this.transform.yy);
+  }
+
+  /**
+   * Unique font sizes in points, as Photoshop's Character panel shows them: scaled by `transform`
+   * and converted at `ppi` pixels per inch (`psd.resources.resolutionInfo.vRes`). Pass 72 for pixels.
+   */
+  pointSizes(ppi: number): number[] {
+    if (!(ppi > 0)) throw new Error(`Invalid resolution: ${ppi}`);
+    return this.sizes.map((size) => (size * this.#scale * 72) / ppi);
   }
 
   /** Unique text colors (RGBA). */
@@ -131,8 +173,11 @@ export class TypeTool {
 
   /** The alignment of each paragraph. */
   get alignment(): TextAlignment[] {
+    const { ParagraphSheetSet, TheNormalParagraphSheet } = this.engineData.ResourceDict;
+    const defaults = ParagraphSheetSet[TheNormalParagraphSheet].Properties;
     return this.engineData.EngineDict.ParagraphRun.RunArray.map(
-      (p: EngineDict) => ALIGNMENTS[Math.min(p.ParagraphSheet.Properties.Justification ?? 0, 3)]!,
+      // Photoshop leaves Justification out of the normal sheet when it's 0 (left).
+      (p: EngineDict) => ALIGNMENTS[Math.min(p.ParagraphSheet.Properties.Justification ?? defaults.Justification ?? 0, 3)]!,
     );
   }
 
@@ -140,7 +185,7 @@ export class TypeTool {
   toCSS(): string {
     const definition: Record<string, string | undefined> = {
       'font-family': this.fonts.join(', '),
-      'font-size': this.sizes[0] === undefined ? undefined : `${this.sizes[0]}pt`,
+      'font-size': this.sizes[0] === undefined ? undefined : `${this.sizes[0] * this.#scale}px`,
       color: `rgba(${this.colors[0]!.join(', ')})`,
       'text-align': this.alignment[0],
     };
@@ -166,6 +211,7 @@ export class TypeTool {
       top: this.top,
       right: this.right,
       bottom: this.bottom,
+      boundingBox: this.boundingBox,
       transform: this.transform,
     };
   }
