@@ -17,6 +17,17 @@ describe('text layers', () => {
     assert.equal(type.runs.reduce((n, r) => n + r.length, 0), type.text.length);
   });
 
+  it('resolves styles a run omits from the normal style sheet', () => {
+    // text.psd's runs don't set Font; the normal style sheet's font is index 1.
+    assert.deepEqual([...new Set(type.runs.map((r) => r.font))], ['MyriadPro-Regular']);
+
+    // Runs without a FontSize use the normal style sheet's 12 (#37).
+    const stripped = open('text.psd').tree.children[0]!.info.typeTool!;
+    const engineData = Buffer.from(stripped.textData.EngineData).toString('latin1');
+    stripped.textData.EngineData = Buffer.from(engineData.replaceAll('/FontSize 37.0', ''), 'latin1');
+    assert.deepEqual(stripped.sizes, [12]);
+  });
+
   it('exports CSS', () => {
     const css = type.toCSS();
     assert.match(css, /MyriadPro-Regular/);

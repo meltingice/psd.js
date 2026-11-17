@@ -88,7 +88,10 @@ export class TypeTool {
     return this.engineData.ResourceDict.FontSet.map((f: EngineDict) => f.Name);
   }
 
-  /** The style of each run of characters, in order. */
+  /**
+   * The style of each run of characters, in order. Runs only store what they change from the
+   * document's normal style sheet, so the rest comes from that.
+   */
   get runs(): TextRun[] {
     const styleRun = this.engineData.EngineDict.StyleRun;
     const lengths: number[] = [...styleRun.RunLengthArray];
@@ -96,14 +99,14 @@ export class TypeTool {
     const total = lengths.reduce((sum, n) => sum + n, 0);
     if (total - this.text.length === 1) lengths[lengths.length - 1]! -= 1;
 
-    const fontSet = this.engineData.ResourceDict.FontSet;
+    const { FontSet, StyleSheetSet, TheNormalStyleSheet } = this.engineData.ResourceDict;
+    const defaults = StyleSheetSet[TheNormalStyleSheet].StyleSheetData;
     return styleRun.RunArray.map((run: EngineDict, i: number): TextRun => {
-      const s = run.StyleSheet.StyleSheetData;
+      const s = { ...defaults, ...run.StyleSheet.StyleSheetData };
       return {
         length: lengths[i] ?? 0,
-        font: s.Font === undefined ? undefined : fontSet[s.Font]?.Name,
+        font: s.Font === undefined ? undefined : FontSet[s.Font]?.Name,
         size: s.FontSize,
-        // Opaque black is sometimes omitted.
         color: s.FillColor ? toRGBA(s.FillColor.Values) : undefined,
         leading: s.AutoLeading === false && s.Leading !== undefined ? s.Leading : 'auto',
         fauxBold: s.FauxBold ?? false,
@@ -131,8 +134,10 @@ export class TypeTool {
 
   /** The alignment of each paragraph. */
   get alignment(): TextAlignment[] {
+    const { ParagraphSheetSet, TheNormalParagraphSheet } = this.engineData.ResourceDict;
+    const defaults = ParagraphSheetSet[TheNormalParagraphSheet].Properties;
     return this.engineData.EngineDict.ParagraphRun.RunArray.map(
-      (p: EngineDict) => ALIGNMENTS[Math.min(p.ParagraphSheet.Properties.Justification ?? 0, 3)]!,
+      (p: EngineDict) => ALIGNMENTS[Math.min(p.ParagraphSheet.Properties.Justification ?? defaults.Justification, 3)]!,
     );
   }
 
