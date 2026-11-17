@@ -166,4 +166,53 @@ describe('PNG encoding', () => {
     assert.equal(IHDR![9], 0);
     assert.deepEqual([...inflateSync(IDAT!)], [0, 7, 9]);
   });
+
+  const embeddedProfile = (png: Uint8Array) => {
+    const { iCCP } = readChunks(png);
+    if (!iCCP) return undefined;
+    const nul = iCCP.indexOf(0);
+    assert.equal(new TextDecoder('latin1').decode(iCCP.subarray(0, nul)), 'ICC profile');
+    assert.equal(iCCP[nul + 1], 0); // compression method
+    return new Uint8Array(inflateSync(iCCP.subarray(nul + 2)));
+  };
+
+  it('embeds the document ICC profile in RGB images', async () => {
+    const psd = open('fixtures/example.psd');
+    const profile = psd.resources.iccProfile!;
+    assert.equal(profile.length, 3144);
+    assert.equal(String.fromCharCode(...profile.subarray(36, 40)), 'acsp'); // ICC header signature
+    assert.deepEqual(embeddedProfile(await psd.image.toPng()), profile);
+    const layer = psd.tree.descendants().find((n) => n.type === 'layer' && n.width > 0)!;
+    assert.ok(layer.type === 'layer');
+    assert.deepEqual(embeddedProfile(await layer.image.toPng()), profile);
+    assert.equal(open('fixtures/one_layer.psd').resources.iccProfile, undefined);
+  });
+
+  it('leaves the profile out when asked', async () => {
+    const psd = open('fixtures/example.psd');
+    const layer = psd.tree.descendants().find((n) => n.type === 'layer' && n.width > 0)!;
+    assert.ok(layer.type === 'layer');
+    for (const image of [psd.image, layer.image]) {
+      const [withProfile, without] = [await image.toPng(), await image.toPng({ embedProfile: false })];
+      assert.ok(embeddedProfile(withProfile));
+      assert.equal(embeddedProfile(without), undefined);
+      assert.deepEqual(readChunks(without).IDAT, readChunks(withProfile).IDAT);
+    }
+  });
+
+  it("doesn't embed CMYK or grayscale profiles in RGBA images", async () => {
+    for (const name of ['example-cmyk.psd', 'example-greyscale.psd']) {
+      const psd = open(`../examples/images/${name}`);
+      assert.ok(psd.resources.iccProfile);
+      assert.equal(embeddedProfile(await psd.image.toPng()), undefined);
+      await assert.rejects(encodePng(await psd.image.decode(), { iccProfile: psd.resources.iccProfile }), /Cannot embed/);
+    }
+  });
+
+  it('embeds grayscale profiles in grayscale images', async () => {
+    const profile = open('../examples/images/example-greyscale.psd').resources.iccProfile!;
+    const png = await encodePng({ width: 2, height: 1, data: new Uint8Array([7, 9]) }, { iccProfile: profile });
+    assert.deepEqual(embeddedProfile(png), profile);
+    assert.deepEqual(Object.keys(readChunks(png)), ['IHDR', 'iCCP', 'IDAT', 'IEND']);
+  });
 });

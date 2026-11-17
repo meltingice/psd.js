@@ -9,6 +9,7 @@ export {
   type ChannelInfo,
   type GlobalMask,
   type InfoBlock,
+  type LayerKind,
   type Mask,
 } from './layer.ts';
 export type { LayerInfo } from './layer-info.ts';
@@ -27,9 +28,18 @@ export type {
   Shadow,
   Stroke,
 } from './layer-styles.ts';
-export { TypeTool, type RGBA, type TextAlignment, type TextRun, type Transform } from './type-tool.ts';
-export { CompositeImage, LayerImage, type GrayImage, type RGBAImage } from './image.ts';
-export { encodePng, type Pixels } from './png.ts';
+export type { ShapeContent, VectorFill, VectorOrigination, VectorShape, VectorStroke } from './shapes.ts';
+export {
+  TypeTool,
+  type RGBA,
+  type TextAlignment,
+  type TextBaseline,
+  type TextCaps,
+  type TextRun,
+  type Transform,
+} from './type-tool.ts';
+export { CompositeImage, LayerImage, type GrayImage, type RGBAImage, type ToPngOptions } from './image.ts';
+export { encodePng, type Pixels, type PngOptions } from './png.ts';
 export { Resources } from './resources.ts';
 export type { Bounds, Guide, LayerComp, ResolutionInfo, ResourceBlock, SavedPath, Slice, Slices } from './resources.ts';
 export type { Descriptor, DescriptorClass, UnitValue } from './descriptor.ts';

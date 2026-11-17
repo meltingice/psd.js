@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
-import { BLEND_MODES, pathToSvg, PSD, type Descriptor, type UnitValue } from '../src/index.ts';
+import { BLEND_MODES, pathToSvg, PSD } from '../src/index.ts';
 
 const open = (name: string) => new PSD(readFileSync(new URL(`fixtures/${name}`, import.meta.url)));
 
@@ -140,6 +140,27 @@ describe('layers in tagged blocks', () => {
   });
 });
 
+describe('layer mask parameters', () => {
+  const params = (file: string, name: string) => {
+    const { density, feather, vectorDensity, vectorFeather } = open(file).layers.find((l) => l.name === name)!.mask!;
+    return [Math.round(density * 255), feather, Math.round(vectorDensity * 255), vectorFeather];
+  };
+
+  it('reads density and feather after the real user mask', () => {
+    // This layer has a real user mask channel (-3), so its fields come before the parameters.
+    assert.deepEqual(params('mask_parameters.psd', 'Rectangle 1'), [204, 2.6, 250, 0.3]);
+  });
+
+  it('reads parameters in a long record without a real user mask', () => {
+    // 36 bytes, the size of a real user mask record, but the layer has no -3 channel.
+    assert.deepEqual(params('mask-parameters-no-real-channel.psd', 'heart'), [255, 3, 191, 6]);
+  });
+
+  it("defaults to Photoshop's 100% density and no feather", () => {
+    assert.deepEqual(params('path.psd', 'Logo_Glyph'), [255, 0, 255, 0]);
+  });
+});
+
 describe('vector masks', () => {
   it('parses path records', () => {
     const mask = open('path.psd').layers.find((l) => l.name === 'Logo_Glyph')!.info.vectorMask!;
@@ -172,13 +193,13 @@ describe('pathToSvg', () => {
     for (const name of ['Rectangle 1', 'Rounded Rectangle 1', 'Ellipse 1', 'Color Fill 1']) {
       const { vectorMask, vectorOrigination } = info(psd, name);
       const shapes = pathToSvg(vectorMask!.paths, psd.width, psd.height);
-      const boxes = (vectorOrigination!.keyDescriptorList as Descriptor[]).map((d) => d.keyOriginShapeBBox as Record<string, UnitValue>);
+      const boxes = vectorOrigination!.shapes.map((shape) => shape.bounds!);
       assert.equal(shapes.length, boxes.length, name);
       shapes.forEach(({ d }, i) => {
         // Photoshop's ellipses and rounded corners keep their control points on the bounding box.
         const [x, y] = [0, 1].map((o) => d.match(/[\d.]+/g)!.map(Number).filter((_, j) => j % 2 === o));
         const box = boxes[i]!;
-        assert.deepEqual([Math.min(...y!), Math.min(...x!), Math.max(...y!), Math.max(...x!)], ['Top ', 'Left', 'Btom', 'Rght'].map((k) => box[k]!.value), name);
+        assert.deepEqual([Math.min(...y!), Math.min(...x!), Math.max(...y!), Math.max(...x!)], [box.top, box.left, box.bottom, box.right], name);
       });
     }
     assert.deepEqual(pathToSvg(info(psd, 'Color Fill 1').vectorMask!.paths, 1, 1).map((s) => s.operation), [3, 3]);

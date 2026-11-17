@@ -76,6 +76,43 @@ describe('tree', () => {
   });
 });
 
+describe('layer kinds', () => {
+  const kinds = (name: string) => open(name).tree.descendants().map((n) => [n.name, n.kind]);
+
+  it('identifies groups, text, shapes, smart objects and pixel layers', () => {
+    assert.deepEqual(kinds('example.psd').slice(0, 4), [
+      ['Version C', 'group'],
+      ['Make a change and save.', 'text'],
+      ['Logo_Glyph', 'shape'], // a CS-era shape: a fill layer with a vector mask
+      ['Matte', 'pixel'],
+    ]);
+    const slices = open('slices.psd').tree;
+    assert.equal(slices.childrenAtPath('navigation-bar/status-bar')[0]!.kind, 'smartObject');
+    assert.equal(slices.childrenAtPath('navigation-bar/status-bar')[0]!.toJSON().kind, 'smartObject');
+  });
+
+  it('identifies fill and adjustment layers', () => {
+    assert.deepEqual(kinds('solid-color-fill.psd'), [['Color Fill 1', 'fill']]);
+    // An adjustment layer with a vector mask is still an adjustment layer.
+    assert.deepEqual(kinds('curves-with-vectormask.psd'), [['Curves 1', 'adjustment']]);
+  });
+
+  it('tells shapes from pixel layers with vector masks', () => {
+    assert.deepEqual(kinds('vector-mask2.psd'), [
+      ['Color Fill 1', 'pixel'], // rasterized, with a vector mask drawn with a shape tool
+      ['Masked Rectangle 1', 'pixel'],
+      ['Shape 2', 'shape'], // pattern fill
+      ['Shape 1', 'shape'], // gradient fill
+      ['Line 1', 'shape'],
+      ['Polygon 1', 'shape'], // newer shapes keep their fill in vscg
+      ['Ellipse 1', 'shape'],
+      ['Rounded Rectangle 1', 'shape'],
+      ['Rectangle 1', 'shape'],
+      ['Gradient Fill 1', 'shape'], // a fill layer with a vector mask
+    ]);
+  });
+});
+
 describe('unbalanced group markers', () => {
   const layer = (name: string, kind?: 'start' | 'end') => ({
     ...{ name, isFolder: kind === 'start', isFolderEnd: kind === 'end' },
