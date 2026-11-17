@@ -464,7 +464,6 @@ const LAYER_INFO = {
       return { enabled: value > 0, mode: value === 1 ? ('shallow' as const) : value === 2 ? ('deep' as const) : undefined };
     },
   },
-  layerEffects: { keys: ['lfxs'], parse: descriptorAfter(8) },
   layerId: { keys: ['lyid'], parse: (r: Reader) => r.int32() },
   layerMaskAsGlobalMask: { keys: ['lmgm'], parse: flag },
   /** Minimum Photoshop version needed to read the layer, times 10 (70 = 7.0). */
@@ -498,8 +497,8 @@ const LAYER_INFO = {
       return { isFolder: code === 1 || code === 2, isHidden: code === 3 };
     },
   },
-  /** Layer styles (drop shadow, stroke, etc.). */
-  objectEffects: { keys: ['lfx2', 'lmfx'], parse: (r: Reader) => readLayerStyles(descriptorAfter(8)(r)) },
+  /** Layer styles (drop shadow, stroke, etc.). Photoshop stores a group's styles in `lfxs`. */
+  objectEffects: { keys: ['lfx2', 'lmfx', 'lfxs'], parse: (r: Reader) => readLayerStyles(descriptorAfter(8)(r)) },
   patternFill: { keys: ['PtFl'], parse: descriptorAfter(4) },
   photoFilter: { keys: ['phfl'], parse: readPhotoFilter },
   /** Smart object data. */

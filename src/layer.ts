@@ -292,14 +292,25 @@ export function readLayerSection(r: Reader, header: Header, resources: () => Res
   readLayers(pad2(header.isBig ? r.int64() : r.uint32()));
   section.globalMask = readGlobalMask(r);
 
-  // 16 and 32-bit documents store their layers in a tagged block after the global mask.
+  // 16 and 32-bit documents store their layers in an Lr16 or Lr32 block after the global mask.
+  // The main section may hold 8-bit compatibility copies, which these replace. Some files use a
+  // Layr block instead, and some pad the blocks with zero bytes.
   while (r.pos + 12 <= end) {
+    if (r.bytes[r.pos] === 0) {
+      r.skip(1);
+      continue;
+    }
     const sig = r.ascii(4);
     if (sig !== '8BIM' && sig !== '8B64') break;
     const key = r.ascii(4);
     const blockLength = pad2(readBlockLength(r, header, key));
     const blockEnd = r.pos + blockLength;
-    if (key === 'Lr16' || key === 'Lr32') readLayers(blockLength);
+    if (key === `Lr${header.depth}`) {
+      section.layers = [];
+      readLayers(blockLength);
+    } else if (key === 'Layr' && section.layers.length === 0) {
+      readLayers(blockLength);
+    }
     r.seek(blockEnd);
   }
 
