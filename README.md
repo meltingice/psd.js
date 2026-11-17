@@ -111,9 +111,9 @@ Most layer data lives in "additional layer information" blocks. `node.info` (or 
 const type = node.info.typeTool;     // undefined if this isn't a text layer
 if (type) {
   type.text;                         // 'Make a change and save.'
-  type.fonts;                        // ['HelveticaNeue-Light']
+  type.fonts;                        // ['HelveticaNeue-Light', 'AdobeInvisFont', 'MyriadPro-Regular']
   type.sizes;                        // [33]
-  type.colors;                       // [[85, 96, 110, 255]]
+  type.colors;                       // [[19, 120, 98, 255]]
   type.alignment;                    // ['center']
   type.runs;                         // per-run font, size, color, bold, italic...
   type.transform;                    // { xx, xy, yx, yy, tx, ty }
@@ -122,7 +122,6 @@ if (type) {
 
 node.info.vectorMask?.paths;         // path records
 node.info.solidColor;                // { r, g, b }
-node.info.objectEffects;             // layer styles: dropShadows, strokes, gradientOverlays...
 node.info.placedLayer;               // smart object descriptor
 node.info.locked;                    // { all, position, composite, transparency }
 node.info.hueSaturation;             // adjustment layer settings
@@ -131,7 +130,28 @@ Object.keys(node.info);              // the blocks this layer has
 
 `node.layer.infoBlocks` lists every block in the layer, including ones this library doesn't parse.
 
-Some blocks are stored as Photoshop descriptors. Their contents vary between Photoshop versions, so they're typed loosely.
+Some blocks are stored as Photoshop descriptors. Their contents vary between Photoshop versions, so they're typed loosely. `descriptorColor()` converts a descriptor color (RGB, HSB, CMYK, grayscale or Lab) to `[r, g, b]`.
+
+### Layer styles
+
+`node.info.objectEffects` normalizes the layer styles. Each effect is a list, since Photoshop CC allows several drop shadows, strokes and overlays per layer:
+
+```ts
+const styles = node.info.objectEffects;
+if (styles?.enabled) {
+  for (const shadow of styles.dropShadows) {
+    shadow.enabled; shadow.color;              // [0, 0, 0]
+    shadow.opacity; shadow.blendMode;          // 0.75, 'multiply'
+    shadow.angle; shadow.distance; shadow.size;
+  }
+  styles.strokes;          // size, position, fillType, color/gradient/pattern
+  styles.gradientOverlays; // gradient stops, angle, style, scale
+  // also innerShadows, outerGlows, innerGlows, bevels, satins, colorOverlays, patternOverlays
+  styles.data;             // the raw descriptor
+}
+```
+
+Files from before Photoshop 6 store effects in `node.info.effectsLayer` instead.
 
 ### Images
 
@@ -204,6 +224,7 @@ New in 4.0: PSB support, 16-bit layers, ZIP-compressed image data, bitmap/indexe
 
 * There's no renderer, so layers can't be composited, and a node can't be exported with its effects applied. The composite stored in the file is available as `psd.image`.
 * 32-bit images can be parsed but not decoded to pixels.
+* Layers in indexed color documents can't be decoded. Photoshop never writes them, but some other tools do; the composite still decodes.
 * Descriptors containing object arrays (`ObAr`), which are undocumented, throw when parsed.
 
 ## License
