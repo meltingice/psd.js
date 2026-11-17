@@ -140,6 +140,27 @@ describe('layers in tagged blocks', () => {
   });
 });
 
+describe('layer mask parameters', () => {
+  const params = (file: string, name: string) => {
+    const { density, feather, vectorDensity, vectorFeather } = open(file).layers.find((l) => l.name === name)!.mask!;
+    return [Math.round(density * 255), feather, Math.round(vectorDensity * 255), vectorFeather];
+  };
+
+  it('reads density and feather after the real user mask', () => {
+    // This layer has a real user mask channel (-3), so its fields come before the parameters.
+    assert.deepEqual(params('mask_parameters.psd', 'Rectangle 1'), [204, 2.6, 250, 0.3]);
+  });
+
+  it('reads parameters in a long record without a real user mask', () => {
+    // 36 bytes, the size of a real user mask record, but the layer has no -3 channel.
+    assert.deepEqual(params('mask-parameters-no-real-channel.psd', 'heart'), [255, 3, 191, 6]);
+  });
+
+  it("defaults to Photoshop's 100% density and no feather", () => {
+    assert.deepEqual(params('path.psd', 'Logo_Glyph'), [255, 0, 255, 0]);
+  });
+});
+
 describe('vector masks', () => {
   it('parses path records', () => {
     const mask = open('path.psd').layers.find((l) => l.name === 'Logo_Glyph')!.info.vectorMask!;
