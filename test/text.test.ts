@@ -21,11 +21,15 @@ describe('text layers', () => {
     // text.psd's runs don't set Font; the normal style sheet's font is index 1.
     assert.deepEqual([...new Set(type.runs.map((r) => r.font))], ['MyriadPro-Regular']);
 
-    // Runs without a FontSize use the normal style sheet's 12 (#37).
-    const stripped = open('text.psd').tree.children[0]!.info.typeTool!;
-    const engineData = Buffer.from(stripped.textData.EngineData).toString('latin1');
-    stripped.textData.EngineData = Buffer.from(engineData.replaceAll('/FontSize 37.0', ''), 'latin1');
-    assert.deepEqual(stripped.sizes, [12]);
+  });
+
+  it('uses the normal style sheet font size for runs without one (#37)', () => {
+    const sample = open('cantGetTextSizes.psd').tree.children[0]!.info.typeTool!;
+    const runStyles = sample.engineData.EngineDict.StyleRun.RunArray.map((r: any) => r.StyleSheet.StyleSheetData);
+    assert.ok(runStyles.every((s: any) => s.FontSize === undefined));
+    assert.equal(sample.text, 'Can’t get text size');
+    assert.deepEqual(sample.sizes, [12]);
+    assert.deepEqual(sample.toCSS().match(/font-size: [^;]+/)?.[0], 'font-size: 12px');
   });
 
   it('converts sizes to the points Photoshop shows', () => {

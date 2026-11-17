@@ -9,7 +9,7 @@ npm run typecheck
 npm run build       # compiles src/ to dist/
 ```
 
-Test fixtures live in `test/fixtures` (most come from PSD.rb's specs) and `examples/images`. The image tests check decoded pixels against hashes of psd.js 3.x output, so a failure there means the output changed.
+Test fixtures live in `test/fixtures` and `examples/images`; `test/fixtures/README.md` says where each came from and credits third-party files. The image tests check decoded pixels against hashes of psd.js 3.x output, so a failure there means the output changed.
 
 ## Examples
 
