@@ -1,5 +1,6 @@
 import { CompositeImage } from './image.ts';
 import { readLayerSection, type GlobalMask, type Layer, type LayerSection } from './layer.ts';
+import { readLinkedFiles, type LinkedFile } from './linked-files.ts';
 import { RootNode } from './nodes.ts';
 import { readPatterns, type Pattern } from './patterns.ts';
 import { Reader } from './reader.ts';
@@ -77,6 +78,7 @@ export class PSD {
   #image: CompositeImage | undefined;
   #tree: RootNode | undefined;
   #patterns: Pattern[] | undefined;
+  #linkedFiles: LinkedFile[] | undefined;
 
   constructor(data: ArrayBuffer | ArrayBufferView) {
     const bytes = ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : new Uint8Array(data);
@@ -131,6 +133,16 @@ export class PSD {
     return (this.#patterns ??= this.#layers.infoBlocks
       .filter((b) => ['Patt', 'Pat2', 'Pat3'].includes(b.key))
       .flatMap((b) => readPatterns(this.#reader.at(b.offset), b.offset + b.length)));
+  }
+
+  /**
+   * Files placed as smart objects, embedded or linked. A smart object layer's file is
+   * `node.linkedFile`. File contents aren't copied out of the document.
+   */
+  get linkedFiles(): LinkedFile[] {
+    return (this.#linkedFiles ??= this.#layers.infoBlocks
+      .filter((b) => ['lnk2', 'lnk3', 'lnkD', 'lnkE'].includes(b.key))
+      .flatMap((b) => readLinkedFiles(this.#reader.at(b.offset), b.offset + b.length)));
   }
 
   /** The flattened composite image. */

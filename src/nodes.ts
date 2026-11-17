@@ -1,6 +1,7 @@
 import type { LayerImage } from './image.ts';
-import type { BlendMode, Layer } from './layer.ts';
+import type { BlendMode, Layer, LayerKind } from './layer.ts';
 import type { LayerInfo } from './layer-info.ts';
+import type { LinkedFile } from './linked-files.ts';
 import type { PSD } from './psd.ts';
 import type { LayerComp } from './resources.ts';
 
@@ -180,6 +181,11 @@ abstract class LayerBackedNode extends BaseNode {
     return this.layer.info;
   }
 
+  /** `'group'`, `'text'`, `'shape'`, `'pixel'`... See `Layer.kind` for how it's decided. */
+  get kind(): LayerKind {
+    return this.layer.kind;
+  }
+
   /** Visible, accounting for clipping masks and the tree's layer comp. */
   get visible(): boolean {
     if (this.layer.clipped && this.clippingMask?.visible === false) return false;
@@ -272,6 +278,7 @@ abstract class LayerBackedNode extends BaseNode {
   toJSON() {
     return {
       type: this.type,
+      kind: this.kind,
       id: this.id,
       name: this.name,
       visible: this.visible,
@@ -315,6 +322,12 @@ export class LayerNode extends LayerBackedNode {
 
   get image(): LayerImage {
     return this.layer.image;
+  }
+
+  /** For smart object layers, the placed file from `psd.linkedFiles`. */
+  get linkedFile(): LinkedFile | undefined {
+    const id = this.layer.info.placedLayer?.Idnt;
+    return id === undefined ? undefined : this.root.psd.linkedFiles.find((f) => f.id === id);
   }
 
   get isEmpty(): boolean {
