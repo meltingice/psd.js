@@ -117,9 +117,23 @@ export class TypeTool {
     });
   }
 
-  /** Unique font sizes, in points. */
+  /** Unique font sizes as stored, in pixels before `transform` scales the text. See `pointSizes()`. */
   get sizes(): number[] {
     return uniq(this.runs.flatMap((r) => (r.size === undefined ? [] : [r.size])));
+  }
+
+  /** How much `transform` scales the text vertically, which is what Photoshop scales font sizes by. */
+  get #scale(): number {
+    return Math.hypot(this.transform.yx, this.transform.yy);
+  }
+
+  /**
+   * Unique font sizes in points, as Photoshop's Character panel shows them: scaled by `transform`
+   * and converted at `ppi` pixels per inch (`psd.resources.resolutionInfo.vRes`). Pass 72 for pixels.
+   */
+  pointSizes(ppi: number): number[] {
+    if (!(ppi > 0)) throw new Error(`Invalid resolution: ${ppi}`);
+    return this.sizes.map((size) => (size * this.#scale * 72) / ppi);
   }
 
   /** Unique text colors (RGBA). */
@@ -145,7 +159,7 @@ export class TypeTool {
   toCSS(): string {
     const definition: Record<string, string | undefined> = {
       'font-family': this.fonts.join(', '),
-      'font-size': this.sizes[0] === undefined ? undefined : `${this.sizes[0]}pt`,
+      'font-size': this.sizes[0] === undefined ? undefined : `${this.sizes[0] * this.#scale}px`,
       color: `rgba(${this.colors[0]!.join(', ')})`,
       'text-align': this.alignment[0],
     };

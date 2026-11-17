@@ -28,10 +28,28 @@ describe('text layers', () => {
     assert.deepEqual(stripped.sizes, [12]);
   });
 
+  it('converts sizes to the points Photoshop shows', () => {
+    // alignment_modes.psd is 300 ppi; its text was set in these point sizes (#169).
+    const psd = open('alignment_modes.psd');
+    const ppi = psd.resources.resolutionInfo!.vRes;
+    for (const [name, points] of [['justify', 10], ['center', 24], ['right', 20], ['left', 18]] as const) {
+      const [size] = psd.tree.childrenAtPath(name)[0]!.info.typeTool!.pointSizes(ppi);
+      assert.ok(Math.abs(size! - points) < 1e-4, `${name}: ${size}`);
+    }
+
+    // Free-transforming text scales its sizes; rotating it doesn't (#131).
+    const scaled = open('text.psd').tree.children[0]!.info.typeTool!;
+    const angle = Math.PI / 6;
+    Object.assign(scaled.transform, { xx: 2 * Math.cos(angle), xy: 2 * Math.sin(angle), yx: -2 * Math.sin(angle), yy: 2 * Math.cos(angle) });
+    assert.deepEqual(scaled.pointSizes(72).map(Math.round), [74]);
+    assert.match(scaled.toCSS(), /font-size: 74(\.\d+)?px;/);
+    assert.throws(() => scaled.pointSizes(NaN), /Invalid resolution/);
+  });
+
   it('exports CSS', () => {
     const css = type.toCSS();
     assert.match(css, /MyriadPro-Regular/);
-    assert.match(css, /font-size: 37pt;/);
+    assert.match(css, /font-size: 37px;/);
     assert.match(css, /rgba\(24, 24, 24, 255\)/);
     for (const line of css.split('\n')) assert.ok(line.endsWith(';'));
   });

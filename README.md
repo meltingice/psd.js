@@ -112,7 +112,8 @@ const type = node.info.typeTool;     // undefined if this isn't a text layer
 if (type) {
   type.text;                         // 'Make a change and save.'
   type.fonts;                        // ['HelveticaNeue-Light', 'AdobeInvisFont', 'MyriadPro-Regular']
-  type.sizes;                        // [33]
+  type.sizes;                        // [33], in pixels before the transform
+  type.pointSizes(psd.resources.resolutionInfo.vRes); // the point sizes Photoshop shows
   type.colors;                       // [[19, 120, 98, 255]]
   type.alignment;                    // ['center']
   type.runs;                         // per-run font, size, color, bold, italic...
