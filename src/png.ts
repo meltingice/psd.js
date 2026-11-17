@@ -5,31 +5,53 @@ export interface Pixels {
   data: Uint8Array | Uint8ClampedArray;
 }
 
-const transform = async (bytes: Uint8Array, stream: CompressionStream | DecompressionStream) =>
-  new Uint8Array(await new Response(new Blob([bytes as Uint8Array<ArrayBuffer>]).stream().pipeThrough(stream)).arrayBuffer());
+/** Writes the chunks to a (de)compression stream as they're produced and returns its output chunks. */
+async function transform(input: Iterable<Uint8Array>, stream: CompressionStream | DecompressionStream): Promise<Uint8Array[]> {
+  const writer = stream.writable.getWriter();
+  const reader = stream.readable.getReader();
+  const output: Uint8Array[] = [];
+  const write = async () => {
+    for (const bytes of input) await writer.write(bytes as Uint8Array<ArrayBuffer>);
+    await writer.close();
+  };
+  const read = async () => {
+    for (let r = await reader.read(); !r.done; r = await reader.read()) output.push(r.value);
+  };
+  await Promise.all([write(), read()]);
+  return output;
+}
 
-export const inflate = (bytes: Uint8Array) => transform(bytes, new DecompressionStream('deflate'));
-export const deflate = (bytes: Uint8Array) => transform(bytes, new CompressionStream('deflate'));
+function concat(parts: Uint8Array[]): Uint8Array {
+  const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
+  let offset = 0;
+  for (const p of parts) {
+    out.set(p, offset);
+    offset += p.length;
+  }
+  return out;
+}
+
+export const inflate = async (bytes: Uint8Array) => concat(await transform([bytes], new DecompressionStream('deflate')));
 
 const CRC_TABLE = Array.from({ length: 256 }, (_, n) => {
   for (let k = 0; k < 8; k++) n = n & 1 ? 0xedb88320 ^ (n >>> 1) : n >>> 1;
   return n >>> 0;
 });
 
-function crc32(bytes: Uint8Array): number {
+function crc32(parts: Uint8Array[]): number {
   let crc = 0xffffffff;
-  for (const b of bytes) crc = CRC_TABLE[(crc ^ b) & 0xff]! ^ (crc >>> 8);
+  for (const bytes of parts) for (const b of bytes) crc = CRC_TABLE[(crc ^ b) & 0xff]! ^ (crc >>> 8);
   return (crc ^ 0xffffffff) >>> 0;
 }
 
-function chunk(type: string, data: Uint8Array): Uint8Array {
-  const out = new Uint8Array(12 + data.length);
-  const view = new DataView(out.buffer);
-  view.setUint32(0, data.length);
-  for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
-  out.set(data, 8);
-  view.setUint32(8 + data.length, crc32(out.subarray(4, 8 + data.length)));
-  return out;
+/** A PNG chunk as a list of parts, so large data isn't copied until the file is assembled. */
+function chunk(type: string, data: Uint8Array[]): Uint8Array[] {
+  const head = new Uint8Array(8);
+  new DataView(head.buffer).setUint32(0, data.reduce((n, d) => n + d.length, 0));
+  for (let i = 0; i < 4; i++) head[4 + i] = type.charCodeAt(i);
+  const crc = new Uint8Array(4);
+  new DataView(crc.buffer).setUint32(0, crc32([head.subarray(4), ...data]));
+  return [head, ...data, crc];
 }
 
 /** Encodes 8-bit grayscale or RGBA pixels as a PNG file. */
@@ -45,22 +67,26 @@ export async function encodePng({ width, height, data }: Pixels): Promise<Uint8A
   header[8] = 8; // bit depth
   header[9] = channels === 4 ? 6 : 0; // RGBA or grayscale
 
-  // Each row is prefixed with filter type 0 (none).
+  // Each row is prefixed with filter type 0 (none). Rows are compressed about 1MB at a time
+  // rather than copied into one buffer, which would double the image's memory.
   const rowLength = width * channels;
-  const raw = new Uint8Array((rowLength + 1) * height);
-  for (let y = 0; y < height; y++) raw.set(data.subarray(y * rowLength, (y + 1) * rowLength), y * (rowLength + 1) + 1);
-
-  const parts = [
-    new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-    chunk('IHDR', header),
-    chunk('IDAT', await deflate(raw)),
-    chunk('IEND', new Uint8Array()),
-  ];
-  const png = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
-  let offset = 0;
-  for (const p of parts) {
-    png.set(p, offset);
-    offset += p.length;
+  const blockRows = Math.max(1, Math.floor(2 ** 20 / (rowLength + 1)));
+  function* rows() {
+    for (let start = 0; start < height; start += blockRows) {
+      const count = Math.min(blockRows, height - start);
+      const block = new Uint8Array((rowLength + 1) * count);
+      for (let y = 0; y < count; y++) {
+        const row = (start + y) * rowLength;
+        block.set(data.subarray(row, row + rowLength), y * (rowLength + 1) + 1);
+      }
+      yield block;
+    }
   }
-  return png;
+
+  return concat([
+    new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    ...chunk('IHDR', [header]),
+    ...chunk('IDAT', await transform(rows(), new CompressionStream('deflate'))),
+    ...chunk('IEND', []),
+  ]);
 }
