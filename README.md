@@ -88,6 +88,7 @@ Groups and layers share these properties:
 ```ts
 node.name;
 node.id;                      // the layer ID
+node.kind;                    // 'group', 'text', 'shape', 'smartObject', 'adjustment', 'fill' or 'pixel'
 node.top; node.left; node.bottom; node.right; node.width; node.height;
 node.visible;                 // accounts for clipping masks and layer comps
 node.opacity;                 // 0 to 1
@@ -102,6 +103,8 @@ node.toJSON();                // a plain object; JSON.stringify(psd.tree) also w
 ```
 
 Groups have `children` and `open`. Group bounds are calculated from their non-empty children. Layers have `image`. Both have `isEmpty`.
+
+`kind` is worked out from the layer's info blocks, in this order: groups (including artboards), text, smart objects, adjustment layers (even with a vector mask), shapes (fill content with a vector mask), fill layers, then pixel layers. A fill layer with a vector mask is a shape, since that's how Photoshop stores shapes. A pixel layer with a vector mask, even one drawn with a shape tool, is still a pixel layer. Video and 3D layers are `'pixel'`.
 
 ### Layer info
 

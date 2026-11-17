@@ -9,6 +9,7 @@ export {
   type ChannelInfo,
   type GlobalMask,
   type InfoBlock,
+  type LayerKind,
   type Mask,
 } from './layer.ts';
 export type { LayerInfo } from './layer-info.ts';
