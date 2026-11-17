@@ -185,6 +185,8 @@ if (node.type === 'layer') {
 }
 ```
 
+The mask's bounds and settings are in `node.layer.mask`, including the density (0 to 1) and feather (pixels) from the Properties panel: `density` and `feather` for the user mask, `vectorDensity` and `vectorFeather` for the vector mask. They aren't applied to the decoded mask.
+
 `decode()` and `toPng()` decode the pixels again on every call and don't keep them, so exporting every layer of a large document only holds one layer's pixels at a time. Keep the result if you need it more than once.
 
 The composite is only present if the file was saved with "Maximize Compatibility" enabled. Decoding supports RGB, CMYK, grayscale, duotone, indexed, Lab and multichannel images at 8 or 16 bits per channel, and 1-bit bitmaps, with raw, RLE or ZIP compression. CMYK, Lab and multichannel colors are converted with simple formulas rather than color profiles, so they're close to Photoshop's but not exact. Multichannel images must have 3 or 4 channels, which are treated as CMY(K) inks.

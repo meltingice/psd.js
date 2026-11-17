@@ -59,6 +59,18 @@ export interface Mask {
   relative: boolean;
   disabled: boolean;
   invert: boolean;
+  /** The user (pixel) mask's density, 0 to 1. 1 unless set in the Properties panel. */
+  density: number;
+  /** The user mask's feather, in pixels. */
+  feather: number;
+  /**
+   * The vector mask's density, 0 to 1. Photoshop stores it here, in the layer mask record, so it's
+   * only available when the layer has one: setting a vector mask's density or feather makes
+   * Photoshop write one.
+   */
+  vectorDensity: number;
+  /** The vector mask's feather, in pixels. */
+  vectorFeather: number;
 }
 
 export interface BlendingRange {
@@ -147,7 +159,7 @@ export class Layer {
     const extraLength = r.uint32();
     const end = r.pos + extraLength;
 
-    this.mask = readMask(r);
+    this.mask = readMask(r, this.channels.some((c) => c.id === -3));
     this.blendingRanges = readBlendingRanges(r);
 
     const nameLength = ((r.uint8() + 4) & ~3) - 1; // padded to a multiple of 4, including the length byte
@@ -214,7 +226,8 @@ export class Layer {
   }
 }
 
-function readMask(r: Reader): Mask | undefined {
+/** `hasRealMask`: the layer has a real user mask channel (-3), whose fields precede the parameters. */
+function readMask(r: Reader, hasRealMask: boolean): Mask | undefined {
   const size = r.uint32();
   if (size === 0) return undefined;
   const end = r.pos + size;
@@ -224,6 +237,19 @@ function readMask(r: Reader): Mask | undefined {
   const right = r.int32();
   const defaultColor = r.uint8();
   const flags = r.uint8();
+  // Photoshop only writes parameters that differ from these defaults.
+  const params = { density: 1, feather: 0, vectorDensity: 1, vectorFeather: 0 };
+  if (flags & 0x10) {
+    // The spec puts the parameters first, but Photoshop writes the real user mask's flags,
+    // default color and rectangle before them. Its size can't tell them apart, the channel can.
+    if (hasRealMask && size >= 36) r.skip(18);
+    const present = r.uint8();
+    if (present & 0x01) params.density = r.uint8() / 255;
+    if (present & 0x02) params.feather = r.float64();
+    if (present & 0x04) params.vectorDensity = r.uint8() / 255;
+    if (present & 0x08) params.vectorFeather = r.float64();
+    if (r.pos > end) throw new Error(`Layer mask parameters overrun the ${size} byte mask record`);
+  }
   r.seek(end);
   return {
     top,
@@ -236,6 +262,7 @@ function readMask(r: Reader): Mask | undefined {
     relative: (flags & 0x01) > 0,
     disabled: (flags & 0x02) > 0,
     invert: (flags & 0x04) > 0,
+    ...params,
   };
 }
 
