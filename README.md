@@ -158,7 +158,7 @@ Files from before Photoshop 6 store effects in `node.info.effectsLayer` instead.
 
 ### Smart objects
 
-`node.info.placedLayer` describes a smart object's source and how it's placed. It keeps the raw descriptor's keys too, such as `warp`:
+`node.info.placedLayer` describes a smart object's source and how it's placed, with the raw descriptor in `data`:
 
 ```ts
 const placed = node.info.placedLayer;
@@ -171,7 +171,7 @@ if (placed) {
   placed.nonAffineCorners; // including perspective and distort
   placed.rotation;         // degrees clockwise
   placed.scale;            // { x, y } relative to size
-  placed.warp;             // the raw warp descriptor
+  placed.data.warp;        // the raw warp descriptor
 }
 ```
 

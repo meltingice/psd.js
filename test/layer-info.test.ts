@@ -73,11 +73,12 @@ describe('smart objects', () => {
     // 72ppi content in this 144ppi document: twice its pixel size.
     const linked = placed('linked-psd');
     assert.deepEqual([linked.size, linked.resolution, linked.scale], [{ width: 101, height: 55 }, 72, { x: 2, y: 2 }]);
-    assert.deepEqual(linked.Trnf, [27, 73, 229, 73, 229, 183, 27, 183]);
+    assert.deepEqual(linked.data.Trnf, [27, 73, 229, 73, 229, 183, 27, 183]);
+    assert.ok(!('Trnf' in linked)); // the raw descriptor is only under data, like objectEffects
   });
 
   it('reads custom warps, which use object arrays', () => {
-    const { warp } = placed('embedded-png');
+    const { warp } = placed('embedded-png').data;
     assert.equal(warp.warpStyle.value, 'warpCustom');
     const { Hrzn, Vrtc } = warp.customEnvelopeWarp.meshPoints;
     assert.deepEqual([Hrzn.unit, Hrzn.values.length, Vrtc.values.length], ['Pixels', 16, 16]);
