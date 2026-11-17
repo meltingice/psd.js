@@ -203,6 +203,16 @@ export class Resources {
     return this.#parse(1047, (r) => r.uint16());
   }
 
+  /** Resource 1039: the document's ICC color profile. */
+  get iccProfile(): Uint8Array | undefined {
+    return this.#parse(1039, (r, block) => {
+      // The block is padded to an even length; the profile header has the exact size.
+      const size = r.view.getUint32(r.pos);
+      if (size < 128 || size > block.size) throw new Error(`Invalid ICC profile size ${size} in a ${block.size} byte resource`);
+      return r.bytesView(size);
+    });
+  }
+
   /** Resource 1026: the group ID of each layer, ordered top to bottom like `psd.layers`. */
   get layerGroups(): number[] | undefined {
     return this.#parse(1026, (r, block) => Array.from({ length: block.size / 2 }, () => r.uint16()).reverse());

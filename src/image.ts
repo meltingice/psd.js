@@ -1,5 +1,5 @@
 import type { ChannelInfo, Layer } from './layer.ts';
-import { encodePng, inflate } from './png.ts';
+import { encodePng, iccColorSpace, inflate } from './png.ts';
 import type { Header } from './psd.ts';
 import type { Reader } from './reader.ts';
 import type { Resources } from './resources.ts';
@@ -241,6 +241,12 @@ export function labToRgb(l: number, a: number, b: number): [number, number, numb
   ];
 }
 
+/** The document's ICC profile if it can be embedded in an RGBA PNG; CMYK, Lab and grayscale profiles can't. */
+function rgbProfile(resources: Resources): Uint8Array | undefined {
+  const profile = resources.iccProfile;
+  return profile && iccColorSpace(profile) === 'RGB ' ? profile : undefined;
+}
+
 /** The flattened composite image stored at the end of the file. */
 export class CompositeImage {
   readonly #reader: Reader;
@@ -279,8 +285,9 @@ export class CompositeImage {
     return { width, height, data: toRgba(model, channels, width * height) };
   }
 
+  /** Encodes `decode()` as a PNG, with the document's ICC profile when it's an RGB profile. */
   async toPng(): Promise<Uint8Array> {
-    return encodePng(await this.decode());
+    return encodePng(await this.decode(), { iccProfile: rgbProfile(this.#resources()) });
   }
 }
 
@@ -332,7 +339,8 @@ export class LayerImage {
     return { width: mask.width, height: mask.height, data: await readLayerChannel(this.#reader, channel, mask.width, mask.height, header) };
   }
 
+  /** Encodes `decode()` as a PNG, with the document's ICC profile when it's an RGB profile. */
   async toPng(): Promise<Uint8Array> {
-    return encodePng(await this.decode());
+    return encodePng(await this.decode(), { iccProfile: rgbProfile(this.#resources()) });
   }
 }
