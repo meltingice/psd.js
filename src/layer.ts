@@ -99,6 +99,15 @@ export interface GlobalMask {
   kind: number;
 }
 
+/**
+ * What a layer is, as shown in Photoshop's layers panel. See `Layer.kind` for how it's decided.
+ * Video and 3D layers are `'pixel'`.
+ */
+export type LayerKind = 'group' | 'text' | 'smartObject' | 'adjustment' | 'shape' | 'fill' | 'pixel';
+
+const ADJUSTMENT_KEYS = ['brit', 'CgEd', 'levl', 'curv', 'expA', 'vibA', 'hue ', 'hue2', 'blnc', 'blwh', 'phfl', 'mixr', 'clrL', 'nvrt', 'post', 'thrs', 'selc', 'grdm'];
+const FILL_KEYS = ['SoCo', 'GdFl', 'PtFl'];
+
 /** Tagged block keys whose length is 8 bytes in PSB files. */
 const BIG_KEYS = new Set(['LMsk', 'Lr16', 'Lr32', 'Layr', 'Mt16', 'Mt32', 'Mtrn', 'Alph', 'FMsk', 'lnk2', 'FEid', 'FXid', 'PxSD']);
 
@@ -218,6 +227,29 @@ export class Layer {
   get isFolderEnd(): boolean {
     const divider = this.info.sectionDivider ?? this.info.nestedSectionDivider;
     return divider ? divider.isHidden : this.name === '</Layer group>';
+  }
+
+  /**
+   * What the layer is, from the blocks it has, checked in this order:
+   *
+   * 1. `'group'`: a group's start or end marker, including artboards.
+   * 2. `'text'`: has type tool data.
+   * 3. `'smartObject'`: has placed layer data, embedded or linked.
+   * 4. `'adjustment'`: has adjustment settings (levels, curves...), even if it also has a vector mask.
+   * 5. `'shape'`: has a vector mask and fill content. This includes a fill layer with a vector mask,
+   *    which is how Photoshop has always stored shapes, so the two can't be told apart.
+   * 6. `'fill'`: a solid color, gradient or pattern fill layer.
+   * 7. `'pixel'`: anything else, including pixel layers with a vector mask drawn with a shape tool.
+   */
+  get kind(): LayerKind {
+    const has = (...keys: string[]) => this.infoBlocks.some((b) => keys.includes(b.key));
+    if (this.isFolder || this.isFolderEnd) return 'group';
+    if (has('TySh', 'tySh')) return 'text';
+    if (has('SoLd', 'SoLE', 'PlLd', 'plLd')) return 'smartObject';
+    if (has(...ADJUSTMENT_KEYS)) return 'adjustment';
+    const fill = has(...FILL_KEYS);
+    if ((fill || has('vscg')) && has('vmsk', 'vsms')) return 'shape';
+    return fill ? 'fill' : 'pixel';
   }
 
   /** The layer's pixels. Decoding happens on demand. */
