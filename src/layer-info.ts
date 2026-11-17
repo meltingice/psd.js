@@ -340,6 +340,69 @@ function readEffectsLayer(r: Reader) {
   return effects;
 }
 
+export interface Point {
+  x: number;
+  y: number;
+}
+
+/** A smart object's source and placement. The raw descriptor's keys (`Trnf`, `warp`...) are kept too. */
+export interface PlacedLayer {
+  /** The source file's ID in the document's linked file data. Copies of a smart object share it. */
+  fileId: string;
+  /** The page of a multi-page source such as a PDF, from 1. */
+  page: number;
+  totalPages: number;
+  /**
+   * Where the content's corners are in the document, in pixels: top left, top right, bottom
+   * right, bottom left. Unlike the layer's bounds, these include transparent edges and follow
+   * rotation. The raw values are in `Trnf`.
+   */
+  corners: [Point, Point, Point, Point];
+  /** The corners including any perspective or distort transform. Undefined in older files. */
+  nonAffineCorners: [Point, Point, Point, Point] | undefined;
+  /** The content's size, in its own pixels. */
+  size: { width: number; height: number };
+  /** The content's resolution, in pixels per inch. */
+  resolution: number;
+  /**
+   * Degrees clockwise, from the angle of the top edge. Only meaningful without skew or perspective.
+   */
+  rotation: number;
+  /**
+   * The corners' size relative to `size`. A flip makes `y` negative (a horizontal flip is a
+   * 180° rotation plus a vertical flip). Photoshop's W and H percentages are relative to the
+   * content's physical size instead, so they differ when `resolution` isn't the document's.
+   */
+  scale: { x: number; y: number };
+}
+
+type Corners = PlacedLayer['corners'];
+
+const corners = (values: number[]) =>
+  [0, 2, 4, 6].map((i) => ({ x: values[i]!, y: values[i + 1]! })) as Corners;
+
+/** Normalizes a smart object's descriptor, keeping its raw keys. */
+export function readPlacedLayer(d: Descriptor): Descriptor & PlacedLayer {
+  if (d.Trnf?.length !== 8) throw new Error('Smart object descriptor has no transform');
+  const [topLeft, topRight, , bottomLeft] = corners(d.Trnf);
+  const top = { x: topRight.x - topLeft.x, y: topRight.y - topLeft.y };
+  const left = { x: bottomLeft.x - topLeft.x, y: bottomLeft.y - topLeft.y };
+  const size = { width: d['Sz  '].Wdth as number, height: d['Sz  '].Hght as number };
+  const flip = Math.sign(top.x * left.y - top.y * left.x) || 1;
+  return {
+    ...d,
+    fileId: d.Idnt,
+    page: d.PgNm,
+    totalPages: d.totalPages,
+    corners: corners(d.Trnf),
+    nonAffineCorners: d.nonAffineTransform && corners(d.nonAffineTransform),
+    size,
+    resolution: d.Rslt.value,
+    rotation: (Math.atan2(top.y, top.x) * 180) / Math.PI,
+    scale: { x: Math.hypot(top.x, top.y) / size.width, y: (flip * Math.hypot(left.x, left.y)) / size.height },
+  };
+}
+
 function readMetadata(r: Reader) {
   const metadata: { layerComp?: Descriptor } = {};
   const count = r.int32();
@@ -501,8 +564,8 @@ const LAYER_INFO = {
   objectEffects: { keys: ['lfx2', 'lmfx', 'lfxs'], parse: (r: Reader) => readLayerStyles(descriptorAfter(8)(r)) },
   patternFill: { keys: ['PtFl'], parse: descriptorAfter(4) },
   photoFilter: { keys: ['phfl'], parse: readPhotoFilter },
-  /** Smart object data. */
-  placedLayer: { keys: ['SoLd', 'SoLE'], parse: descriptorAfter(12) },
+  /** Smart object data: the raw descriptor plus its normalized source and placement. */
+  placedLayer: { keys: ['SoLd', 'SoLE'], parse: (r: Reader) => readPlacedLayer(descriptorAfter(12)(r)) },
   posterize: { keys: ['post'], parse: (r: Reader) => r.int16() },
   referencePoint: { keys: ['fxrp'], parse: (r: Reader) => ({ x: r.float64(), y: r.float64() }) },
   sectionDivider: { keys: ['lsct'], parse: readDivider },

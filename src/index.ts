@@ -11,7 +11,7 @@ export {
   type InfoBlock,
   type Mask,
 } from './layer.ts';
-export type { LayerInfo } from './layer-info.ts';
+export type { LayerInfo, PlacedLayer, Point } from './layer-info.ts';
 export { descriptorColor } from './layer-styles.ts';
 export type {
   Bevel,

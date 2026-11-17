@@ -125,7 +125,7 @@ if (type) {
 
 node.info.vectorMask?.paths;         // path records
 node.info.solidColor;                // { r, g, b }
-node.info.placedLayer;               // smart object descriptor
+node.info.placedLayer;               // smart object source and placement; see below
 node.info.locked;                    // { all, position, composite, transparency }
 node.info.hueSaturation;             // adjustment layer settings
 Object.keys(node.info);              // the blocks this layer has
@@ -155,6 +155,29 @@ if (styles?.enabled) {
 ```
 
 Files from before Photoshop 6 store effects in `node.info.effectsLayer` instead.
+
+### Smart objects
+
+`node.info.placedLayer` describes a smart object's source and how it's placed. It keeps the raw descriptor's keys too, such as `warp`:
+
+```ts
+const placed = node.info.placedLayer;
+if (placed) {
+  placed.fileId;           // the source file's ID; copies of a smart object share it
+  placed.page;             // for multi-page sources such as PDFs
+  placed.size;             // { width, height } of the content, in its own pixels
+  placed.resolution;       // the content's pixels per inch
+  placed.corners;          // [topLeft, topRight, bottomRight, bottomLeft] in the document
+  placed.nonAffineCorners; // including perspective and distort
+  placed.rotation;         // degrees clockwise
+  placed.scale;            // { x, y } relative to size
+  placed.warp;             // the raw warp descriptor
+}
+```
+
+`rotation` and `scale` come from the corners, so they're only meaningful when the smart object isn't skewed or distorted. `scale` is relative to the content's pixel size: Photoshop's W and H percentages are relative to its physical size, so they differ when its resolution isn't the document's.
+
+Text layers have a rotation too: `Math.atan2(t.xy, t.xx) * 180 / Math.PI` for `t = node.info.typeTool.transform`. Pixel layers don't: Photoshop applies the transform to the pixels, so it isn't stored.
 
 ### Images
 
