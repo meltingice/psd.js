@@ -32,13 +32,18 @@ describe('layer styles', () => {
   });
 
   it('reads group styles, which Photoshop stores in lfxs', () => {
-    // No fixture has a group with styles, so relabel a layer's lfx2 block: lfxs has the same layout.
-    const bytes = readFileSync(new URL('fixtures/slices.psd', import.meta.url));
-    const block = new PSD(bytes).layers.find((l) => l.name === 'status-bar')!.infoBlocks.find((b) => b.key === 'lfx2')!;
-    bytes.write('lfxs', block.offset - 8, 'latin1'); // the key precedes the 4-byte length
-    const layer = new PSD(bytes).layers.find((l) => l.name === 'status-bar')!;
-    assert.ok(layer.infoBlocks.some((b) => b.key === 'lfxs'));
-    assert.deepEqual(layer.info.objectEffects?.colorOverlays, [{ enabled: true, blendMode: 'normal', opacity: 1, color: [255, 255, 255] }]);
+    const groups = open('fixtures/drop-shadow-groups.psd').tree.children.filter((n) => n.type === 'group');
+    assert.deepEqual(groups.map((g) => g.name), ['group-child-shadow', 'group-opacity50', 'group-passthrough', 'group-normal']);
+    for (const group of groups) {
+      assert.ok(group.layer.infoBlocks.some((b) => b.key === 'lfxs') && !group.layer.infoBlocks.some((b) => b.key === 'lfx2'));
+      const [shadow, ...others] = group.info.objectEffects!.dropShadows;
+      assert.equal(others.length, 0);
+      assert.deepEqual(
+        [shadow!.enabled, shadow!.blendMode, shadow!.opacity, shadow!.color, shadow!.angle, shadow!.distance, shadow!.size],
+        [true, 'normal', 0.75, [200, 0, 0], 120, 6, 8],
+        group.name,
+      );
+    }
   });
 
   it('converts descriptor colors', () => {
