@@ -89,8 +89,24 @@ describe('layer comps', () => {
     assert.equal(filtered.children.length, 3);
     assert.equal(filtered.childrenAtPath('Version A')[0]!.visible, true);
     assert.equal(filtered.childrenAtPath('Version B')[0]!.visible, false);
+  });
+
+  it('applies comp offsets once', () => {
+    // No fixture moves a layer in a comp, so this uses a minimal stand-in document.
+    const comp = { id: 1, name: 'Moved', capturedInfo: 0b011 };
+    const layer = {
+      ...{ isFolder: false, isFolderEnd: false, clipped: false, visible: true },
+      ...{ top: 10, left: 20, bottom: 30, right: 40 },
+      info: { metadata: { layerComp: { layerSettings: [{ enab: false, Ofst: { Hrzn: 5, Vrtc: 7 }, compList: [1] }] } } },
+    };
+    const psd = { width: 100, height: 100, layers: [layer], resources: { layerComps: [comp] } } as unknown as PSD;
+    const original = new RootNode(psd).children[0]!;
+    const moved = original.root.filterByComp('Moved').children[0]!;
+
+    assert.deepEqual([moved.top, moved.left, moved.visible], [17, 25, false]);
+    assert.deepEqual(moved.positionInComp(comp), original.positionInComp(comp));
     // The original tree is untouched.
-    assert.equal(tree.childrenAtPath('Version B')[0]!.forceVisible, undefined);
+    assert.deepEqual([original.top, original.left, original.visible], [10, 20, true]);
   });
 
   it('reports visibility per comp', () => {

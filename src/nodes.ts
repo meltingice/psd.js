@@ -23,33 +23,40 @@ interface Box {
   right: number;
 }
 
+interface Offset {
+  x: number;
+  y: number;
+}
+
 abstract class BaseNode {
   abstract readonly type: 'root' | 'group' | 'layer';
   abstract readonly name: string;
   readonly children: ChildNode[] = [];
-  /** Position offset applied by a layer comp. */
-  leftOffset = 0;
-  topOffset = 0;
 
   abstract get parent(): RootNode | GroupNode | null;
   abstract get root(): RootNode;
   /** Bounds before any layer comp offset. */
   protected abstract get box(): Box;
 
+  /** The offset applied by the tree's layer comp. */
+  protected get offset(): Offset {
+    return { x: 0, y: 0 };
+  }
+
   get top(): number {
-    return this.box.top + this.topOffset;
+    return this.box.top + this.offset.y;
   }
 
   get bottom(): number {
-    return this.box.bottom + this.topOffset;
+    return this.box.bottom + this.offset.y;
   }
 
   get left(): number {
-    return this.box.left + this.leftOffset;
+    return this.box.left + this.offset.x;
   }
 
   get right(): number {
-    return this.box.right + this.leftOffset;
+    return this.box.right + this.offset.x;
   }
 
   get width(): number {
@@ -136,8 +143,6 @@ abstract class LayerBackedNode extends BaseNode {
   abstract override readonly type: 'group' | 'layer';
   readonly layer: Layer;
   readonly #parent: RootNode | GroupNode;
-  /** Visibility override set by a layer comp. */
-  forceVisible: boolean | undefined;
 
   constructor(layer: Layer, parent: RootNode | GroupNode) {
     super();
@@ -158,6 +163,11 @@ abstract class LayerBackedNode extends BaseNode {
     return { top, left, bottom, right };
   }
 
+  protected override get offset(): Offset {
+    const comp = this.root.comp;
+    return comp && comp.capturedInfo & 0b010 ? this.#offsetInComp(comp.id) : super.offset;
+  }
+
   get name(): string {
     return this.layer.name;
   }
@@ -170,10 +180,11 @@ abstract class LayerBackedNode extends BaseNode {
     return this.layer.info;
   }
 
-  /** Visible, accounting for clipping masks and layer comp overrides. */
+  /** Visible, accounting for clipping masks and the tree's layer comp. */
   get visible(): boolean {
     if (this.layer.clipped && this.clippingMask?.visible === false) return false;
-    return this.forceVisible ?? this.layer.visible;
+    const comp = this.root.comp;
+    return comp && comp.capturedInfo & 0b001 ? this.visibleInComp(comp) : this.layer.visible;
   }
 
   /** 0 to 1. */
@@ -239,14 +250,19 @@ abstract class LayerBackedNode extends BaseNode {
 
   /** This node's bounds in the given layer comp. */
   positionInComp(comp: CompRef): Box {
-    const id = this.root.findComp(comp).id;
+    const { x, y } = this.#offsetInComp(this.root.findComp(comp).id);
+    const { top, left, bottom, right } = this.box;
+    return { top: top + y, left: left + x, bottom: bottom + y, right: right + x };
+  }
+
+  #offsetInComp(id: number): Offset {
     let x = 0;
     let y = 0;
     for (const setting of this.#compSettings()) {
       if (setting.Ofst) ({ Hrzn: x, Vrtc: y } = setting.Ofst);
       if (setting.compList.includes(id)) break;
     }
-    return { top: this.top + y, left: this.left + x, bottom: this.bottom + y, right: this.right + x };
+    return { x, y };
   }
 
   #compSettings(): Array<{ enab?: boolean; Ofst?: { Hrzn: number; Vrtc: number }; compList: number[] }> {
@@ -319,10 +335,13 @@ export class RootNode extends BaseNode {
   readonly type = 'root';
   readonly name = '';
   readonly psd: PSD;
+  /** The layer comp whose visibility and positions this tree shows, if any. See `filterByComp`. */
+  readonly comp: LayerComp | undefined;
 
-  constructor(psd: PSD) {
+  constructor(psd: PSD, comp?: LayerComp) {
     super();
     this.psd = psd;
+    this.comp = comp;
 
     let current: RootNode | GroupNode = this;
     const stack: Array<RootNode | GroupNode> = [];
@@ -367,17 +386,7 @@ export class RootNode extends BaseNode {
 
   /** A new tree with the visibility and positions captured by a layer comp applied. */
   filterByComp(comp: CompRef): RootNode {
-    const found = this.findComp(comp);
-    const root = new RootNode(this.psd);
-    for (const node of root.descendants()) {
-      if (found.capturedInfo & 0b001) node.forceVisible = node.visibleInComp(found);
-      if (found.capturedInfo & 0b010) {
-        const { left, top } = node.positionInComp(found);
-        node.leftOffset = left - node.left;
-        node.topOffset = top - node.top;
-      }
-    }
-    return root;
+    return new RootNode(this.psd, this.findComp(comp));
   }
 
   toJSON() {
