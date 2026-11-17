@@ -26,7 +26,31 @@ export interface TextRun {
   fauxItalic: boolean;
   underline: boolean;
   strikethrough: boolean;
+  /** Tracking (letter spacing) in 1/1000 em, as in the Character panel. Multiply by `size / 1000` for pixels. */
+  tracking: number;
+  /**
+   * `'auto'` when the font's kerning is used (Metrics in the Character panel), otherwise manual kerning
+   * in 1/1000 em. Photoshop often stores the first character as its own run with a kerning of 0.
+   */
+  kerning: number | 'auto';
+  /** Baseline shift in pixels before `transform` scales the text, like `size`. Positive values raise the text. */
+  baselineShift: number;
+  /** Small Caps or All Caps from the Character panel. `text` keeps the case it was typed in. */
+  caps: TextCaps;
+  /** Superscript or subscript from the Character panel. */
+  baseline: TextBaseline;
 }
+
+const CAPS = ['normal', 'small-caps', 'all-caps'] as const;
+export type TextCaps = (typeof CAPS)[number];
+const BASELINES = ['normal', 'superscript', 'subscript'] as const;
+export type TextBaseline = (typeof BASELINES)[number];
+
+const lookup = <T>(values: readonly T[], key: string, index: number): T => {
+  const value = values[index];
+  if (value === undefined) throw new Error(`Unknown ${key} value: ${index}`);
+  return value;
+};
 
 const ALIGNMENTS = ['left', 'right', 'center', 'justify'] as const;
 export type TextAlignment = (typeof ALIGNMENTS)[number];
@@ -70,8 +94,8 @@ export class TypeTool {
   /**
    * The left edge of the text's frame, in pixels relative to the transform origin (`tx`, `ty`) and
    * before the transform. The frame spans the lines around the anchor point for point text, or the box
-   * for paragraph text (its top can reach above the box to fit the first line). Undefined in files
-   * from older Photoshop versions.
+   * for paragraph text (it can reach beyond the box to fit the first line; see `boxBounds`).
+   * Undefined in files from older Photoshop versions.
    */
   get left(): number | undefined {
     return this.textData.bounds?.Left.value;
@@ -93,6 +117,19 @@ export class TypeTool {
   get boundingBox(): Bounds | undefined {
     const box = this.textData.boundingBox;
     return box && { left: box.Left.value, top: box['Top '].value, right: box.Rght.value, bottom: box.Btom.value };
+  }
+
+  /**
+   * The box of paragraph (box) text, exactly as Photoshop draws it, relative to the transform origin and
+   * before the transform like `left`/`top`/`right`/`bottom`. Undefined for text without a box, such as
+   * point text. Unlike the frame, it doesn't grow to fit the first line, and older Photoshop versions
+   * store it too.
+   */
+  get boxBounds(): Bounds | undefined {
+    const shape = this.engineData.EngineDict.Rendered.Shapes.Children[0].Cookie.Photoshop;
+    if (shape.ShapeType !== 1) return undefined;
+    const [left, top, right, bottom] = shape.BoxBounds;
+    return { left, top, right, bottom };
   }
 
   /**
@@ -138,6 +175,11 @@ export class TypeTool {
         fauxItalic: s.FauxItalic ?? false,
         underline: s.Underline ?? false,
         strikethrough: s.Strikethrough ?? false,
+        tracking: s.Tracking ?? 0,
+        kerning: s.AutoKerning === false ? (s.Kerning ?? 0) : 'auto',
+        baselineShift: s.BaselineShift ?? 0,
+        caps: lookup(CAPS, 'FontCaps', s.FontCaps ?? 0),
+        baseline: lookup(BASELINES, 'FontBaseline', s.FontBaseline ?? 0),
       };
     });
   }
@@ -212,6 +254,7 @@ export class TypeTool {
       right: this.right,
       bottom: this.bottom,
       boundingBox: this.boundingBox,
+      boxBounds: this.boxBounds,
       transform: this.transform,
     };
   }

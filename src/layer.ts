@@ -59,6 +59,18 @@ export interface Mask {
   relative: boolean;
   disabled: boolean;
   invert: boolean;
+  /** The user (pixel) mask's density, 0 to 1. 1 unless set in the Properties panel. */
+  density: number;
+  /** The user mask's feather, in pixels. */
+  feather: number;
+  /**
+   * The vector mask's density, 0 to 1. Photoshop stores it here, in the layer mask record, so it's
+   * only available when the layer has one: setting a vector mask's density or feather makes
+   * Photoshop write one.
+   */
+  vectorDensity: number;
+  /** The vector mask's feather, in pixels. */
+  vectorFeather: number;
 }
 
 export interface BlendingRange {
@@ -87,8 +99,17 @@ export interface GlobalMask {
   kind: number;
 }
 
+/**
+ * What a layer is, as shown in Photoshop's layers panel. See `Layer.kind` for how it's decided.
+ * Video and 3D layers are `'pixel'`.
+ */
+export type LayerKind = 'group' | 'text' | 'smartObject' | 'adjustment' | 'shape' | 'fill' | 'pixel';
+
+const ADJUSTMENT_KEYS = ['brit', 'CgEd', 'levl', 'curv', 'expA', 'vibA', 'hue ', 'hue2', 'blnc', 'blwh', 'phfl', 'mixr', 'clrL', 'nvrt', 'post', 'thrs', 'selc', 'grdm'];
+const FILL_KEYS = ['SoCo', 'GdFl', 'PtFl'];
+
 /** Tagged block keys whose length is 8 bytes in PSB files. */
-const BIG_KEYS = new Set(['LMsk', 'Lr16', 'Lr32', 'Layr', 'Mt16', 'Mt32', 'Mtrn', 'Alph', 'FMsk', 'lnk2', 'FEid', 'FXid', 'PxSD']);
+const BIG_KEYS = new Set(['LMsk', 'Lr16', 'Lr32', 'Layr', 'Mt16', 'Mt32', 'Mtrn', 'Alph', 'FMsk', 'lnk2', 'lnk3', 'lnkE', 'FEid', 'FXid', 'PxSD']);
 
 export const readBlockLength = (r: Reader, header: Header, key: string) =>
   header.isBig && BIG_KEYS.has(key) ? r.int64() : r.uint32();
@@ -147,7 +168,7 @@ export class Layer {
     const extraLength = r.uint32();
     const end = r.pos + extraLength;
 
-    this.mask = readMask(r);
+    this.mask = readMask(r, this.channels.some((c) => c.id === -3));
     this.blendingRanges = readBlendingRanges(r);
 
     const nameLength = ((r.uint8() + 4) & ~3) - 1; // padded to a multiple of 4, including the length byte
@@ -208,13 +229,37 @@ export class Layer {
     return divider ? divider.isHidden : this.name === '</Layer group>';
   }
 
+  /**
+   * What the layer is, from the blocks it has, checked in this order:
+   *
+   * 1. `'group'`: a group's start or end marker, including artboards.
+   * 2. `'text'`: has type tool data.
+   * 3. `'smartObject'`: has placed layer data, embedded or linked.
+   * 4. `'adjustment'`: has adjustment settings (levels, curves...), even if it also has a vector mask.
+   * 5. `'shape'`: has a vector mask and fill content. This includes a fill layer with a vector mask,
+   *    which is how Photoshop has always stored shapes, so the two can't be told apart.
+   * 6. `'fill'`: a solid color, gradient or pattern fill layer.
+   * 7. `'pixel'`: anything else, including pixel layers with a vector mask drawn with a shape tool.
+   */
+  get kind(): LayerKind {
+    const has = (...keys: string[]) => this.infoBlocks.some((b) => keys.includes(b.key));
+    if (this.isFolder || this.isFolderEnd) return 'group';
+    if (has('TySh', 'tySh')) return 'text';
+    if (has('SoLd', 'SoLE', 'PlLd', 'plLd')) return 'smartObject';
+    if (has(...ADJUSTMENT_KEYS)) return 'adjustment';
+    const fill = has(...FILL_KEYS);
+    if ((fill || has('vscg')) && has('vmsk', 'vsms')) return 'shape';
+    return fill ? 'fill' : 'pixel';
+  }
+
   /** The layer's pixels. Decoding happens on demand. */
   get image(): LayerImage {
     return (this.#image ??= new LayerImage(this, this.#reader, this.#resources));
   }
 }
 
-function readMask(r: Reader): Mask | undefined {
+/** `hasRealMask`: the layer has a real user mask channel (-3), whose fields precede the parameters. */
+function readMask(r: Reader, hasRealMask: boolean): Mask | undefined {
   const size = r.uint32();
   if (size === 0) return undefined;
   const end = r.pos + size;
@@ -224,6 +269,19 @@ function readMask(r: Reader): Mask | undefined {
   const right = r.int32();
   const defaultColor = r.uint8();
   const flags = r.uint8();
+  // Photoshop only writes parameters that differ from these defaults.
+  const params = { density: 1, feather: 0, vectorDensity: 1, vectorFeather: 0 };
+  if (flags & 0x10) {
+    // The spec puts the parameters first, but Photoshop writes the real user mask's flags,
+    // default color and rectangle before them. Its size can't tell them apart, the channel can.
+    if (hasRealMask && size >= 36) r.skip(18);
+    const present = r.uint8();
+    if (present & 0x01) params.density = r.uint8() / 255;
+    if (present & 0x02) params.feather = r.float64();
+    if (present & 0x04) params.vectorDensity = r.uint8() / 255;
+    if (present & 0x08) params.vectorFeather = r.float64();
+    if (r.pos > end) throw new Error(`Layer mask parameters overrun the ${size} byte mask record`);
+  }
   r.seek(end);
   return {
     top,
@@ -236,6 +294,7 @@ function readMask(r: Reader): Mask | undefined {
     relative: (flags & 0x01) > 0,
     disabled: (flags & 0x02) > 0,
     invert: (flags & 0x04) > 0,
+    ...params,
   };
 }
 
@@ -257,6 +316,8 @@ export interface LayerSection {
   globalMask: GlobalMask | undefined;
   /** The first alpha channel of the composite image holds the merged transparency. */
   mergedAlpha: boolean;
+  /** Document-wide tagged blocks after the global mask, such as linked files and patterns. */
+  infoBlocks: InfoBlock[];
 }
 
 /**
@@ -264,7 +325,7 @@ export interface LayerSection {
  * `resources` is only read when decoding indexed color layers, which need the color table.
  */
 export function readLayerSection(r: Reader, header: Header, resources: () => Resources): LayerSection {
-  const section: LayerSection = { layers: [], globalMask: undefined, mergedAlpha: false };
+  const section: LayerSection = { layers: [], globalMask: undefined, mergedAlpha: false, infoBlocks: [] };
   const length = header.isBig ? r.int64() : r.uint32();
   const end = r.pos + length;
   if (length === 0) return section;
@@ -305,6 +366,7 @@ export function readLayerSection(r: Reader, header: Header, resources: () => Res
     const key = r.ascii(4);
     const blockLength = pad2(readBlockLength(r, header, key));
     const blockEnd = r.pos + blockLength;
+    section.infoBlocks.push({ key, offset: r.pos, length: blockLength });
     if (key === `Lr${header.depth}`) {
       section.layers = [];
       readLayers(blockLength);
