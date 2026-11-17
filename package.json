@@ -1,10 +1,12 @@
 {
   "name": "psd",
-  "description": "A general purpose Photoshop file parser.",
-  "version": "3.3.0",
-  "main": "./index.js",
+  "description": "A general purpose Photoshop file parser for Node and the browser.",
+  "version": "4.0.0-alpha.0",
+  "license": "MIT",
+  "type": "module",
   "keywords": [
     "psd",
+    "psb",
     "parser",
     "photoshop",
     "adobe",
@@ -12,39 +14,30 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git@github.com:meltingice/psd.js.git"
+    "url": "git+https://github.com/meltingice/psd.js.git"
   },
-  "dependencies": {
-    "coffee-script": "~ 1.7.1",
-    "coffeescript-module": "~ 0.2.1",
-    "iconv-lite": "~ 0.4.4",
-    "jspack": "~ 0.0.3",
-    "lodash": "~4.17.21",
-    "parse-engine-data": "~ 0.1",
-    "pngjs": "3.2.0",
-    "rsvp": "~ 3.0.6"
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
   },
   "scripts": {
-    "test": "mocha test",
-    "docs": "node_modules/docco-husky/bin/generate lib shims",
-    "build": "cake compile-browser",
-    "generate-docs": "cake docs:generate",
-    "local-dev": "npm run build && rm -rf ./examples/browser/dist && cp -R ./dist ./examples/browser/dist && webpack serve"
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
   },
   "devDependencies": {
-    "acorn": "^5.1.1",
-    "bluebird": "^2.9.25",
-    "browserify": "^17.0.0",
-    "coffeeify": "~ 1.1.0",
-    "copy-webpack-plugin": "^9.0.1",
-    "docco-husky": "*",
-    "html-loader": "^2.1.2",
-    "mocha": "^9.1.1",
-    "rimraf": "~ 2.2.8",
-    "should": "~ 3.3.1",
-    "uglify-js": "^2.4.21",
-    "webpack": "^5.53.0",
-    "webpack-cli": "^4.8.0",
-    "webpack-dev-server": "^4.2.1"
+    "@types/node": "^24.0.0",
+    "typescript": "^7.0.2"
   }
 }

@@ -1,189 +1,231 @@
 # PSD.js
 
-[![Build Status](https://travis-ci.org/meltingice/psd.js.svg?branch=master)](https://travis-ci.org/meltingice/psd.js)
-[![Help Contribute to Open Source](https://www.codetriage.com/meltingice/psd.js/badges/users.svg)](https://www.codetriage.com/meltingice/psd.js)
+A general purpose Photoshop (PSD and PSB) parser for Node and the browser, written in TypeScript with no runtime dependencies. Based on [PSD.rb](https://github.com/layervault/psd.rb).
 
-A general purpose PSD parser written in Coffeescript. Based off of [PSD.rb](https://github.com/layervault/psd.rb). It allows you to work with a Photoshop document in a manageable tree structure and find out important data such as:
+It gives you a Photoshop document as a tree of groups and layers, along with:
 
-* Document structure
-* Document size
-* Layer/folder size + positioning
-* Layer/folder names
-* Layer/folder visibility and opacity
-* Font data (via [psd-enginedata](https://github.com/layervault/psd-enginedata))
-  * Text area contents
-  * Font names, sizes, and colors
-* Color mode and bit-depth
-* Vector mask data
-* Flattened image data
-* Layer comps
-
-Runs in both NodeJS and the browser (using browserify). There are still some pieces missing that are present in PSD.rb, such as layer comp filtering, a built-in renderer, and many layer info blocks. The eventual goal is full feature parity with PSD.rb.
+* Document size, color mode and bit depth
+* Layer and group names, bounds, visibility, opacity, blend modes and locks
+* Text contents, fonts, sizes, colors and alignment
+* Vector masks, layer styles, adjustment layers, smart objects and the rest of nearly 50 layer info blocks
+* Layer comps, guides, slices, resolution info and XMP metadata
+* The flattened composite image and individual layer images, as RGBA pixels or PNG
 
 ## Installation
 
-PSD.js has no native dependencies. Simply add `psd` to your package.json or run `npm install psd`.
+```sh
+npm install psd
+```
 
-## Documentation
-
-**Note: work in progress**
-
-Annotated source code documentation is available [here](http://meltingice.github.io/psd.js/docs/). PROTIP: if you're wondering how to access various metadata from a layer, you'll want to see this [file](http://meltingice.github.io/psd.js/docs/lib/psd/layer/info.coffee.html).
+Requires Node 20+ or a modern browser. The package is ESM only.
 
 ## Usage
 
-PSD.js works almost exactly the same in the browser and NodeJS.
+`new PSD()` takes the file contents as an `ArrayBuffer` or any typed array (including a Node `Buffer`). It only reads the header up front; everything else is parsed lazily when you first access it, so opening large files is fast.
 
-### NodeJS Example
+### Node
 
-``` js
-var PSD = require('psd');
-var psd = PSD.fromFile("path/to/file.psd");
-psd.parse();
+```ts
+import { readFile, writeFile } from 'node:fs/promises';
+import { PSD } from 'psd';
 
-console.log(psd.tree().export());
-console.log(psd.tree().childrenAtPath('A/B/C')[0].export());
+const psd = new PSD(await readFile('file.psd'));
 
-// You can also use promises syntax for opening and parsing
-PSD.open("path/to/file.psd").then(function (psd) {
-  return psd.image.saveAsPng('./output.png');
-}).then(function () {
-  console.log("Finished!");
-});
+console.log(psd.width, psd.height, psd.header.modeName);
+console.log(JSON.stringify(psd.tree, null, 2));
 
+await writeFile('composite.png', await psd.image.toPng());
 ```
 
-### Browser Example
+### Browser
 
-``` js
-var PSD = require('psd');
+```ts
+import { PSD } from 'psd';
 
-// Load from URL
-PSD.fromURL("/path/to/file.psd").then(function(psd) {
-  document.getElementById('ImageContainer').appendChild(psd.image.toPng());
-});
+// From a URL
+const psd = new PSD(await (await fetch('/file.psd')).arrayBuffer());
 
-// Load from event, e.g. drag & drop
-function onDrop(evt) {
-  PSD.fromEvent(evt).then(function (psd) {
-    console.log(psd.tree().export());
-  }); 
+// From a file input or drag and drop
+const psd = new PSD(await file.arrayBuffer());
+
+// Draw the composite on a canvas
+const { width, height, data } = await psd.image.decode();
+canvas.getContext('2d').putImageData(new ImageData(data, width, height), 0, 0);
+```
+
+See [`examples/`](examples) for more. The Node examples run directly with `node examples/tree.ts`.
+
+### The document tree
+
+`psd.tree` is the root of the document hierarchy. Every node has a `type` of `'root'`, `'group'` or `'layer'`, which TypeScript uses to narrow the node's type.
+
+```ts
+const tree = psd.tree;
+
+tree.children;                // top-level groups and layers
+tree.descendants();           // every node below, depth first
+tree.subtree();               // the node itself followed by its descendants
+tree.descendants().filter((n) => n.type === 'layer'); // just layers
+
+const [matte] = tree.childrenAtPath('Version A/Matte'); // or ['Version A', 'Matte']
+matte.path;                   // 'Version A/Matte'
+matte.parent;                 // the 'Version A' group
+matte.ancestors();            // [the 'Version A' group]
+matte.siblings;               // all children of the parent, including this node
+matte.nextSibling;
+matte.prevSibling;
+matte.depth;                  // 2; the root is 0
+matte.root;                   // the root node
+tree.findById(32);            // by layer ID
+```
+
+`childrenAtPath` is case-insensitive unless you pass `{ caseSensitive: true }`, and it always returns an array because layer names don't have to be unique.
+
+### Node properties
+
+Groups and layers share these properties:
+
+```ts
+node.name;
+node.id;                      // the layer ID
+node.top; node.left; node.bottom; node.right; node.width; node.height;
+node.visible;                 // accounts for clipping masks and layer comps
+node.opacity;                 // 0 to 1
+node.fillOpacity;             // 0 to 1
+node.blendMode;               // 'normal', 'multiply', 'passthru', ...
+node.clippingMask;            // the node this one is clipped to
+node.allLocked; node.positionLocked; node.compositeLocked; node.transparencyLocked;
+node.colorLabel;              // 'none', 'red', ...; inherited from ancestors
+node.info;                    // layer info blocks; see below
+node.layer;                   // the raw layer record
+node.toJSON();                // a plain object; JSON.stringify(psd.tree) also works
+```
+
+Groups have `children` and `open`. Group bounds are calculated from their non-empty children. Layers have `image`. Both have `isEmpty`.
+
+### Layer info
+
+Most layer data lives in "additional layer information" blocks. `node.info` (or `layer.info`) has a typed property for each block in the layer. Each block is parsed the first time you access it:
+
+```ts
+const type = node.info.typeTool;     // undefined if this isn't a text layer
+if (type) {
+  type.text;                         // 'Make a change and save.'
+  type.fonts;                        // ['HelveticaNeue-Light', 'AdobeInvisFont', 'MyriadPro-Regular']
+  type.sizes;                        // [33]
+  type.colors;                       // [[19, 120, 98, 255]]
+  type.alignment;                    // ['center']
+  type.runs;                         // per-run font, size, color, bold, italic...
+  type.transform;                    // { xx, xy, yx, yy, tx, ty }
+  type.toCSS();
+}
+
+node.info.vectorMask?.paths;         // path records
+node.info.solidColor;                // { r, g, b }
+node.info.placedLayer;               // smart object descriptor
+node.info.locked;                    // { all, position, composite, transparency }
+node.info.hueSaturation;             // adjustment layer settings
+Object.keys(node.info);              // the blocks this layer has
+```
+
+`node.layer.infoBlocks` lists every block in the layer, including ones this library doesn't parse.
+
+Some blocks are stored as Photoshop descriptors. Their contents vary between Photoshop versions, so they're typed loosely. `descriptorColor()` converts a descriptor color (RGB, HSB, CMYK, grayscale or Lab) to `[r, g, b]`.
+
+### Layer styles
+
+`node.info.objectEffects` normalizes the layer styles. Each effect is a list, since Photoshop CC allows several drop shadows, strokes and overlays per layer:
+
+```ts
+const styles = node.info.objectEffects;
+if (styles?.enabled) {
+  for (const shadow of styles.dropShadows) {
+    shadow.enabled; shadow.color;              // [0, 0, 0]
+    shadow.opacity; shadow.blendMode;          // 0.75, 'multiply'
+    shadow.angle; shadow.distance; shadow.size;
+  }
+  styles.strokes;          // size, position, fillType, color/gradient/pattern
+  styles.gradientOverlays; // gradient stops, angle, style, scale
+  // also innerShadows, outerGlows, innerGlows, bevels, satins, colorOverlays, patternOverlays
+  styles.data;             // the raw descriptor
 }
 ```
 
-### Traversing the Document
+Files from before Photoshop 6 store effects in `node.info.effectsLayer` instead.
 
-To access the document as a tree structure, use `psd.tree()` to get the root node. From there, work with the tree using any of these methods:
+### Images
 
-* `root()`: get the root node from anywhere in the tree
-* `isRoot()`: is this the root node?
-* `children()`: get all immediate children of the node
-* `hasChildren()`: does this node have any children?
-* `childless()`: opposite of `hasChildren()`
-* `ancestors()`: get all ancestors in the path of this node (excluding the root)
-* `siblings()`: get all sibling tree nodes including the current one (e.g. all layers in a folder)
-* `nextSibling()`: gets the sibling immediately following the current node
-* `prevSibling()`: gets the sibling immediately before the current node
-* `hasSiblings()`: does this node have any siblings?
-* `onlyChild()`: opposite of `hasSiblings()`
-* `descendants()`: get all descendant nodes not including the current one
-* `subtree()`: same as descendants but starts with the current node
-* `depth()`: calculate the depth of the current node (root node is 0)
-* `path()`: gets the path to the current node
+Image decoding is asynchronous because ZIP-compressed data is inflated with the platform's `DecompressionStream`.
 
-If you know the path to a group or layer within the tree, you can search by that path. Note that this always returns an Array because layer/group names do not have to be unique. The search is always scoped to the descendants of the current node, as well.
+```ts
+const composite = await psd.image.decode();  // { width, height, data: RGBA Uint8ClampedArray }
+const png = await psd.image.toPng();         // Uint8Array
 
-``` js
-psd.tree().childrenAtPath('Version A/Matte');
-psd.tree().childrenAtPath(['Version A', 'Matte']);
+if (node.type === 'layer') {
+  await node.image.decode();                 // the layer's own pixels, at node.left/top
+  await node.image.decodeMask();             // the user mask as grayscale, or undefined
+  await node.image.toPng();
+}
 ```
 
-### Accessing Layer Data
+The composite is only present if the file was saved with "Maximize Compatibility" enabled. Decoding supports RGB, CMYK, grayscale, duotone, indexed, Lab and multichannel images at 8 or 16 bits per channel, and 1-bit bitmaps, with raw, RLE or ZIP compression. CMYK, Lab and multichannel colors are converted with simple formulas rather than color profiles, so they're close to Photoshop's but not exact. Multichannel images must have 3 or 4 channels, which are treated as CMY(K) inks.
 
-To get data such as the name or dimensions of a layer:
+`encodePng({ width, height, data })` encodes any grayscale or RGBA pixels.
 
-``` js
-node = psd.tree().descendants()[0];
-node.get('name');
-node.get('width');
+### Resources
+
+```ts
+psd.resources.layerComps;      // [{ id, name, capturedInfo }]
+psd.resources.guides;          // [{ location, direction }]
+psd.resources.slices;          // { version, name, bounds, slices }
+psd.resources.resolutionInfo;  // { hRes, vRes, ... }
+psd.resources.xmpMetadata;     // the XMP packet as a string
+psd.resources.workPath;        // path records
+psd.resources.savedPaths;      // [{ id, name, records }]
+psd.resources.bytes(1036);     // the raw bytes of any resource block
 ```
 
-PSD files also store various pieces of information in "layer info" blocks. See [this file](https://github.com/meltingice/psd.js/blob/master/lib/psd/layer/info.coffee) for all of the possible layer info blocks that PSD.js parses (in `LAYER_INFO`). Which blocks a layer has varies from layer-to-layer, but to access them you can do:
+### Layer comps
 
-``` js
-node = psd.tree().descendants()[0]
-node.get('typeTool').export()
-node.get('vectorMask').export()
+```ts
+const tree = psd.tree.filterByComp('Version A'); // a new tree with the comp's visibility and positions
+node.visibleInComp('Version B');
+node.positionInComp(725235304);                  // by name or ID
 ```
 
-### Exporting Data
+## Upgrading from 3.x
 
-When working with the tree structure, you can recursively export any node to an object. This does not dump *everything*, but it does include the most commonly accessed information.
+4.0 is a TypeScript rewrite with a new API. The main changes:
 
-``` js
-console.log(psd.tree().export());
-```
+| 3.x | 4.0 |
+| --- | --- |
+| `require('psd')` | `import { PSD } from 'psd'` (ESM only) |
+| `PSD.fromFile(path)` + `psd.parse()` | `new PSD(await readFile(path))`; no `parse()` |
+| `PSD.open(path)` | `new PSD(await readFile(path))` |
+| `PSD.fromURL(url)` / `fromEvent` / `fromDroppedFile` | `new PSD(await response.arrayBuffer())` / `new PSD(await file.arrayBuffer())` |
+| `psd.tree()` | `psd.tree` |
+| `node.get('name')`, `node.get('width')` | `node.name`, `node.width` |
+| `node.get('typeTool')`, `layer.typeTool()` | `node.info.typeTool` |
+| `typeTool.export().value`, `typeTool.fonts()` | `typeTool.text`, `typeTool.fonts` |
+| `typeTool.lengthArray()`, `fontStyles()`, `fontWeights()`, `textDecoration()` | `typeTool.runs` |
+| `node.export()` | `node.toJSON()` |
+| `node.isLayer()`, `isGroup()`, `isRoot()` | `node.type === 'layer'`, etc. |
+| `node.children()`, `siblings()`, `depth()`, `path()` ... | properties: `node.children`, `node.siblings`, `node.depth`, `node.path` |
+| `node.hasChildren()`, `childless()`, `hasSiblings()`, `onlyChild()` | `node.children.length`, `node.siblings.length` |
+| `psd.image.pixelData` | `(await psd.image.decode()).data` |
+| `psd.image.toPng()` (pngjs / `<img>`) | `await psd.image.toPng()` returns PNG bytes |
+| `psd.image.saveAsPng(path)` | `writeFile(path, await psd.image.toPng())` |
+| `psd.resources.resource('layerComps').export()` | `psd.resources.layerComps` |
+| `psd.layers` | `psd.layers` (now also populated for 16-bit files) |
 
-Which produces something like:
+New in 4.0: PSB support, 16-bit layers, ZIP-compressed image data, bitmap/indexed/Lab/multichannel decoding, typed layer styles, ~30 more layer info blocks, slices, paths, XMP, lock inheritance, layer comp filtering, and fixes for grayscale layer images.
 
-``` js
-{ children: 
-   [ { type: 'group',
-       visible: false,
-       opacity: 1,
-       blendingMode: 'normal',
-       name: 'Version D',
-       left: 0,
-       right: 900,
-       top: 0,
-       bottom: 600,
-       height: 600,
-       width: 900,
-       children: 
-        [ { type: 'layer',
-            visible: true,
-            opacity: 1,
-            blendingMode: 'normal',
-            name: 'Make a change and save.',
-            left: 275,
-            right: 636,
-            top: 435,
-            bottom: 466,
-            height: 31,
-            width: 361,
-            mask: {},
-            text: 
-             { value: 'Make a change and save.',
-               font: 
-                { name: 'HelveticaNeue-Light',
-                  sizes: [ 33 ],
-                  colors: [ [ 85, 96, 110, 255 ] ],
-                  alignment: [ 'center' ] },
-               left: 0,
-               top: 0,
-               right: 0,
-               bottom: 0,
-               transform: { xx: 1, xy: 0, yx: 0, yy: 1, tx: 456, ty: 459 } },
-            image: {} } ] } ],
-    document: 
-       { width: 900,
-         height: 600,
-         resources: 
-          { layerComps: 
-             [ { id: 692243163, name: 'Version A', capturedInfo: 1 },
-               { id: 725235304, name: 'Version B', capturedInfo: 1 },
-               { id: 730932877, name: 'Version C', capturedInfo: 1 } ],
-            guides: [],
-            slices: [] } } }
-```
+## Limitations
 
-You can also export the PSD to a flattened image. Please note that, at this time, not all image modes + depths are supported.
+* There's no renderer, so layers can't be composited, and a node can't be exported with its effects applied. The composite stored in the file is available as `psd.image`.
+* 32-bit images can be parsed but not decoded to pixels.
+* Descriptors containing object arrays (`ObAr`), which are undocumented, throw when parsed.
 
-``` js
-png = psd.image.toPng(); // get PNG object
-psd.image.saveAsPng('path/to/output.png').then(function () {
-  console.log('Exported!');
-});
-```
+## License
 
-This uses the full rasterized preview provided by Photoshop. If the file was not saved with Compatibility Mode enabled, this will return an empty image.
+MIT
