@@ -57,6 +57,18 @@ describe('layer styles', () => {
   });
 });
 
+describe('smart objects', () => {
+  const placed = (name: string) => open('fixtures/placedLayer.psd').layers.find((l) => l.name === name)!.info.placedLayer!;
+
+  it('reads custom warps, which use object arrays', () => {
+    const { warp } = placed('embedded-png');
+    assert.equal(warp.warpStyle.value, 'warpCustom');
+    const { Hrzn, Vrtc } = warp.customEnvelopeWarp.meshPoints;
+    assert.deepEqual([Hrzn.unit, Hrzn.values.length, Vrtc.values.length], ['Pixels', 16, 16]);
+    assert.deepEqual([Hrzn.values[3], Vrtc.values[15]], [64, 64]);
+  });
+});
+
 describe('legacy layer effects', () => {
   // This layer stores Photoshop's default effect settings in the pre-Photoshop 6 lrFX block.
   const effects = layer('fixtures/slices.psd', 'status-bar').info.effectsLayer!;

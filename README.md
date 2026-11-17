@@ -229,7 +229,6 @@ New in 4.0: PSB support, 16-bit layers, ZIP-compressed image data, bitmap/indexe
 
 * There's no renderer, so layers can't be composited, and a node can't be exported with its effects applied. The composite stored in the file is available as `psd.image`.
 * 32-bit images can be parsed but not decoded to pixels.
-* Descriptors containing object arrays (`ObAr`), which are undocumented, throw when parsed.
 
 ## License
 
