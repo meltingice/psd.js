@@ -27,7 +27,15 @@ export type {
   Shadow,
   Stroke,
 } from './layer-styles.ts';
-export { TypeTool, type RGBA, type TextAlignment, type TextRun, type Transform } from './type-tool.ts';
+export {
+  TypeTool,
+  type RGBA,
+  type TextAlignment,
+  type TextBaseline,
+  type TextCaps,
+  type TextRun,
+  type Transform,
+} from './type-tool.ts';
 export { CompositeImage, LayerImage, type GrayImage, type RGBAImage, type ToPngOptions } from './image.ts';
 export { encodePng, type Pixels, type PngOptions } from './png.ts';
 export { Resources } from './resources.ts';

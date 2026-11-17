@@ -2,8 +2,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import { parseEngineData, PSD, TypeTool } from '../src/index.ts';
+import { Reader } from '../src/reader.ts';
 
 const open = (name: string) => new PSD(readFileSync(new URL(`fixtures/${name}`, import.meta.url)));
+const bytes = (text: string) => new Uint8Array([...text].map((c) => c.charCodeAt(0)));
 
 describe('text layers', () => {
   const type = open('text.psd').tree.children[0]!.info.typeTool!;
@@ -30,6 +32,52 @@ describe('text layers', () => {
     assert.equal(sample.text, 'Can’t get text size');
     assert.deepEqual(sample.sizes, [12]);
     assert.deepEqual(sample.toCSS().match(/font-size: [^;]+/)?.[0], 'font-size: 12px');
+  });
+
+  it('reads tracking, kerning and baseline shift (#146)', () => {
+    // effect-stroke-gradient.psd's texts have -80 tracking and are shifted 8px down.
+    const runs = open('effect-stroke-gradient.psd').tree.descendants().flatMap((n) => n.info.typeTool?.runs ?? []);
+    assert.equal(runs.length, 2);
+    for (const run of runs) {
+      assert.equal(run.tracking, -80);
+      assert.ok(Math.abs(run.baselineShift + 8) < 1e-4, `${run.baselineShift}`);
+      assert.equal(run.kerning, 'auto');
+    }
+
+    // text.psd's first character turns off automatic kerning.
+    assert.deepEqual(type.runs.map((r) => r.kerning), [0, 'auto', 'auto', 'auto', 'auto']);
+    assert.deepEqual([...new Set(type.runs.map((r) => [r.tracking, r.baselineShift, r.caps, r.baseline].join()))], ['0,0,normal,normal']);
+  });
+
+  it('reads caps and superscript/subscript (#299)', () => {
+    // No small fixture uses these, so the TySh block is built from scratch.
+    const style = (s: string) => `<< /StyleSheet << /StyleSheetData << ${s} >> >> >>`;
+    const typeTool = (styles: string[]) => {
+      const out: number[] = [];
+      const int = (n: number, size = 4) => out.push(...Array.from({ length: size }, (_, i) => (n >> (8 * (size - 1 - i))) & 0xff));
+      const ascii = (s: string) => out.push(...bytes(s));
+      const engineData = `<< /EngineDict << /StyleRun << /RunLengthArray [ ${styles.map(() => 1).join(' ')} ] /RunArray [ ${styles.join(' ')} ] >> >>
+        /ResourceDict << /FontSet [ ] /StyleSheetSet [ ${style('')} ] /TheNormalStyleSheet 0 >> >>`;
+      int(1, 2); // version
+      out.push(...new Array(48).fill(0)); // transform
+      int(50, 2); int(16); // text and descriptor versions
+      int(0); int(0); ascii('TxLr'); int(2); // unnamed TxLr descriptor with 2 items
+      int(0); ascii('Txt '); ascii('TEXT'); int(styles.length); for (let i = 0; i < styles.length; i++) int(0x61 + i, 2);
+      int(10); ascii('EngineData'); ascii('tdta'); int(engineData.length); ascii(engineData);
+      int(1, 2); int(16); // warp and descriptor versions
+      int(0); int(0); ascii('warp'); int(0); // empty warp descriptor
+      return new TypeTool(new Reader(new Uint8Array(out)));
+    };
+
+    const runs = typeTool([style('/FontCaps 1 /FontBaseline 2'), style('/FontCaps 2 /FontBaseline 1'), style('')]).runs;
+    assert.deepEqual(runs.map((r) => r.caps), ['small-caps', 'all-caps', 'normal']);
+    assert.deepEqual(runs.map((r) => r.baseline), ['subscript', 'superscript', 'normal']);
+    assert.deepEqual(runs[2], {
+      length: 1, font: undefined, size: undefined, color: undefined, leading: 'auto', fauxBold: false, fauxItalic: false,
+      underline: false, strikethrough: false, tracking: 0, kerning: 'auto', baselineShift: 0, caps: 'normal', baseline: 'normal',
+    });
+    assert.throws(() => typeTool([style('/FontCaps 3')]).runs, /Unknown FontCaps value: 3/);
+    assert.throws(() => typeTool([style('/FontBaseline 3')]).runs, /Unknown FontBaseline value: 3/);
   });
 
   it('converts sizes to the points Photoshop shows', () => {
@@ -114,8 +162,6 @@ describe('text layers', () => {
 });
 
 describe('parseEngineData', () => {
-  const bytes = (text: string) => new Uint8Array([...text].map((c) => c.charCodeAt(0)));
-
   it('parses nested dictionaries, arrays and scalars', () => {
     const data = parseEngineData(bytes('<< /A 1 /B -.5 /C [ 1 2.25 ] /D true /E << /F /Name >> /G [ << /H false >> ] >>'));
     assert.deepEqual(data, { A: 1, B: -0.5, C: [1, 2.25], D: true, E: { F: 'Name' }, G: [{ H: false }] });

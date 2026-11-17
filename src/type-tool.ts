@@ -26,7 +26,31 @@ export interface TextRun {
   fauxItalic: boolean;
   underline: boolean;
   strikethrough: boolean;
+  /** Tracking (letter spacing) in 1/1000 em, as in the Character panel. Multiply by `size / 1000` for pixels. */
+  tracking: number;
+  /**
+   * `'auto'` when the font's kerning is used (Metrics in the Character panel), otherwise manual kerning
+   * in 1/1000 em. Photoshop often stores the first character as its own run with a kerning of 0.
+   */
+  kerning: number | 'auto';
+  /** Baseline shift in pixels before `transform` scales the text, like `size`. Positive values raise the text. */
+  baselineShift: number;
+  /** Small Caps or All Caps from the Character panel. `text` keeps the case it was typed in. */
+  caps: TextCaps;
+  /** Superscript or subscript from the Character panel. */
+  baseline: TextBaseline;
 }
+
+const CAPS = ['normal', 'small-caps', 'all-caps'] as const;
+export type TextCaps = (typeof CAPS)[number];
+const BASELINES = ['normal', 'superscript', 'subscript'] as const;
+export type TextBaseline = (typeof BASELINES)[number];
+
+const lookup = <T>(values: readonly T[], key: string, index: number): T => {
+  const value = values[index];
+  if (value === undefined) throw new Error(`Unknown ${key} value: ${index}`);
+  return value;
+};
 
 const ALIGNMENTS = ['left', 'right', 'center', 'justify'] as const;
 export type TextAlignment = (typeof ALIGNMENTS)[number];
@@ -151,6 +175,11 @@ export class TypeTool {
         fauxItalic: s.FauxItalic ?? false,
         underline: s.Underline ?? false,
         strikethrough: s.Strikethrough ?? false,
+        tracking: s.Tracking ?? 0,
+        kerning: s.AutoKerning === false ? (s.Kerning ?? 0) : 'auto',
+        baselineShift: s.BaselineShift ?? 0,
+        caps: lookup(CAPS, 'FontCaps', s.FontCaps ?? 0),
+        baseline: lookup(BASELINES, 'FontBaseline', s.FontBaseline ?? 0),
       };
     });
   }
