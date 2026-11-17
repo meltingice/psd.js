@@ -9,6 +9,7 @@ Most of these files come from [PSD.rb](https://github.com/layervault/psd.rb)'s s
 These files are from [psd-tools](https://github.com/psd-tools/psd-tools), used under its MIT license below:
 
 * `drop-shadow-groups.psd`: `tests/psd_files/effects/drop-shadow-groups.psd`
+* `effect-stroke-gradient.psd`: `tests/psd_files/effect-stroke-gradient.psd`
 * `placedLayer.psd`: `tests/psd_files/placedLayer.psd`
 
 ```

@@ -54,6 +54,14 @@ describe('resources', () => {
     assert.equal(slices[0]!.id, 0);
   });
 
+  it('parses the global light angle and altitude', () => {
+    const example = open('example.psd').resources;
+    assert.equal(example.globalAngle, 120);
+    assert.equal(example.globalAltitude, 30);
+    assert.equal(open('drop-shadow-groups.psd').resources.globalAngle, 90);
+    assert.equal(open('indexed.psd').resources.globalAngle, undefined);
+  });
+
   it('exposes raw bytes and XMP', () => {
     const { resources } = open('example.psd');
     assert.ok(resources.bytes(1005)!.length >= 16);
