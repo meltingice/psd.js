@@ -76,6 +76,27 @@ describe('tree', () => {
   });
 });
 
+describe('unbalanced group markers', () => {
+  const layer = (name: string, kind?: 'start' | 'end') => ({
+    ...{ name, isFolder: kind === 'start', isFolderEnd: kind === 'end' },
+    ...{ top: 0, left: 0, bottom: 1, right: 1, info: {} },
+  });
+  const build = (...layers: object[]) => new RootNode({ width: 1, height: 1, layers } as unknown as PSD);
+  const names = (nodes: Array<GroupNode | LayerNode>): unknown[] =>
+    nodes.map((n) => (n.type === 'group' ? { [n.name]: names(n.children) } : n.name));
+
+  it('ignores stray end markers', () => {
+    const tree = build(layer('</Layer group>', 'end'), layer('a'), layer('g', 'start'), layer('b'), layer('</Layer group>', 'end'), layer('</Layer group>', 'end'), layer('c'));
+    assert.deepEqual(names(tree.children), ['a', { g: ['b'] }, 'c']);
+  });
+
+  it('keeps groups that are never closed', () => {
+    const tree = build(layer('a'), layer('g', 'start'), layer('b'), layer('h', 'start'), layer('c'));
+    assert.deepEqual(names(tree.children), ['a', { g: ['b', { h: ['c'] }] }]);
+    assert.equal(tree.childrenAtPath('g/h/c')[0]!.depth, 3);
+  });
+});
+
 describe('layer comps', () => {
   const tree = open('example.psd').tree;
 
