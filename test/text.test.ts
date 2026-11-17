@@ -121,6 +121,23 @@ describe('text layers', () => {
     assert.equal(old.boundingBox, undefined);
   });
 
+  it('reads the paragraph text box (#285)', () => {
+    // text.psd's 100x50 box; the frame's top reaches above it to fit the first line.
+    assert.deepEqual(type.boxBounds, { left: 0, top: 0, right: 100, bottom: 50 });
+    assert.ok(type.top! < type.boxBounds!.top);
+
+    // Older files store the box but not the frame.
+    const psd = open('alignment_modes.psd');
+    const paragraph = psd.tree.childrenAtPath('justify')[0]!.info.typeTool!;
+    assert.equal(paragraph.left, undefined);
+    assert.deepEqual(paragraph.boxBounds, { left: 0, top: 0, right: 699.67828, bottom: 609.61292 });
+
+    // Point text has no box.
+    for (const name of ['left', 'right', 'center']) {
+      assert.equal(psd.tree.childrenAtPath(name)[0]!.info.typeTool!.boxBounds, undefined);
+    }
+  });
+
   it('exports CSS', () => {
     const css = type.toCSS();
     assert.match(css, /MyriadPro-Regular/);

@@ -36,8 +36,8 @@ export {
   type TextRun,
   type Transform,
 } from './type-tool.ts';
-export { CompositeImage, LayerImage, type GrayImage, type RGBAImage } from './image.ts';
-export { encodePng, type Pixels } from './png.ts';
+export { CompositeImage, LayerImage, type GrayImage, type RGBAImage, type ToPngOptions } from './image.ts';
+export { encodePng, type Pixels, type PngOptions } from './png.ts';
 export { Resources } from './resources.ts';
 export type { Bounds, Guide, LayerComp, ResolutionInfo, ResourceBlock, SavedPath, Slice, Slices } from './resources.ts';
 export type { Descriptor, DescriptorClass, UnitValue } from './descriptor.ts';

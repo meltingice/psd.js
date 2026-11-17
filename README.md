@@ -19,6 +19,13 @@ npm install psd
 
 Requires Node 20+ or a modern browser. The package is ESM only.
 
+To check the installed version at runtime, import its `package.json`:
+
+```ts
+import pkg from 'psd/package.json' with { type: 'json' };
+pkg.version; // '4.1.0'
+```
+
 ## Usage
 
 `new PSD()` takes the file contents as an `ArrayBuffer` or any typed array (including a Node `Buffer`). It only reads the header up front; everything else is parsed lazily when you first access it, so opening large files is fast.
@@ -120,11 +127,14 @@ if (type) {
   type.transform;                    // { xx, xy, yx, yy, tx, ty }
   type.left; type.top; type.right; type.bottom; // the text frame or paragraph box, relative to tx/ty
   type.boundingBox;                  // { left, top, right, bottom } of the glyphs, relative to tx/ty
+  type.boxBounds;                    // { left, top, right, bottom } of the paragraph text box; undefined for point text
   type.toCSS();
 }
 ```
 
 Each run in `type.runs` has its character styles: `font`, `size`, `color`, `leading`, `fauxBold`, `fauxItalic`, `underline`, `strikethrough`, `tracking` and `kerning` (in 1/1000 em; `kerning` is `'auto'` for the font's own kerning), `baselineShift` (in pixels like `sizes`; positive raises the text), `caps` (`'normal'`, `'small-caps'` or `'all-caps'`; `text` keeps the case it was typed in) and `baseline` (`'normal'`, `'superscript'` or `'subscript'`).
+
+For paragraph text, `boxBounds` is the text box exactly as Photoshop draws it. The frame (`left`/`top`/`right`/`bottom`) usually matches it, but it can reach above or below the box to fit the first line, and files from older Photoshop versions don't store the frame. Like the frame and `boundingBox`, it's relative to `tx`/`ty` and before the rest of `transform`: a box resized with Free Transform keeps its stored size, and `transform` scales it in the document.
 
 ```ts
 node.info.vectorMask?.paths;         // path records
@@ -179,7 +189,13 @@ if (node.type === 'layer') {
 
 The composite is only present if the file was saved with "Maximize Compatibility" enabled. Decoding supports RGB, CMYK, grayscale, duotone, indexed, Lab and multichannel images at 8 or 16 bits per channel, and 1-bit bitmaps, with raw, RLE or ZIP compression. CMYK, Lab and multichannel colors are converted with simple formulas rather than color profiles, so they're close to Photoshop's but not exact. Multichannel images must have 3 or 4 channels, which are treated as CMY(K) inks.
 
-`encodePng({ width, height, data })` encodes any grayscale or RGBA pixels.
+`encodePng({ width, height, data })` encodes any grayscale or RGBA pixels. Pass `{ iccProfile }` as the second argument to embed an ICC profile; it must be an RGB profile for RGBA pixels or a grayscale one for grayscale pixels.
+
+`toPng()` embeds the document's ICC profile (`psd.resources.iccProfile`) when it's an RGB profile. CMYK and Lab colors are converted to approximate sRGB and grayscale documents decode to RGBA, so their profiles don't describe the output and aren't embedded. Pass `{ embedProfile: false }` to leave the profile out, e.g. for smaller files when the document is sRGB anyway:
+
+```ts
+const png = await psd.image.toPng({ embedProfile: false });
+```
 
 ### Resources
 
@@ -189,6 +205,9 @@ psd.resources.guides;          // [{ location, direction }]
 psd.resources.slices;          // { version, name, bounds, slices }
 psd.resources.resolutionInfo;  // { hRes, vRes, ... }
 psd.resources.xmpMetadata;     // the XMP packet as a string
+psd.resources.iccProfile;      // the ICC color profile as a Uint8Array
+psd.resources.globalAngle;     // 120, the global light angle in degrees for styles with useGlobalLight
+psd.resources.globalAltitude;  // 30, the global light altitude in degrees
 psd.resources.workPath;        // path records
 psd.resources.savedPaths;      // [{ id, name, records }]
 psd.resources.bytes(1036);     // the raw bytes of any resource block

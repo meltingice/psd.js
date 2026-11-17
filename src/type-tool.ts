@@ -94,8 +94,8 @@ export class TypeTool {
   /**
    * The left edge of the text's frame, in pixels relative to the transform origin (`tx`, `ty`) and
    * before the transform. The frame spans the lines around the anchor point for point text, or the box
-   * for paragraph text (its top can reach above the box to fit the first line). Undefined in files
-   * from older Photoshop versions.
+   * for paragraph text (it can reach beyond the box to fit the first line; see `boxBounds`).
+   * Undefined in files from older Photoshop versions.
    */
   get left(): number | undefined {
     return this.textData.bounds?.Left.value;
@@ -117,6 +117,19 @@ export class TypeTool {
   get boundingBox(): Bounds | undefined {
     const box = this.textData.boundingBox;
     return box && { left: box.Left.value, top: box['Top '].value, right: box.Rght.value, bottom: box.Btom.value };
+  }
+
+  /**
+   * The box of paragraph (box) text, exactly as Photoshop draws it, relative to the transform origin and
+   * before the transform like `left`/`top`/`right`/`bottom`. Undefined for text without a box, such as
+   * point text. Unlike the frame, it doesn't grow to fit the first line, and older Photoshop versions
+   * store it too.
+   */
+  get boxBounds(): Bounds | undefined {
+    const shape = this.engineData.EngineDict.Rendered.Shapes.Children[0].Cookie.Photoshop;
+    if (shape.ShapeType !== 1) return undefined;
+    const [left, top, right, bottom] = shape.BoxBounds;
+    return { left, top, right, bottom };
   }
 
   /**
@@ -241,6 +254,7 @@ export class TypeTool {
       right: this.right,
       bottom: this.bottom,
       boundingBox: this.boundingBox,
+      boxBounds: this.boxBounds,
       transform: this.transform,
     };
   }
