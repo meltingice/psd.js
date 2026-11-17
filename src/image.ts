@@ -241,9 +241,17 @@ export function labToRgb(l: number, a: number, b: number): [number, number, numb
   ];
 }
 
-/** The document's ICC profile if it can be embedded in an RGBA PNG; CMYK, Lab and grayscale profiles can't. */
-function rgbProfile(resources: Resources): Uint8Array | undefined {
-  const profile = resources.iccProfile;
+export interface ToPngOptions {
+  /**
+   * Embed the document's ICC profile when it's an RGB profile. Defaults to `true`. Turn it off for
+   * smaller files when the colors are sRGB anyway, or when you manage color yourself.
+   */
+  embedProfile?: boolean;
+}
+
+/** The document's ICC profile if it should be embedded in an RGBA PNG; CMYK, Lab and grayscale profiles can't be. */
+function rgbProfile(resources: Resources, { embedProfile = true }: ToPngOptions): Uint8Array | undefined {
+  const profile = embedProfile ? resources.iccProfile : undefined;
   return profile && iccColorSpace(profile) === 'RGB ' ? profile : undefined;
 }
 
@@ -285,9 +293,9 @@ export class CompositeImage {
     return { width, height, data: toRgba(model, channels, width * height) };
   }
 
-  /** Encodes `decode()` as a PNG, with the document's ICC profile when it's an RGB profile. */
-  async toPng(): Promise<Uint8Array> {
-    return encodePng(await this.decode(), { iccProfile: rgbProfile(this.#resources()) });
+  /** Encodes `decode()` as a PNG, with the document's ICC profile when it's an RGB profile (see `options`). */
+  async toPng(options: ToPngOptions = {}): Promise<Uint8Array> {
+    return encodePng(await this.decode(), { iccProfile: rgbProfile(this.#resources(), options) });
   }
 }
 
@@ -339,8 +347,8 @@ export class LayerImage {
     return { width: mask.width, height: mask.height, data: await readLayerChannel(this.#reader, channel, mask.width, mask.height, header) };
   }
 
-  /** Encodes `decode()` as a PNG, with the document's ICC profile when it's an RGB profile. */
-  async toPng(): Promise<Uint8Array> {
-    return encodePng(await this.decode(), { iccProfile: rgbProfile(this.#resources()) });
+  /** Encodes `decode()` as a PNG, with the document's ICC profile when it's an RGB profile (see `options`). */
+  async toPng(options: ToPngOptions = {}): Promise<Uint8Array> {
+    return encodePng(await this.decode(), { iccProfile: rgbProfile(this.#resources(), options) });
   }
 }

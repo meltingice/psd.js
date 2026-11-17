@@ -177,7 +177,11 @@ The composite is only present if the file was saved with "Maximize Compatibility
 
 `encodePng({ width, height, data })` encodes any grayscale or RGBA pixels. Pass `{ iccProfile }` as the second argument to embed an ICC profile; it must be an RGB profile for RGBA pixels or a grayscale one for grayscale pixels.
 
-`toPng()` embeds the document's ICC profile (`psd.resources.iccProfile`) when it's an RGB profile. CMYK and Lab colors are converted to approximate sRGB and grayscale documents decode to RGBA, so their profiles don't describe the output and aren't embedded.
+`toPng()` embeds the document's ICC profile (`psd.resources.iccProfile`) when it's an RGB profile. CMYK and Lab colors are converted to approximate sRGB and grayscale documents decode to RGBA, so their profiles don't describe the output and aren't embedded. Pass `{ embedProfile: false }` to leave the profile out, e.g. for smaller files when the document is sRGB anyway:
+
+```ts
+const png = await psd.image.toPng({ embedProfile: false });
+```
 
 ### Resources
 

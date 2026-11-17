@@ -188,6 +188,18 @@ describe('PNG encoding', () => {
     assert.equal(open('fixtures/one_layer.psd').resources.iccProfile, undefined);
   });
 
+  it('leaves the profile out when asked', async () => {
+    const psd = open('fixtures/example.psd');
+    const layer = psd.tree.descendants().find((n) => n.type === 'layer' && n.width > 0)!;
+    assert.ok(layer.type === 'layer');
+    for (const image of [psd.image, layer.image]) {
+      const [withProfile, without] = [await image.toPng(), await image.toPng({ embedProfile: false })];
+      assert.ok(embeddedProfile(withProfile));
+      assert.equal(embeddedProfile(without), undefined);
+      assert.deepEqual(readChunks(without).IDAT, readChunks(withProfile).IDAT);
+    }
+  });
+
   it("doesn't embed CMYK or grayscale profiles in RGBA images", async () => {
     for (const name of ['example-cmyk.psd', 'example-greyscale.psd']) {
       const psd = open(`../examples/images/${name}`);
