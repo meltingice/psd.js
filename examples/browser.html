@@ -12,15 +12,15 @@
   canvas { max-width: 100%; margin-top: 1rem; }
   pre { background: #f4f4f4; padding: 1rem; overflow: auto; }
 </style>
-<div id="drop">Drop a PSD file here</div>
+<div id="drop">Drop a PSD file anywhere on this page</div>
 <canvas id="canvas"></canvas>
 <pre id="tree"></pre>
 <script type="module">
   import { PSD } from '../dist/index.js';
 
-  const drop = document.getElementById('drop');
-  drop.addEventListener('dragover', (e) => e.preventDefault());
-  drop.addEventListener('drop', async (e) => {
+  // Listen on the whole page so a drop that misses the box doesn't make the browser open the file.
+  document.addEventListener('dragover', (e) => e.preventDefault());
+  document.addEventListener('drop', async (e) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (!file) return;
