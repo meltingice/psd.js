@@ -2,10 +2,11 @@ import { CompositeImage } from './image.ts';
 import { readLayerSection, type GlobalMask, type Layer, type LayerSection } from './layer.ts';
 import { readLinkedFiles, type LinkedFile } from './linked-files.ts';
 import { RootNode } from './nodes.ts';
+import { readPatterns, type Pattern } from './patterns.ts';
 import { Reader } from './reader.ts';
 import { Resources } from './resources.ts';
 
-const MODES = [
+export const MODES = [
   'Bitmap',
   'GrayScale',
   'IndexedColor',
@@ -76,6 +77,7 @@ export class PSD {
   #layerSection: LayerSection | undefined;
   #image: CompositeImage | undefined;
   #tree: RootNode | undefined;
+  #patterns: Pattern[] | undefined;
   #linkedFiles: LinkedFile[] | undefined;
 
   constructor(data: ArrayBuffer | ArrayBufferView) {
@@ -121,6 +123,16 @@ export class PSD {
 
   get globalMask(): GlobalMask | undefined {
     return this.#layers.globalMask;
+  }
+
+  /**
+   * The patterns used by pattern fills, overlays and strokes, which refer to them by `id`.
+   * Pixels are decoded on demand with `pattern.decode()`.
+   */
+  get patterns(): Pattern[] {
+    return (this.#patterns ??= this.#layers.infoBlocks
+      .filter((b) => ['Patt', 'Pat2', 'Pat3'].includes(b.key))
+      .flatMap((b) => readPatterns(this.#reader.at(b.offset), b.offset + b.length)));
   }
 
   /**

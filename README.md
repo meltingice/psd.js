@@ -272,6 +272,20 @@ if (file?.data && file.fileType === '8BPB') {
 }
 ```
 
+### Patterns
+
+`psd.patterns` holds the patterns that pattern fills, overlays and strokes use, which refer to them by ID:
+
+```ts
+const id = node.info.patternFill?.Ptrn.Idnt ?? node.info.objectEffects?.patternOverlays[0]?.pattern?.id;
+const pattern = psd.patterns.find((p) => p.id === id);
+if (pattern) {
+  pattern.name; pattern.width; pattern.height;
+  await pattern.decode();   // one tile as RGBA, like the images above
+  await pattern.toPng();
+}
+```
+
 ### Resources
 
 ```ts

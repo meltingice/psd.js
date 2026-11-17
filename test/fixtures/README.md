@@ -13,6 +13,8 @@ These files are from [psd-tools](https://github.com/psd-tools/psd-tools), used u
 * `effect-stroke-gradient.psd`: `tests/psd_files/effect-stroke-gradient.psd`
 * `mask-parameters-no-real-channel.psd`: `tests/psd_files/mask-parameters-no-real-channel.psd`
 * `mask_parameters.psd`: `tests/psd_files/mask_parameters.psd`
+* `multichannel-pattern-fill.psd`: `tests/psd_files/multichannel-pattern-fill.psd`
+* `pattern-fill.psb`: `tests/psd_files/layers/pattern-fill.psb`
 * `placedLayer.psb`: `tests/psd_files/placedLayer.psb`
 * `placedLayer.psd`: `tests/psd_files/placedLayer.psd`
 * `solid-color-fill.psd`: `tests/psd_files/layers-minimal/solid-color-fill.psd`
