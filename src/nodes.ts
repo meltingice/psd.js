@@ -326,7 +326,7 @@ export class LayerNode extends LayerBackedNode {
 
   /** For smart object layers, the placed file from `psd.linkedFiles`. */
   get linkedFile(): LinkedFile | undefined {
-    const id = this.layer.info.placedLayer?.Idnt;
+    const id = this.layer.info.placedLayer?.fileId;
     return id === undefined ? undefined : this.root.psd.linkedFiles.find((f) => f.id === id);
   }
 

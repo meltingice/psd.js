@@ -5,7 +5,7 @@ const TYPES = { liFD: 'embedded', liFE: 'external', liFA: 'alias' } as const;
 
 /** A file placed in the document as a smart object, from the `lnk2`, `lnk3`, `lnkD` or `lnkE` blocks. */
 export interface LinkedFile {
-  /** The unique ID that smart object layers refer to in `info.placedLayer.Idnt`. */
+  /** The unique ID that smart object layers refer to in `info.placedLayer.fileId`. */
   id: string;
   /** The original file name. */
   name: string;
