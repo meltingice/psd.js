@@ -213,6 +213,16 @@ export class Resources {
     });
   }
 
+  /** Resource 1037: the global light angle in degrees, used by layer styles with `useGlobalLight`. */
+  get globalAngle(): number | undefined {
+    return this.#parse(1037, (r) => r.int32());
+  }
+
+  /** Resource 1049: the global light altitude in degrees, used by bevels with `useGlobalLight`. */
+  get globalAltitude(): number | undefined {
+    return this.#parse(1049, (r) => r.int32());
+  }
+
   /** Resource 1026: the group ID of each layer, ordered top to bottom like `psd.layers`. */
   get layerGroups(): number[] | undefined {
     return this.#parse(1026, (r, block) => Array.from({ length: block.size / 2 }, () => r.uint16()).reverse());
