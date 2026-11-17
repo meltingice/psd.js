@@ -185,6 +185,8 @@ psd.resources.guides;          // [{ location, direction }]
 psd.resources.slices;          // { version, name, bounds, slices }
 psd.resources.resolutionInfo;  // { hRes, vRes, ... }
 psd.resources.xmpMetadata;     // the XMP packet as a string
+psd.resources.globalAngle;     // 120, the global light angle in degrees for styles with useGlobalLight
+psd.resources.globalAltitude;  // 30, the global light altitude in degrees
 psd.resources.workPath;        // path records
 psd.resources.savedPaths;      // [{ id, name, records }]
 psd.resources.bytes(1036);     // the raw bytes of any resource block
