@@ -135,6 +135,28 @@ Object.keys(node.info);              // the blocks this layer has
 
 Some blocks are stored as Photoshop descriptors. Their contents vary between Photoshop versions, so they're typed loosely. `descriptorColor()` converts a descriptor color (RGB, HSB, CMYK, grayscale or Lab) to `[r, g, b]`.
 
+### Vector masks and paths
+
+Shape layers and vector masks keep their outline in `node.info.vectorMask.paths`, and `psd.resources.workPath` and `psd.resources.savedPaths` use the same path records. `pathToSvg()` converts them to SVG path data in document pixels, with one entry per shape component:
+
+```ts
+import { pathToSvg } from 'psd';
+
+const shapes = pathToSvg(node.info.vectorMask.paths, psd.width, psd.height);
+// [{ operation: 1, d: 'M8 4C8 4 4 4 4 4C4 4 4 8 4 8C4 8 8 8 8 8C8 8 8 4 8 4Z' }]
+const svg = `<svg viewBox="0 0 ${psd.width} ${psd.height}"><path fill-rule="evenodd" d="${shapes[0].d}"/></svg>`;
+```
+
+Fill each component with the even-odd rule. When there are several, Photoshop combines them in order by `operation`: 1 combine, 2 subtract, 3 intersect and 0 exclude, starting from a full canvas if the first one subtracts or intersects. On a canvas:
+
+```ts
+shapes.forEach(({ operation, d }, i) => {
+  if (i === 0 && operation >= 2) ctx.fillRect(0, 0, psd.width, psd.height);
+  ctx.globalCompositeOperation = ['xor', 'source-over', 'destination-out', 'destination-in'][operation];
+  ctx.fill(new Path2D(d), 'evenodd');
+});
+```
+
 ### Layer styles
 
 `node.info.objectEffects` normalizes the layer styles. Each effect is a list, since Photoshop CC allows several drop shadows, strokes and overlays per layer:
