@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
-import { BLEND_MODES, PSD } from '../src/index.ts';
+import { BLEND_MODES, pathToSvg, PSD } from '../src/index.ts';
 
 const open = (name: string) => new PSD(readFileSync(new URL(`fixtures/${name}`, import.meta.url)));
 
@@ -170,5 +170,66 @@ describe('vector masks', () => {
     const knot = mask.paths[3]!;
     assert.ok(knot.recordType === 2 && knot.closed && !knot.linked);
     assert.ok(knot.anchor.vert > 0 && knot.anchor.vert < 1);
+  });
+
+  it('reads how subpaths combine', () => {
+    const glyph = open('example.psd').layers.find((l) => l.name === 'Logo_Glyph')!.info.vectorMask!.paths;
+    assert.deepEqual(glyph.flatMap((p) => (p.recordType === 0 ? [p.operation] : [])), [1, 2, 1, 2, 1, 2]);
+  });
+});
+
+describe('pathToSvg', () => {
+  const info = (psd: PSD, name: string) => psd.layers.find((l) => l.name === name && l.info.vectorMask)!.info;
+
+  it('converts a closed path', () => {
+    const psd = open('path.psd');
+    assert.deepEqual(pathToSvg(info(psd, 'Logo_Glyph').vectorMask!.paths, psd.width, psd.height), [
+      { operation: 1, d: 'M8 4C8 4 4 4 4 4C4 4 4 8 4 8C4 8 8 8 8 8C8 8 8 4 8 4Z' },
+    ]);
+  });
+
+  it("matches each shape's bounds", () => {
+    const psd = open('vector-mask2.psd');
+    for (const name of ['Rectangle 1', 'Rounded Rectangle 1', 'Ellipse 1', 'Color Fill 1']) {
+      const { vectorMask, vectorOrigination } = info(psd, name);
+      const shapes = pathToSvg(vectorMask!.paths, psd.width, psd.height);
+      const boxes = vectorOrigination!.shapes.map((shape) => shape.bounds!);
+      assert.equal(shapes.length, boxes.length, name);
+      shapes.forEach(({ d }, i) => {
+        // Photoshop's ellipses and rounded corners keep their control points on the bounding box.
+        const [x, y] = [0, 1].map((o) => d.match(/[\d.]+/g)!.map(Number).filter((_, j) => j % 2 === o));
+        const box = boxes[i]!;
+        assert.deepEqual([Math.min(...y!), Math.min(...x!), Math.max(...y!), Math.max(...x!)], [box.top, box.left, box.bottom, box.right], name);
+      });
+    }
+    assert.deepEqual(pathToSvg(info(psd, 'Color Fill 1').vectorMask!.paths, 1, 1).map((s) => s.operation), [3, 3]);
+    assert.deepEqual(pathToSvg(info(psd, 'Gradient Fill 1').vectorMask!.paths, psd.width, psd.height), []);
+  });
+
+  it('leaves open subpaths open and merges subpaths of one component', () => {
+    const psd = open('slices.psd');
+    const layers = psd.layers.map((l) => l.info.vectorMask?.paths ?? []);
+    const openPath = layers.find((paths) => paths.some((p) => p.recordType === 3))!;
+    const shapes = pathToSvg(openPath, psd.width, psd.height);
+    assert.equal(shapes.length, 1);
+    const { d } = shapes[0]!;
+    assert.equal(d.match(/C/g)!.length, 17); // 18 knots
+    assert.match(d, /^M680\.98 143\.446C[^MZ]+$/);
+
+    const ring = layers.find((paths) => paths.some((p) => p.recordType === 0 && p.operation === -1))!;
+    const merged = pathToSvg(ring, psd.width, psd.height);
+    // Three subpaths combined by -1 form one component, then a separate one.
+    assert.deepEqual(
+      merged.map(({ operation, d }) => [operation, d.match(/M/g)!.length, d.match(/Z/g)!.length]),
+      [[1, 3, 3], [1, 1, 1]],
+    );
+  });
+
+  it('throws on knots that do not match their subpath records', () => {
+    const paths = open('path.psd').layers[0]!.info.vectorMask!.paths;
+    assert.throws(() => pathToSvg(paths.slice(3), 1, 1), /knot outside/);
+    assert.throws(() => pathToSvg(paths.slice(0, -1), 1, 1), /3 of its 4 knots/);
+    assert.throws(() => pathToSvg([...paths, ...paths.slice(3)], 1, 1), /knot outside/);
+    assert.throws(() => pathToSvg([{ recordType: 0, numPoints: 0, operation: -1 }], 1, 1), /component that does not exist/);
   });
 });

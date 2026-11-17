@@ -43,6 +43,6 @@ export { encodePng, type Pixels, type PngOptions } from './png.ts';
 export { Resources } from './resources.ts';
 export type { Bounds, Guide, LayerComp, ResolutionInfo, ResourceBlock, SavedPath, Slice, Slices } from './resources.ts';
 export type { Descriptor, DescriptorClass, UnitValue } from './descriptor.ts';
-export type { PathPoint, PathRecord } from './path-record.ts';
+export { pathToSvg, type PathPoint, type PathRecord } from './path-record.ts';
 export { parseEngineData, type EngineDict, type EngineValue } from './engine-data.ts';
 export type { SpaceColor } from './reader.ts';
