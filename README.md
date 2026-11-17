@@ -19,6 +19,13 @@ npm install psd
 
 Requires Node 20+ or a modern browser. The package is ESM only.
 
+To check the installed version at runtime, import its `package.json`:
+
+```ts
+import pkg from 'psd/package.json' with { type: 'json' };
+pkg.version; // '4.1.0'
+```
+
 ## Usage
 
 `new PSD()` takes the file contents as an `ArrayBuffer` or any typed array (including a Node `Buffer`). It only reads the header up front; everything else is parsed lazily when you first access it, so opening large files is fast.
