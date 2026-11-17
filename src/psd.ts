@@ -123,7 +123,7 @@ export class PSD {
 
   /** The flattened composite image. */
   get image(): CompositeImage {
-    return (this.#image ??= new CompositeImage(this.#reader.at(this.#imageOffset), this.header));
+    return (this.#image ??= new CompositeImage(this.#reader.at(this.#imageOffset), this.header, () => this.resources));
   }
 
   /** The document as a tree of groups and layers. */

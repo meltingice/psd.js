@@ -193,6 +193,16 @@ export class Resources {
       .map((b) => ({ id: b.id, name: b.name, records: this.#parse(b.id, (r) => readPathRecords(r, Math.floor(b.size / 26)))! }));
   }
 
+  /** Resource 1046: the number of colors in an indexed image's color table. */
+  get indexedColorCount(): number | undefined {
+    return this.#parse(1046, (r) => r.uint16());
+  }
+
+  /** Resource 1047: the color table index that is transparent in an indexed image. */
+  get transparencyIndex(): number | undefined {
+    return this.#parse(1047, (r) => r.uint16());
+  }
+
   /** Resource 1026: the group ID of each layer, ordered top to bottom like `psd.layers`. */
   get layerGroups(): number[] | undefined {
     return this.#parse(1026, (r, block) => Array.from({ length: block.size / 2 }, () => r.uint16()).reverse());
