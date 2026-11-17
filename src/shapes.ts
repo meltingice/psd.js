@@ -54,6 +54,22 @@ export interface VectorStroke extends ShapeContent {
   /** 0 to 1. */
   opacity: number;
   blendMode: BlendMode | string | undefined;
+  /** The raw descriptor, for anything not covered above. */
+  data: Descriptor;
+}
+
+/** The live shape properties Photoshop keeps for a shape layer (`vogk`). */
+export interface VectorOrigination {
+  /** One entry per shape tool shape in the layer. */
+  shapes: VectorShape[];
+  /** The raw descriptor, for anything not covered above. */
+  data: Descriptor;
+}
+
+/** A newer shape layer's fill (`vscg`). */
+export interface VectorFill extends ShapeContent {
+  /** The raw descriptor, for anything not covered above. */
+  data: Descriptor;
 }
 
 const SHAPE_TYPES = { 1: 'rectangle', 2: 'roundedRectangle', 4: 'line', 5: 'ellipse' } as const;
@@ -110,17 +126,19 @@ function vectorShape(d: Descriptor): VectorShape {
   };
 }
 
-/** Adds `shapes` to the vector origination (`vogk`) descriptor. */
-export const readVectorOrigination = (d: Descriptor): Descriptor & { shapes: VectorShape[] } => ({
-  ...d,
+/** Normalizes the vector origination (`vogk`) descriptor. */
+export const readVectorOrigination = (d: Descriptor): VectorOrigination => ({
   shapes: (d.keyDescriptorList ?? []).map(vectorShape),
+  data: d,
 });
 
-/** Adds the normalized settings to the vector stroke (`vstk`) descriptor, keeping its raw keys. */
-export function readVectorStroke(d: Descriptor): Descriptor & VectorStroke {
+/** Normalizes the vector fill (`vscg`) descriptor. */
+export const readVectorFill = (d: Descriptor): VectorFill => ({ ...shapeContent(d), data: d });
+
+/** Normalizes the vector stroke (`vstk`) descriptor. */
+export function readVectorStroke(d: Descriptor): VectorStroke {
   const res: number = d.strokeStyleResolution;
   return {
-    ...d,
     ...shapeContent(d.strokeStyleContent),
     enabled: d.strokeEnabled,
     fillEnabled: d.fillEnabled,
@@ -133,5 +151,6 @@ export function readVectorStroke(d: Descriptor): Descriptor & VectorStroke {
     dashOffset: pixels(d.strokeStyleLineDashOffset, res),
     opacity: percent(d.strokeStyleOpacity),
     blendMode: blendMode(d.strokeStyleBlendMode),
+    data: d,
   };
 }

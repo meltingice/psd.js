@@ -4,7 +4,7 @@ import { readLayerStyles } from './layer-styles.ts';
 import { readPathRecords } from './path-record.ts';
 import type { Header } from './psd.ts';
 import type { Reader, SpaceColor } from './reader.ts';
-import { readVectorOrigination, readVectorStroke, shapeContent, type ShapeContent } from './shapes.ts';
+import { readVectorFill, readVectorOrigination, readVectorStroke } from './shapes.ts';
 import { readLegacyTypeTool, TypeTool } from './type-tool.ts';
 
 interface Ctx {
@@ -535,18 +535,12 @@ const LAYER_INFO = {
     },
   },
   vectorMaskAsGlobalMask: { keys: ['vmgm'], parse: flag },
-  /** Live shape properties. The raw descriptor plus `shapes`, one per shape in the layer. */
+  /** Live shape properties: `shapes`, one per shape in the layer, and the raw descriptor as `data`. */
   vectorOrigination: { keys: ['vogk'], parse: (r: Reader) => readVectorOrigination(descriptorAfter(8)(r)) },
-  /** A shape layer's stroke, and whether its fill and stroke are shown. The raw descriptor plus normalized settings. */
+  /** A shape layer's stroke, and whether its fill and stroke are shown, with the raw descriptor as `data`. */
   vectorStroke: { keys: ['vstk'], parse: (r: Reader) => readVectorStroke(descriptorAfter(4)(r)) },
-  /** A shape layer's fill. The raw descriptor plus its `color`, `gradient` or `pattern`. */
-  vectorStrokeContent: {
-    keys: ['vscg'],
-    parse: (r: Reader): Descriptor & ShapeContent => {
-      const d = descriptorAfter(8)(r);
-      return { ...d, ...shapeContent(d) };
-    },
-  },
+  /** A shape layer's fill: its `color`, `gradient` or `pattern`, with the raw descriptor as `data`. */
+  vectorStrokeContent: { keys: ['vscg'], parse: (r: Reader) => readVectorFill(descriptorAfter(8)(r)) },
   vibrance: {
     keys: ['vibA'],
     parse: (r: Reader) => {

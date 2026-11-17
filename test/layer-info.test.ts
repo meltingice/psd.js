@@ -87,19 +87,25 @@ describe('shapes', () => {
     ]);
   });
 
-  it('reads strokes and fills, keeping the raw descriptor', () => {
+  it('reads strokes and fills, with the raw descriptor in data', () => {
     const { vectorStroke: stroke, vectorStrokeContent: fill } = info('Rounded Rectangle 1');
     assert.deepEqual(
       [stroke!.enabled, stroke!.fillEnabled, stroke!.width, stroke!.alignment, stroke!.cap, stroke!.join, stroke!.dashes, stroke!.opacity, stroke!.blendMode, stroke!.color],
       [true, true, 0.29, 'inside', 'butt', 'miter', [], 1, 'normal', [0, 0, 255]],
     );
-    assert.equal(stroke!.strokeStyleLineWidth.value, 0.29);
+    // The raw descriptors are only under data, like objectEffects.
+    assert.equal(stroke!.data.strokeStyleLineWidth.value, 0.29);
+    assert.ok(!('strokeStyleLineWidth' in stroke!));
+    assert.deepEqual(Object.keys(fill!), ['color', 'gradient', 'pattern', 'data']);
+    assert.ok(fill!.data['Clr ']);
+    assert.deepEqual(Object.keys(info('Rectangle 1').vectorOrigination!), ['shapes', 'data']);
+    assert.equal(info('Rectangle 1').vectorOrigination!.data.keyDescriptorList.length, 1);
     assert.deepEqual(fill!.color, [0, 255, 255]);
   });
 
   it('converts stroke widths in points to pixels, and reads a disabled fill', () => {
     const stroke = open('fixtures/stroke-width-points-300dpi.psd').layers.find((l) => l.name === 'Rectangle 1')!.info.vectorStroke!;
-    assert.equal(stroke.strokeStyleLineWidth.unit, 'Points');
+    assert.equal(stroke.data.strokeStyleLineWidth.unit, 'Points');
     assert.equal(stroke.width, 25); // 6pt at 300ppi
     assert.deepEqual([stroke.fillEnabled, stroke.alignment, stroke.color], [false, 'center', [255, 0, 0]]);
   });

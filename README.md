@@ -158,7 +158,7 @@ Files from before Photoshop 6 store effects in `node.info.effectsLayer` instead.
 
 ### Shapes
 
-Shape layers keep their outline in `node.info.vectorMask`, and some normalized shape properties in other blocks. These keep the raw descriptor's keys too:
+Shape layers keep their outline in `node.info.vectorMask`, and their properties in other blocks, normalized like layer styles with the raw descriptor in `data`:
 
 ```ts
 for (const shape of node.info.vectorOrigination?.shapes ?? []) {
@@ -176,8 +176,10 @@ stroke?.width;              // pixels
 stroke?.alignment;          // 'inside', 'center' or 'outside'
 stroke?.cap; stroke?.join; stroke?.dashes; stroke?.opacity;
 stroke?.color;              // or gradient, or pattern
+stroke?.data;               // the raw descriptor
 
 node.info.vectorStrokeContent?.color; // the fill; older shapes use solidColor, gradientFill or patternFill
+node.info.vectorOrigination?.data;    // the raw descriptor
 ```
 
 A shape's bounds can be fractional and exclude antialiasing and the stroke, so they're usually smaller than the layer's.

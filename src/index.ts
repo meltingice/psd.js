@@ -27,7 +27,7 @@ export type {
   Shadow,
   Stroke,
 } from './layer-styles.ts';
-export type { ShapeContent, VectorShape, VectorStroke } from './shapes.ts';
+export type { ShapeContent, VectorFill, VectorOrigination, VectorShape, VectorStroke } from './shapes.ts';
 export { TypeTool, type RGBA, type TextAlignment, type TextRun, type Transform } from './type-tool.ts';
 export { CompositeImage, LayerImage, type GrayImage, type RGBAImage } from './image.ts';
 export { encodePng, type Pixels } from './png.ts';
