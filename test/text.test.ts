@@ -110,6 +110,18 @@ describe('parseEngineData', () => {
     assert.deepEqual(parseEngineData(data), { T: 'a)é' });
   });
 
+  it('decodes CJK font names (#202)', () => {
+    // 木 (U+6728), 丩 (U+4E29) and 小 (U+5C0F) contain "(", ")" and "\" bytes, which are escaped.
+    // 上 (U+4E0A) and 不 (U+4E0D) contain raw newline bytes.
+    const name = '微软雅黑木丩小上不';
+    const utf16 = [...name].flatMap((c) => [c.charCodeAt(0) >> 8, c.charCodeAt(0) & 0xff]);
+    const escaped = utf16.flatMap((b) => ([0x28, 0x29, 0x5c].includes(b) ? [0x5c, b] : [b]));
+    const data = parseEngineData(
+      new Uint8Array([...bytes('<< /FontSet [ << /Name ('), 0xfe, 0xff, ...escaped, ...bytes(') /Script 1 >> ] >>')]),
+    );
+    assert.deepEqual(data, { FontSet: [{ Name: name, Script: 1 }] });
+  });
+
   it('throws on malformed input', () => {
     assert.throws(() => parseEngineData(bytes('<< /A (unterminated >>')), /Unterminated/);
     assert.throws(() => parseEngineData(bytes('<< /A ?? >>')), /Unexpected EngineData token/);
