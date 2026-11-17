@@ -31,6 +31,16 @@ describe('layer styles', () => {
     assert.deepEqual(overlay.gradient!.opacityStops.map((s) => s.opacity), [1, 1]);
   });
 
+  it('reads group styles, which Photoshop stores in lfxs', () => {
+    // No fixture has a group with styles, so relabel a layer's lfx2 block: lfxs has the same layout.
+    const bytes = readFileSync(new URL('fixtures/slices.psd', import.meta.url));
+    const block = new PSD(bytes).layers.find((l) => l.name === 'status-bar')!.infoBlocks.find((b) => b.key === 'lfx2')!;
+    bytes.write('lfxs', block.offset - 8, 'latin1'); // the key precedes the 4-byte length
+    const layer = new PSD(bytes).layers.find((l) => l.name === 'status-bar')!;
+    assert.ok(layer.infoBlocks.some((b) => b.key === 'lfxs'));
+    assert.deepEqual(layer.info.objectEffects?.colorOverlays, [{ enabled: true, blendMode: 'normal', opacity: 1, color: [255, 255, 255] }]);
+  });
+
   it('converts descriptor colors', () => {
     const color = (id: string, values: object) => descriptorColor({ class: { name: '', id }, ...values });
     assert.deepEqual(color('RGBC', { 'Rd  ': 10.4, 'Grn ': 20, 'Bl  ': 300 }), [10, 20, 255]);
