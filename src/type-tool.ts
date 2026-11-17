@@ -95,7 +95,10 @@ export class TypeTool {
     return box && { left: box.Left.value, top: box['Top '].value, right: box.Rght.value, bottom: box.Btom.value };
   }
 
-  /** The text content. Paragraphs are separated by `\r`. */
+  /**
+   * The text content. Paragraphs are separated by `\r`, and line breaks within a paragraph
+   * (Shift+Enter) are `\u0003`; neither displays as a new line in HTML or a terminal.
+   */
   get text(): string {
     return this.textData['Txt '];
   }
