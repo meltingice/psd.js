@@ -46,6 +46,29 @@ describe('text layers', () => {
     assert.throws(() => scaled.pointSizes(NaN), /Invalid resolution/);
   });
 
+  it('reads the text frame and glyph bounds (#181)', () => {
+    // text.psd is a 100x50 paragraph box at the origin.
+    assert.deepEqual([type.left, type.right, type.bottom], [0, 100, 50]);
+    assert.ok(type.top! < 0);
+
+    // Centered point text: the frame is around the anchor, and the glyphs fill the layer's pixels.
+    const node = new PSD(readFileSync(new URL('../examples/images/example.psd', import.meta.url))).tree.descendants()
+      .find((n) => n.info.typeTool)!;
+    const point = node.info.typeTool!;
+    assert.ok(point.left! < 0 && point.right! > 0 && Math.abs(point.left! + point.right!) < 0.01);
+    const { tx, ty } = point.transform;
+    const box = point.boundingBox!;
+    assert.deepEqual(
+      [Math.floor(box.left + tx), Math.floor(box.top + ty), Math.ceil(box.right + tx), Math.ceil(box.bottom + ty)],
+      [node.left, node.top, node.right, node.bottom],
+    );
+
+    // Older files don't store bounds.
+    const old = open('alignment_modes.psd').tree.childrenAtPath('left')[0]!.info.typeTool!;
+    assert.equal(old.left, undefined);
+    assert.equal(old.boundingBox, undefined);
+  });
+
   it('exports CSS', () => {
     const css = type.toCSS();
     assert.match(css, /MyriadPro-Regular/);

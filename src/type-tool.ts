@@ -1,6 +1,7 @@
 import { readDescriptor, type Descriptor } from './descriptor.ts';
 import { parseEngineData, type EngineDict } from './engine-data.ts';
 import type { Reader } from './reader.ts';
+import type { Bounds } from './resources.ts';
 
 export interface Transform {
   xx: number;
@@ -54,10 +55,6 @@ export class TypeTool {
   readonly textData: Descriptor;
   /** The raw warp descriptor. */
   readonly warpData: Descriptor;
-  readonly left: number;
-  readonly top: number;
-  readonly right: number;
-  readonly bottom: number;
   #engineData: EngineDict | undefined;
 
   constructor(r: Reader) {
@@ -67,10 +64,35 @@ export class TypeTool {
     this.textData = readDescriptor(r);
     r.skip(6); // warp version + descriptor version
     this.warpData = readDescriptor(r);
-    this.left = r.int32();
-    this.top = r.int32();
-    this.right = r.int32();
-    this.bottom = r.int32();
+    // The block ends with left, top, right and bottom fields that Photoshop leaves as 0.
+  }
+
+  /**
+   * The left edge of the text's frame, in pixels relative to the transform origin (`tx`, `ty`) and
+   * before the transform. The frame spans the lines around the anchor point for point text, or the box
+   * for paragraph text (its top can reach above the box to fit the first line). Undefined in files
+   * from older Photoshop versions.
+   */
+  get left(): number | undefined {
+    return this.textData.bounds?.Left.value;
+  }
+  /** See `left`. */
+  get top(): number | undefined {
+    return this.textData.bounds?.['Top '].value;
+  }
+  /** See `left`. */
+  get right(): number | undefined {
+    return this.textData.bounds?.Rght.value;
+  }
+  /** See `left`. */
+  get bottom(): number | undefined {
+    return this.textData.bounds?.Btom.value;
+  }
+
+  /** The tight bounds of the glyphs, relative to the transform origin like `left`/`top`/`right`/`bottom`. */
+  get boundingBox(): Bounds | undefined {
+    const box = this.textData.boundingBox;
+    return box && { left: box.Left.value, top: box['Top '].value, right: box.Rght.value, bottom: box.Btom.value };
   }
 
   /** The text content. Paragraphs are separated by `\r`. */
@@ -185,6 +207,7 @@ export class TypeTool {
       top: this.top,
       right: this.right,
       bottom: this.bottom,
+      boundingBox: this.boundingBox,
       transform: this.transform,
     };
   }

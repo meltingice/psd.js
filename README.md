@@ -118,6 +118,8 @@ if (type) {
   type.alignment;                    // ['center']
   type.runs;                         // per-run font, size, color, bold, italic...
   type.transform;                    // { xx, xy, yx, yy, tx, ty }
+  type.left; type.top; type.right; type.bottom; // the text frame or paragraph box, relative to tx/ty
+  type.boundingBox;                  // { left, top, right, bottom } of the glyphs, relative to tx/ty
   type.toCSS();
 }
 
