@@ -1,5 +1,6 @@
 import { CompositeImage } from './image.ts';
 import { readLayerSection, type GlobalMask, type Layer, type LayerSection } from './layer.ts';
+import { readLinkedFiles, type LinkedFile } from './linked-files.ts';
 import { RootNode } from './nodes.ts';
 import { Reader } from './reader.ts';
 import { Resources } from './resources.ts';
@@ -75,6 +76,7 @@ export class PSD {
   #layerSection: LayerSection | undefined;
   #image: CompositeImage | undefined;
   #tree: RootNode | undefined;
+  #linkedFiles: LinkedFile[] | undefined;
 
   constructor(data: ArrayBuffer | ArrayBufferView) {
     const bytes = ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : new Uint8Array(data);
@@ -119,6 +121,16 @@ export class PSD {
 
   get globalMask(): GlobalMask | undefined {
     return this.#layers.globalMask;
+  }
+
+  /**
+   * Files placed as smart objects, embedded or linked. A smart object layer's file is
+   * `node.linkedFile`. File contents aren't copied out of the document.
+   */
+  get linkedFiles(): LinkedFile[] {
+    return (this.#linkedFiles ??= this.#layers.infoBlocks
+      .filter((b) => ['lnk2', 'lnk3', 'lnkD', 'lnkE'].includes(b.key))
+      .flatMap((b) => readLinkedFiles(this.#reader.at(b.offset), b.offset + b.length)));
   }
 
   /** The flattened composite image. */
